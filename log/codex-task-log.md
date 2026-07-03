@@ -548,3 +548,171 @@ It does not return database auto-increment ids.
 - Real MySQL success and failure persistence validation remains pending until DB environment variables are supplied.
 - Current app must not be run with a long-lived `root` database account; create a least-privilege `mes_agent` application account before live use.
 - SQLAlchemy mappings cover only the three tables used in this task; feedback, issue, and verification tables remain unused by application code.
+
+## 2026-07-03 - Chat Persistence Not Writing Investigation
+
+### Task Goal
+
+Investigate and fix why successful `POST /api/chat` calls did not appear to create rows in:
+
+- `agent_conversation`
+- `agent_message`
+- `agent_model_call`
+
+This task did not redesign persistence, change table structure, add feedback/history features, or modify frontend behavior.
+
+### Root Cause
+
+- `backend/app/core/config.py` used plain `load_dotenv()`, which depends on the process working directory. When the backend is started from a directory other than `backend`, `backend/.env` may not be loaded.
+- Without stable DB configuration loading, the production path can run with missing or stale DB settings depending on how `uvicorn` was started.
+- Persistence stages also lacked positive INFO logs, so a request could return 200 without an obvious log trail showing whether the persistence service ran.
+
+No duplicate production `get_chat_service` or fake repository path was found. Current production `get_chat_service` creates `ChatApplicationService` with `ChatPersistenceService`, SQLAlchemy Session Factory, and the configured LLM client.
+
+### Modified Files
+
+- `backend/app/core/config.py`
+- `backend/app/main.py`
+- `backend/app/api/chat.py`
+- `backend/app/application/chat_service.py`
+- `backend/app/application/chat_persistence_service.py`
+- `backend/app/infrastructure/database/engine.py`
+- `backend/tests/test_chat_api.py`
+- `backend/tests/test_config.py`
+- `backend/tests/test_database_session.py`
+- `backend/README.md`
+- `docs/chat-persistence-flow.md`
+- `log/codex-task-log.md`
+
+### Fixes
+
+- `backend/.env` is now loaded through a stable absolute path derived from `backend/app/core/config.py`.
+- Startup now logs the resolved env file path and performs a read-only DB connectivity check.
+- Production chat service creation now performs a DB connectivity check before creating the singleton service.
+- Added sanitized engine creation log with driver, host, port, database, and user only.
+- Added persistence stage logs for:
+  - first transaction start
+  - first transaction commit
+  - model success/failure with `call_key` and `duration_ms`
+  - second transaction success commit
+  - second transaction failure commit
+  - persistence exception stages
+- Added tests for config env path, session commit/rollback behavior, and production service using real `ChatPersistenceService`.
+
+### Actual Call Chain
+
+```text
+POST /api/chat
+-> app.api.chat.chat
+-> get_chat_service
+-> ChatApplicationService
+-> ChatPersistenceService.initialize_chat
+-> LlmClient.chat
+-> ChatPersistenceService.save_success or save_failure
+-> ChatApiResponse
+```
+
+### Configuration Loading
+
+- `.env` path: `backend/.env`
+- The file is resolved from code location, not current working directory.
+- Passwords and full connection strings are not logged.
+
+### Transaction Commit Points
+
+- `session_scope` commits on normal exit and rolls back on exception.
+- First commit happens after creating conversation, user message, and calling model-call record.
+- The model call happens after the first session has closed.
+- Second commit happens after saving either model success or model failure result.
+
+### Validation Commands And Results
+
+- Passed: `cd backend && .venv/bin/python -m py_compile $(find app tests -name '*.py' -not -path '*/__pycache__/*')`
+- Passed: `cd backend && .venv/bin/python -c "from app.main import app; print(app.title)"`
+  - Printed `MES Agent Backend`.
+- Passed: `cd backend && .venv/bin/pytest`
+  - `28 passed in 0.54s`.
+- Passed: `/api/health` through FastAPI TestClient.
+  - Returned HTTP 200 and `status=ok`.
+- Passed: `cd frontend && npm run build`
+  - Vite build completed successfully.
+
+### Real MySQL Environment Check
+
+- `backend/.env` was loaded successfully.
+- Connected database name: `mes_agent`.
+- Required tables existed:
+  - `agent_conversation`
+  - `agent_message`
+  - `agent_model_call`
+- Table inspection found expected primary keys, indexes, and foreign keys for the three tables.
+- Current DB user is `root`; this is a security risk and must be replaced with a least-privilege application account.
+
+### Real MySQL Success Verification
+
+Executed one real `POST /api/chat` request with a short validation prompt.
+
+Returned business keys:
+
+- `conversation_key`: `300a86b130994e6fa31ee4750421f25d`
+- `response_message_key`: `ac2f97f96a1540a5b5288f92203a39e5`
+- `call_key`: `5c9cc6d4f96a4938b3f9b66a801db1f9`
+
+Database verification:
+
+- Conversation row found.
+- `message_count=2`.
+- `status=2`.
+- `last_message_at` is set.
+- Two message rows found.
+- `sequence_no` values are `1,2`.
+- `role` values are `2,3`.
+- API `response_message_key` matched the assistant message row.
+- Model call status is `2`.
+- `response_message_id` is not null.
+- `duration_ms` is set.
+- `agent_version=0.1.0`.
+- `prompt_version=chat-v1`.
+- `request_snapshot` and `response_snapshot` are valid JSON.
+- Snapshot sensitive marker check returned false for API key / Authorization / Bearer markers.
+
+### Real MySQL Failure Verification
+
+Executed a safe failure scenario using a fake failing LLM client and the real persistence service/database.
+
+Returned:
+
+- API status: `502`
+- API error: `llm_call_error`
+- Failed `call_key`: `bc5308282c7e4c1d827a9b0ae720a76d`
+
+Database verification:
+
+- `call_status=3`.
+- `response_message_id` is null.
+- `error_code=llm_call_error`.
+- Error message sensitive marker check returned false.
+- Conversation `message_count=1`.
+- One message row exists.
+- No assistant message row was created.
+
+### Data Consistency Results
+
+Global consistency queries returned:
+
+- `MISMATCHED_MESSAGE_COUNT=0`
+- `SUCCESS_WITHOUT_RESPONSE=0`
+- `FAILURE_WITH_RESPONSE=0`
+- `ORPHAN_MODEL_CALLS=0`
+- `DUPLICATE_SEQUENCE_ROWS=0`
+- `CALLING_STATUS_ROWS=0`
+
+### Running Process Check
+
+- No active process was detected on port 8000 during this check.
+
+### Open Items And Risks
+
+- Replace the current `root` DB user with a least-privilege `mes_agent` application account.
+- Existing historical records created before this fix were not modified.
+- Diagnostic logs are intentionally minimal and do not include full prompts, full responses, snapshots, passwords, API keys, or Authorization headers.

@@ -19,6 +19,7 @@ from app.domain.persistence.exceptions import (
     ModelResultPersistenceError,
 )
 from app.infrastructure.database.engine import create_database_engine
+from app.infrastructure.database.engine import check_database_connection
 from app.infrastructure.database.session import create_session_factory
 from app.infrastructure.llm.client_factory import create_llm_client
 from app.schemas.chat import ChatApiRequest, ChatApiResponse, TokenUsageApiResponse
@@ -37,6 +38,7 @@ def get_chat_service() -> ChatApplicationService:
     try:
         settings = get_settings()
         _database_engine = create_database_engine(settings)
+        check_database_connection(_database_engine)
         session_factory = create_session_factory(_database_engine)
         _chat_service = ChatApplicationService(
             llm_client=create_llm_client(settings),
@@ -57,6 +59,14 @@ def get_chat_service() -> ChatApplicationService:
         raise HTTPException(
             status_code=500,
             detail={"error": "database_configuration_error", "message": str(exc)},
+        ) from exc
+    except DatabaseConnectionError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "database_connection_error",
+                "message": "Database connection failed.",
+            },
         ) from exc
 
 

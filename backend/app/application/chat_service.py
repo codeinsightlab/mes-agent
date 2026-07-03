@@ -1,4 +1,5 @@
 import time
+import logging
 
 from app.application.chat_persistence_service import ChatPersistenceService
 from app.application.chat_result import ChatUseCaseResult
@@ -12,6 +13,9 @@ from app.domain.llm.exceptions import (
     LlmUnavailableError,
 )
 from app.domain.llm.models import ChatRequest, ChatResponse, LlmMessage
+
+
+logger = logging.getLogger(__name__)
 
 
 class ChatApplicationService:
@@ -74,6 +78,12 @@ class ChatApplicationService:
             LlmUnavailableError,
         ) as exc:
             duration_ms = self._duration_ms(started_at)
+            logger.info(
+                "Chat model call result=failed call_key=%s duration_ms=%s error_code=%s",
+                start.call_key,
+                duration_ms,
+                self._error_code(exc),
+            )
             self._persistence_service.save_failure(
                 start=start,
                 duration_ms=duration_ms,
@@ -84,6 +94,11 @@ class ChatApplicationService:
             raise
 
         duration_ms = self._duration_ms(started_at)
+        logger.info(
+            "Chat model call result=success call_key=%s duration_ms=%s",
+            start.call_key,
+            duration_ms,
+        )
         saved = self._persistence_service.save_success(
             start=start,
             response=response,

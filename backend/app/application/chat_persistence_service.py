@@ -64,6 +64,11 @@ class ChatPersistenceService:
         call_key = self._new_key()
 
         try:
+            logger.info(
+                "Chat persistence stage=initializing conversation_key=%s call_key=%s",
+                conversation_key,
+                call_key,
+            )
             with session_scope(self._session_factory) as session:
                 conversations = ConversationRepository(session)
                 messages = MessageRepository(session)
@@ -99,6 +104,12 @@ class ChatPersistenceService:
                     last_message_at=now,
                     now=now,
                 )
+                logger.info(
+                    "Chat persistence stage=initialized conversation_key=%s user_message_key=%s call_key=%s committed=true",
+                    conversation.conversation_key,
+                    user_record.message_key,
+                    model_call.call_key,
+                )
                 return ChatRecordStart(
                     conversation_id=conversation.id,
                     conversation_key=conversation.conversation_key,
@@ -108,6 +119,12 @@ class ChatPersistenceService:
                     call_key=model_call.call_key,
                 )
         except SQLAlchemyError as exc:
+            logger.error(
+                "Chat persistence stage=initialize_failed conversation_key=%s call_key=%s exception_type=%s",
+                conversation_key,
+                call_key,
+                type(exc).__name__,
+            )
             raise ConversationInitializationError(
                 "Failed to initialize chat persistence records."
             ) from exc
@@ -122,6 +139,11 @@ class ChatPersistenceService:
         response_message_key = self._new_key()
 
         try:
+            logger.info(
+                "Chat persistence stage=saving_success conversation_key=%s call_key=%s",
+                start.conversation_key,
+                start.call_key,
+            )
             with session_scope(self._session_factory) as session:
                 conversations = ConversationRepository(session)
                 messages = MessageRepository(session)
@@ -157,13 +179,24 @@ class ChatPersistenceService:
                     now=now,
                     status=2,
                 )
+                logger.info(
+                    "Chat persistence stage=success_saved conversation_key=%s response_message_key=%s call_key=%s committed=true",
+                    start.conversation_key,
+                    assistant_message.message_key,
+                    start.call_key,
+                )
                 return ChatRecordSuccess(
                     conversation_key=start.conversation_key,
                     response_message_key=assistant_message.message_key,
                     call_key=start.call_key,
                 )
         except SQLAlchemyError as exc:
-            logger.exception("Failed to save model success result.")
+            logger.exception(
+                "Chat persistence stage=save_success_failed conversation_key=%s call_key=%s exception_type=%s",
+                start.conversation_key,
+                start.call_key,
+                type(exc).__name__,
+            )
             raise ModelResultPersistenceError(
                 "Failed to save model success result."
             ) from exc
@@ -178,6 +211,11 @@ class ChatPersistenceService:
     ):
         now = self._utc_now()
         try:
+            logger.info(
+                "Chat persistence stage=saving_failure conversation_key=%s call_key=%s",
+                start.conversation_key,
+                start.call_key,
+            )
             with session_scope(self._session_factory) as session:
                 conversations = ConversationRepository(session)
                 model_calls = ModelCallRepository(session)
@@ -199,8 +237,18 @@ class ChatPersistenceService:
                     now=now,
                     status=2,
                 )
+                logger.info(
+                    "Chat persistence stage=failure_saved conversation_key=%s call_key=%s committed=true",
+                    start.conversation_key,
+                    start.call_key,
+                )
         except SQLAlchemyError as exc:
-            logger.exception("Failed to save model failure result.")
+            logger.exception(
+                "Chat persistence stage=save_failure_failed conversation_key=%s call_key=%s exception_type=%s",
+                start.conversation_key,
+                start.call_key,
+                type(exc).__name__,
+            )
             raise ModelResultPersistenceError(
                 "Failed to save model failure result."
             ) from exc

@@ -22,6 +22,15 @@
 - `models/`：映射已有 MySQL 表，不自动建表。
 - `repositories/`：只负责持久化，不调用模型、不处理 HTTP。
 
+配置从 `backend/.env` 读取，路径由 `backend/app/core/config.py` 根据代码位置推导，不依赖启动命令所在目录。
+
+应用启动时会执行只读数据库检查：
+
+- `SELECT DATABASE()`
+- `SELECT 1`
+
+日志只记录 driver、host、port、database、user 和检查结果，不记录密码或完整连接 URL。
+
 ### Repository 职责
 
 - `ConversationRepository`
@@ -62,6 +71,28 @@
 2. 更新 `agent_model_call` 的耗时、失败或超时状态、稳定错误码和脱敏错误信息。
 3. 更新会话结束状态，保留 `message_count=1`。
 4. 提交并关闭 Session。
+
+### 持久化日志
+
+关键日志阶段：
+
+- `stage=initializing`：第一段事务开始，包含 `conversation_key` 和 `call_key`。
+- `stage=initialized`：第一段事务提交成功，包含 `conversation_key`、`user_message_key`、`call_key`。
+- `Chat model call result=success|failed`：模型调用完成，包含 `call_key`、`duration_ms` 和错误码。
+- `stage=success_saved`：第二段成功事务提交。
+- `stage=failure_saved`：第二段失败事务提交。
+
+日志不记录用户完整长文本、模型完整回答、request/response snapshot 全文、数据库密码、API Key 或 Authorization Header。
+
+### 不入库排查顺序
+
+1. `/api/chat` 响应是否包含 `conversation_key`、`response_message_key`、`call_key`。
+2. 当前请求是否命中新代码进程，而不是旧 `uvicorn`。
+3. `backend/.env` 是否包含 DB 配置，且启动日志显示加载该文件。
+4. 启动数据库检查是否连接到 `mes_agent`。
+5. 日志是否出现 `stage=initialized` 和 `stage=success_saved` 或 `stage=failure_saved`。
+6. 如果只有模型 200 日志但没有持久化阶段日志，说明请求没有进入持久化版本的 `ChatApplicationService`。
+7. 如果出现 `stage=initialized` 但没有第二段日志，检查模型调用异常和持久化失败错误。
 
 ### API 响应标识
 

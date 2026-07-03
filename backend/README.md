@@ -28,6 +28,7 @@ cp .env.example .env
 ```
 
 Set `LLM_API_KEY` and database variables in `.env` before calling `/api/chat`.
+The backend loads this file from `backend/.env` using an absolute path derived from the code location, so behavior is stable whether `uvicorn` is started from the repository root or from `backend/`.
 
 ## Run
 
@@ -82,3 +83,23 @@ TOOL_VERSION=
 ```
 
 Use a least-privilege application database account. Do not run the FastAPI application with a long-lived `root` account.
+
+## Persistence Checks
+
+On application startup, the backend performs a read-only database connectivity check with `SELECT DATABASE()` and `SELECT 1`. Logs include the driver, host, port, database name, and user, but never the password or full connection URL.
+
+For each `/api/chat` request, persistence logs show:
+
+- `stage=initializing`
+- `stage=initialized`
+- model call result with `call_key` and `duration_ms`
+- `stage=success_saved` or `stage=failure_saved`
+
+If `/api/chat` returns 200 but no rows appear in MySQL, check in this order:
+
+1. Confirm the response contains `conversation_key`, `response_message_key`, and `call_key`.
+2. Confirm the running process is using the latest code and the expected virtualenv.
+3. Confirm logs show the persistence stages above.
+4. Confirm `backend/.env` contains DB variables and is the file being loaded.
+5. Confirm startup database check reports `mes_agent`.
+6. Confirm no old `uvicorn` process is still serving port 8000.

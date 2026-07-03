@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -7,7 +8,10 @@ from app.domain.llm.exceptions import LlmConfigurationError
 from app.domain.persistence.exceptions import DatabaseConfigurationError
 
 
-load_dotenv()
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+BACKEND_ENV_PATH = BACKEND_DIR / ".env"
+
+load_dotenv(dotenv_path=BACKEND_ENV_PATH)
 
 DEFAULT_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
 DEFAULT_LLM_PROVIDER = "deepseek"
@@ -47,6 +51,7 @@ class Settings:
     agent_version: str = DEFAULT_AGENT_VERSION
     prompt_version: str = DEFAULT_PROMPT_VERSION
     tool_version: str | None = None
+    env_file_path: str = str(BACKEND_ENV_PATH)
 
 
 def _int_env(name: str, default: int) -> int:
@@ -71,6 +76,7 @@ def get_settings() -> Settings:
         raise LlmConfigurationError("LLM_TIMEOUT_SECONDS must be greater than 0.")
 
     return Settings(
+        env_file_path=str(BACKEND_ENV_PATH),
         cors_origins=_parse_cors_origins(
             os.getenv("BACKEND_CORS_ORIGINS", DEFAULT_CORS_ORIGINS)
         ),

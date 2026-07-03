@@ -1,7 +1,10 @@
 from fastapi.testclient import TestClient
 
 from app.application.chat_result import ChatUseCaseResult
+from app.application.chat_persistence_service import ChatPersistenceService
 from app.api.chat import get_chat_service
+import app.api.chat as chat_module
+from app.core.config import Settings
 from app.domain.llm.exceptions import LlmUnavailableError
 from app.domain.llm.models import ChatResponse, TokenUsage
 from app.main import app
@@ -96,27 +99,57 @@ def test_chat_api_model_exception_returns_stable_error():
     }
 
 
-def test_chat_api_missing_provider_config_returns_stable_error():
+def test_chat_api_missing_database_config_returns_stable_error(monkeypatch):
     app.dependency_overrides.clear()
+    chat_module.close_chat_service()
+    chat_module._chat_service = None
+    chat_module._database_engine = None
     client = TestClient(app)
 
+    monkeypatch.setattr(chat_module, "get_settings", lambda: Settings(
+        cors_origins=["http://localhost:5173"],
+        llm_provider="deepseek",
+        llm_api_key="test",
+        llm_base_url="https://api.deepseek.com",
+        llm_model="deepseek-chat",
+        llm_timeout_seconds=30,
+    ))
     response = client.post("/api/chat", json={"message": "hello"})
 
     assert response.status_code == 500
     assert response.json()["detail"]["error"] == "database_configuration_error"
 
 
-def test_chat_api_default_dependency_missing_db_config_returns_stable_error():
+def test_chat_api_missing_llm_config_returns_stable_error(monkeypatch):
     app.dependency_overrides.clear()
+    chat_module.close_chat_service()
+    chat_module._chat_service = None
+    chat_module._database_engine = None
     client = TestClient(app)
+
+    class FakeEngine:
+        def dispose(self):
+            pass
+
+    monkeypatch.setattr(chat_module, "get_settings", lambda: Settings(
+        cors_origins=["http://localhost:5173"],
+        llm_provider="deepseek",
+        llm_api_key=None,
+        llm_base_url="https://api.deepseek.com",
+        llm_model="deepseek-chat",
+        llm_timeout_seconds=30,
+        db_host="127.0.0.1",
+        db_name="mes_agent",
+        db_user="test",
+        db_password="test",
+    ))
+    monkeypatch.setattr(chat_module, "create_database_engine", lambda settings: FakeEngine())
+    monkeypatch.setattr(chat_module, "check_database_connection", lambda engine: "mes_agent")
 
     response = client.post("/api/chat", json={"message": "hello"})
 
     assert response.status_code == 500
-    assert response.json()["detail"]["error"] in {
-        "database_configuration_error",
-        "llm_configuration_error",
-    }
+    assert response.json()["detail"]["error"] == "llm_configuration_error"
 
 
 def test_chat_api_response_does_not_return_database_ids():
@@ -131,3 +164,32 @@ def test_chat_api_response_does_not_return_database_ids():
     assert "conversation_id" not in payload
     assert "message_id" not in payload
     assert "model_call_id" not in payload
+
+
+def test_production_chat_service_uses_real_persistence_service(monkeypatch):
+    class FakeSettings:
+        llm_provider = "fake-provider"
+        llm_model = "fake-model"
+        agent_version = "0.1.0"
+        prompt_version = "chat-v1"
+        tool_version = None
+
+    class FakeEngine:
+        def dispose(self):
+            pass
+
+    class FakeLlmClient:
+        pass
+
+    monkeypatch.setattr(chat_module, "_chat_service", None)
+    monkeypatch.setattr(chat_module, "_database_engine", None)
+    monkeypatch.setattr(chat_module, "get_settings", lambda: FakeSettings())
+    monkeypatch.setattr(chat_module, "create_database_engine", lambda settings: FakeEngine())
+    monkeypatch.setattr(chat_module, "check_database_connection", lambda engine: "mes_agent")
+    monkeypatch.setattr(chat_module, "create_session_factory", lambda engine: object())
+    monkeypatch.setattr(chat_module, "create_llm_client", lambda settings: FakeLlmClient())
+
+    service = get_chat_service()
+
+    chat_module.close_chat_service()
+    assert isinstance(service._persistence_service, ChatPersistenceService)
