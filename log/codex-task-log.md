@@ -192,3 +192,145 @@ frontend input
 
 - Initial pytest collection failed because Python import path was not configured for the backend package; added `backend/app/__init__.py` and `backend/pytest.ini`.
 - A direct TestClient request without `LLM_API_KEY` initially surfaced an internal configuration exception during dependency resolution; `get_chat_service` now converts provider configuration errors to a stable HTTP response.
+
+## 2026-07-03 - Single-Turn Chat Loop Verification
+
+### Task Goal
+
+Verify and complete the MES Agent single-turn question-answer loop:
+
+```text
+frontend input
+-> POST /api/chat
+-> ChatApplicationService
+-> LlmClient
+-> configured provider
+-> unified ChatResponse
+-> frontend answer display
+```
+
+This verification is limited to one request and one response. It does not add context, multi-session history, persistence, tools, MES data access, Agent loops, streaming, SSE, or WebSocket behavior.
+
+### Modified Files
+
+- `README.md`
+- `backend/README.md`
+- `backend/tests/test_chat_api.py`
+- `backend/tests/test_chat_service.py`
+- `docs/llm-client-layer.md`
+- `frontend/src/api.js`
+- `log/codex-task-log.md`
+
+### Actual Completion
+
+- Confirmed the existing backend call chain remains `api -> application -> LlmClient -> provider`.
+- Confirmed `POST /api/chat` request field is `message`.
+- Confirmed response fields are `content`, `model`, `provider`, `finish_reason`, and `usage`.
+- Improved frontend API error handling for network failures on health and chat requests.
+- Added test coverage for `/api/health`, empty `message`, blank `message`, configuration error, model error, successful fake chat response, and single-turn independence.
+- Updated README/backend README/docs to state the current chat behavior is single-turn only.
+
+### Frontend Interaction Behavior
+
+- User input is trimmed before submit.
+- Empty or whitespace-only input cannot be submitted.
+- Send button is disabled while a chat request is in flight.
+- A new request clears the previous result and replaces it with the latest response.
+- Errors are shown in the chat error area.
+- No frontend API key storage, local history, chat list, Markdown rendering, Router, Pinia, Axios, or component library was added.
+
+### Backend Error Handling
+
+- Missing `LLM_API_KEY` returns stable `llm_configuration_error`.
+- Provider unavailable errors return stable `llm_unavailable`.
+- Timeout, authentication, response-format, and generic provider-call failures are mapped to stable HTTP errors.
+- Third-party raw JSON, stack traces, Authorization headers, and API keys are not returned to the frontend.
+
+### Validation Commands And Results
+
+- Passed: `cd backend && .venv/bin/python -m py_compile app/main.py app/api/chat.py app/application/chat_service.py app/core/config.py app/domain/llm/models.py app/domain/llm/client.py app/domain/llm/exceptions.py app/infrastructure/llm/deepseek_client.py app/infrastructure/llm/client_factory.py app/schemas/chat.py`
+- Passed: `cd backend && .venv/bin/python -c "from app.main import app; print(app.title)"`
+  - Printed `MES Agent Backend`.
+- Passed: `cd backend && .venv/bin/pytest`
+  - `15 passed in 0.36s`.
+- Passed: `cd frontend && npm run build`
+  - Vite production build completed successfully.
+- Passed: short backend startup with `cd backend && .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000`
+  - `curl -sS http://127.0.0.1:8000/api/health` returned `{"status":"ok","service":"mes-agent-backend","message":"Backend is reachable."}`.
+  - `curl -sS -X POST http://127.0.0.1:8000/api/chat -H 'Content-Type: application/json' -d '{"message":"hello"}'` returned stable `llm_configuration_error` because `LLM_API_KEY` is not configured.
+  - Uvicorn was stopped after verification.
+- Passed: checked `backend/.env` presence without printing secrets.
+  - Result: `backend/.env` is missing.
+- Passed: checked path/config/session indicators.
+  - `os.getenv` remains centralized in `backend/app/core/config.py`.
+  - Frontend still uses `VITE_API_BASE_URL=/api`.
+  - No `localStorage` or `sessionStorage` chat persistence is present.
+
+### Real Provider Verification
+
+- Not executed.
+- Reason: `backend/.env` is missing, so no real `LLM_API_KEY` is available in the current environment.
+- No fake token was created and no real token was written to code, README, tests, docs, or logs.
+
+### Open Items And Risks
+
+- Real third-party model loop still requires a local `backend/.env` with a valid `LLM_API_KEY`.
+- Once a real key is configured, manual verification should start backend and frontend, send `你好`, then send a second independent question and confirm the second answer does not depend on the first.
+
+## 2026-07-03 - Frontend Long Response Layout Stability
+
+### Task Goal
+
+Review and fix frontend layout instability when long model responses are displayed. This task only changes frontend layout/text rendering behavior and does not modify backend APIs, model integration, chat protocol, or business behavior.
+
+### Root Cause
+
+- The answer text used `white-space: pre-wrap` but did not handle long unbroken tokens such as URLs, long English words, continuous digits, or code-like strings.
+- The debug JSON response is rendered in a `pre.result-box`; default `pre` behavior preserves long lines and can create a large min-content width that pushes the card/page wider than the viewport.
+- The main page/card/content blocks did not consistently set `min-width: 0` and `max-width: 100%`, so grid/flex descendants had room to widen the layout under long content.
+
+### Modified Files
+
+- `frontend/src/style.css`
+- `log/codex-task-log.md`
+
+### Key Fixes
+
+- Added width containment for `html`, `body`, `#app`, `.page-shell`, `.panel`, `.answer-box`, `.result-box`, and `textarea`.
+- Added `min-width: 0` where long content can otherwise widen grid/flex descendants.
+- Added local long-text wrapping rules to `.answer-box p`, `.result-box`, and `.error-message`.
+- Made `pre.result-box` use `white-space: pre-wrap`, `overflow-wrap: anywhere`, `word-break: break-word`, and local overflow handling so JSON/debug output does not break the page.
+- Preserved natural vertical growth for long answers; no fixed truncation or hidden content was introduced.
+- Kept health check, loading state, error display, and single-turn chat interaction unchanged.
+
+### Manual Validation Scenarios
+
+Reviewed the resulting CSS behavior against these long-content cases:
+
+- 500+ character Chinese paragraph.
+- Very long English word without spaces.
+- Long URL.
+- Multi-line model answer.
+- JSON text shown in the debug `pre` block.
+- Longer code-like text.
+- Continuous numeric string.
+- Short answer text.
+
+Expected behavior after the fix: content wraps inside the panel, debug JSON stays within the parent width, the page should not gain abnormal horizontal scrolling, and the input/button area remains stable.
+
+### Validation Commands And Results
+
+- Failed first: `cd frontend && npm run build`
+  - Rollup optional native package `@rollup/rollup-darwin-x64` was missing from local `node_modules`.
+  - Error matched npm optional dependency install issue.
+- Passed: `cd frontend && npm install`
+  - Added the missing local optional packages.
+  - npm printed the existing local CommonJS/ESM experimental warning; install completed successfully.
+  - `package.json` and `package-lock.json` were not modified.
+- Passed: `cd frontend && npm run build`
+  - Vite production build completed successfully.
+
+### Open Items And Risks
+
+- No browser screenshot-based visual QA was run in this turn.
+- The fix relies on CSS wrapping/containment; real model outputs with unusual binary/control characters were not tested.

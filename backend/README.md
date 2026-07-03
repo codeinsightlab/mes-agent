@@ -10,6 +10,8 @@ Current backend capabilities:
 
 It does not include MES data access, Agent orchestration, tool calling, streaming, or session persistence.
 
+The chat API is single-turn only: one request produces one response, and the backend does not store or reuse previous user messages.
+
 ## Setup
 
 ```bash
@@ -50,3 +52,11 @@ curl -X POST http://127.0.0.1:8000/api/chat \
 ```
 
 If `LLM_API_KEY` is not configured, `/api/chat` returns a configuration error. Health checks remain available without LLM credentials.
+
+Response fields:
+
+- `content`
+- `model`
+- `provider`
+- `finish_reason`
+- `usage`

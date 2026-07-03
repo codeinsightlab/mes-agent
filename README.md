@@ -4,6 +4,8 @@ Independent MES Agent research project. The current skeleton verifies project st
 
 DeepSeek is the first supported LLM provider. No Agent orchestration, MES database, login, permission, queue, cache, vector-store, tool calling, streaming, or session persistence functionality is included.
 
+The current chat page supports one independent request and one response at a time. It does not preserve context or display a message history.
+
 ## Project Structure
 
 ```text
@@ -84,6 +86,14 @@ curl -X POST http://127.0.0.1:8000/api/chat \
 
 If `LLM_API_KEY` is missing, `/api/chat` returns a stable configuration error instead of calling the provider. `/api/health` does not require an API key.
 
+Response fields:
+
+- `content`: model answer
+- `model`: model name returned by the provider or configured fallback
+- `provider`: provider name
+- `finish_reason`: optional provider finish reason
+- `usage`: optional token usage
+
 ## Frontend Setup
 
 ```bash
@@ -105,6 +115,8 @@ http://127.0.0.1:5173
 ```
 
 The frontend uses `VITE_API_BASE_URL=/api` and the Vite development proxy forwards `/api` requests to `http://127.0.0.1:8000`.
+
+The frontend trims blank input, disables the send button while a request is in flight, replaces the previous answer with the latest response, and shows explicit errors when the backend or model call fails.
 
 ## LLM Configuration
 

@@ -1,12 +1,17 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
 export async function checkHealth() {
-  const response = await fetch(`${API_BASE_URL}/health`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json"
-    }
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}/health`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json"
+      }
+    });
+  } catch (error) {
+    throw new Error("无法连接后端健康检查接口，请确认后端服务已启动。");
+  }
 
   if (!response.ok) {
     throw new Error(`Health check failed with HTTP ${response.status}`);
@@ -16,14 +21,19 @@ export async function checkHealth() {
 }
 
 export async function sendChatMessage(message) {
-  const response = await fetch(`${API_BASE_URL}/chat`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ message })
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}/chat`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message })
+    });
+  } catch (error) {
+    throw new Error("无法连接后端聊天接口，请确认后端服务已启动。");
+  }
 
   const result = await response.json().catch(() => null);
 

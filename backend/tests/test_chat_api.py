@@ -43,6 +43,25 @@ def test_chat_api_success_returns_stable_response():
     }
 
 
+def test_health_api_still_returns_ok():
+    client = TestClient(app)
+
+    response = client.get("/api/health")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+
+
+def test_chat_api_rejects_empty_message():
+    app.dependency_overrides[get_chat_service] = lambda: SuccessfulChatService()
+    client = TestClient(app)
+
+    response = client.post("/api/chat", json={"message": ""})
+
+    app.dependency_overrides.clear()
+    assert response.status_code == 422
+
+
 def test_chat_api_rejects_blank_message():
     app.dependency_overrides[get_chat_service] = lambda: SuccessfulChatService()
     client = TestClient(app)
