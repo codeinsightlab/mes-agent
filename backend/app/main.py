@@ -1,33 +1,33 @@
-import os
+from contextlib import asynccontextmanager
 
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.chat import close_chat_service, router as chat_router
+from app.core.config import get_settings
 
-load_dotenv()
 
 APP_NAME = "MES Agent Backend"
-DEFAULT_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
+settings = get_settings()
 
 
-def parse_cors_origins(value):
-    return [origin.strip() for origin in value.split(",") if origin.strip()]
+@asynccontextmanager
+async def lifespan(app_instance: FastAPI):
+    yield
+    close_chat_service()
 
 
-cors_origins = parse_cors_origins(
-    os.getenv("BACKEND_CORS_ORIGINS", DEFAULT_CORS_ORIGINS)
-)
-
-app = FastAPI(title=APP_NAME)
+app = FastAPI(title=APP_NAME, lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+app.include_router(chat_router)
 
 
 @app.get("/api/health")

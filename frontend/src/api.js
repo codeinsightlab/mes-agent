@@ -14,3 +14,25 @@ export async function checkHealth() {
 
   return response.json();
 }
+
+export async function sendChatMessage(message) {
+  const response = await fetch(`${API_BASE_URL}/chat`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ message })
+  });
+
+  const result = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const detail = result?.detail;
+    const messageText =
+      detail?.message || result?.message || `Chat request failed with HTTP ${response.status}`;
+    throw new Error(messageText);
+  }
+
+  return result;
+}

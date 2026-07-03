@@ -1,11 +1,15 @@
 <script setup>
 import { onMounted, ref } from "vue";
-import { checkHealth } from "./api";
+import { checkHealth, sendChatMessage } from "./api";
 
 const status = ref("未连接");
 const loading = ref(false);
 const errorMessage = ref("");
 const healthResult = ref(null);
+const chatMessage = ref("");
+const chatLoading = ref(false);
+const chatErrorMessage = ref("");
+const chatResult = ref(null);
 
 async function testConnection() {
   loading.value = true;
@@ -22,6 +26,26 @@ async function testConnection() {
       error instanceof Error ? error.message : "未知连接错误";
   } finally {
     loading.value = false;
+  }
+}
+
+async function submitChat() {
+  const message = chatMessage.value.trim();
+  if (!message || chatLoading.value) {
+    return;
+  }
+
+  chatLoading.value = true;
+  chatErrorMessage.value = "";
+  chatResult.value = null;
+
+  try {
+    chatResult.value = await sendChatMessage(message);
+  } catch (error) {
+    chatErrorMessage.value =
+      error instanceof Error ? error.message : "未知聊天请求错误";
+  } finally {
+    chatLoading.value = false;
   }
 }
 
@@ -53,6 +77,28 @@ onMounted(() => {
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
       <pre class="result-box">{{ healthResult ? JSON.stringify(healthResult, null, 2) : "暂无后端返回结果" }}</pre>
+
+      <form class="chat-form" @submit.prevent="submitChat">
+        <label for="chat-message">聊天输入</label>
+        <textarea
+          id="chat-message"
+          v-model="chatMessage"
+          maxlength="4000"
+          rows="5"
+          placeholder="输入一段文本，发送到后端模型接入层"
+        />
+        <button type="submit" :disabled="chatLoading || !chatMessage.trim()">
+          {{ chatLoading ? "发送中..." : "发送" }}
+        </button>
+      </form>
+
+      <p v-if="chatErrorMessage" class="error-message">{{ chatErrorMessage }}</p>
+
+      <section class="answer-box">
+        <span class="label">模型回答</span>
+        <p>{{ chatResult?.content || "暂无模型回答" }}</p>
+        <pre v-if="chatResult" class="result-box">{{ JSON.stringify(chatResult, null, 2) }}</pre>
+      </section>
     </section>
   </main>
 </template>
