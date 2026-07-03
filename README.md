@@ -1,8 +1,8 @@
 # MES Agent
 
-Independent MES Agent research project. The current skeleton verifies project structure, startup commands, HTTP communication, and a minimal provider-independent LLM chat layer.
+Independent MES Agent research project. The current skeleton verifies project structure, startup commands, HTTP communication, a minimal provider-independent LLM chat layer, and anonymous feedback for saved assistant answers.
 
-DeepSeek is the first supported LLM provider. Single-turn chat persistence stores each request in MySQL. No Agent orchestration, MES data access, login, permission, queue, cache, vector-store, tool calling, streaming, or history-query functionality is included.
+DeepSeek is the first supported LLM provider. Single-turn chat persistence stores each request in MySQL. Anonymous feedback stores likes or dislikes in `agent_feedback`. No Agent orchestration, MES data access, login, permission, queue, cache, vector-store, tool calling, streaming, issue workflow, or history-query functionality is included.
 
 The current chat page supports one independent request and one response at a time. Each request creates a new conversation record, but it does not send prior messages as context or display a message history.
 
@@ -25,6 +25,7 @@ The current chat page supports one independent request and one response at a tim
 │   └── requirements.txt
 ├── docs
 │   ├── agent-conversation-storage.md
+│   ├── anonymous-feedback-flow.md
 │   ├── chat-persistence-flow.md
 │   └── llm-client-layer.md
 ├── frontend
@@ -86,6 +87,14 @@ curl -X POST http://127.0.0.1:8000/api/chat \
   -d '{"message":"hello"}'
 ```
 
+Feedback API:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/feedback \
+  -H "Content-Type: application/json" \
+  -d '{"response_message_key":"assistant-message-key","visitor_id":"anonymous-visitor-id","feedback_type":1}'
+```
+
 If `LLM_API_KEY` is missing, `/api/chat` returns a stable configuration error instead of calling the provider. `/api/health` does not require an API key.
 
 Response fields:
@@ -123,6 +132,8 @@ The frontend uses `VITE_API_BASE_URL=/api` and the Vite development proxy forwar
 
 The frontend trims blank input, disables the send button while a request is in flight, replaces the previous answer with the latest response, and shows explicit errors when the backend or model call fails.
 
+After a successful assistant answer, the frontend shows like and dislike feedback controls when `response_message_key` is present. It stores an anonymous `visitor_id` in `localStorage` under `mes_agent_visitor_id`; this value is only used for anonymous feedback ownership and is not an authentication credential.
+
 ## LLM Configuration
 
 Backend variables:
@@ -159,3 +170,4 @@ TOOL_VERSION=
 FastAPI must not use a long-lived `root` account. Use a least-privilege application account scoped to `mes_agent` with the required `SELECT`, `INSERT`, and `UPDATE` permissions.
 
 The persistence flow is documented in [docs/chat-persistence-flow.md](/Users/user/Documents/mes-agent/docs/chat-persistence-flow.md).
+Anonymous feedback is documented in [docs/anonymous-feedback-flow.md](/Users/user/Documents/mes-agent/docs/anonymous-feedback-flow.md).

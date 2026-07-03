@@ -46,3 +46,42 @@ export async function sendChatMessage(message) {
 
   return result;
 }
+
+export async function submitFeedback({
+  responseMessageKey,
+  visitorId,
+  feedbackType,
+  reasonType = null,
+  comment = null
+}) {
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}/feedback`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        response_message_key: responseMessageKey,
+        visitor_id: visitorId,
+        feedback_type: feedbackType,
+        reason_type: reasonType,
+        comment
+      })
+    });
+  } catch (error) {
+    throw new Error("无法连接后端反馈接口，请确认后端服务已启动。");
+  }
+
+  const result = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const detail = result?.detail;
+    const messageText =
+      detail?.message || result?.message || `Feedback request failed with HTTP ${response.status}`;
+    throw new Error(messageText);
+  }
+
+  return result;
+}

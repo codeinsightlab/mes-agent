@@ -167,6 +167,24 @@ agent_message
 4. 将原始输入、期望输出和关键判断标准写入 `agent_issue_verification`。
 5. 每次 Agent、Prompt、Tool 或模型版本变更后新增验证记录，不覆盖历史验证。
 
+## 2026-07-03 - 匿名反馈接口接入状态
+
+当前已实现 `POST /api/feedback`，只接入 `agent_feedback`，不接入 `agent_issue` 或 `agent_issue_verification`。
+
+实现规则：
+
+- 前端为匿名访客生成 `visitor_id`，并保存到 `localStorage` 的 `mes_agent_visitor_id`。
+- `visitor_id` 只用于匿名反馈归属，不是认证凭证。
+- API 层构造 `IdentityContext(user_id=None, visitor_id=...)`。
+- `FeedbackApplicationService` 只依赖 `IdentityContext`，不读取 HTTP Header 或前端存储。
+- 反馈只能针对 `role=3` 且 `message_status=1` 的助手消息。
+- 同一 `visitor_id` 对同一助手消息只保留一条有效反馈。
+- 再次提交同一消息的反馈会更新原 `agent_feedback`，不会新增重复有效记录。
+- 从不喜欢改为喜欢时清空 `reason_type` 和 `comment`。
+- 不同 `visitor_id` 可以分别评价同一助手消息。
+
+详细流程见 [anonymous-feedback-flow.md](/Users/user/Documents/mes-agent/docs/anonymous-feedback-flow.md)。
+
 ### 应用账号原则
 
 本轮不创建正式应用账号。管理员账号只用于初始化数据库和表。

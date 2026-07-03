@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.infrastructure.database.models.message import AgentMessage
@@ -14,6 +15,10 @@ MESSAGE_STATUS_NORMAL = 1
 class MessageRepository:
     def __init__(self, session: Session):
         self._session = session
+
+    def get_by_message_key(self, message_key: str) -> AgentMessage | None:
+        statement = select(AgentMessage).where(AgentMessage.message_key == message_key)
+        return self._session.execute(statement).scalar_one_or_none()
 
     def create_user_message(
         self,

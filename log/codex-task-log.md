@@ -716,3 +716,194 @@ Global consistency queries returned:
 - Replace the current `root` DB user with a least-privilege `mes_agent` application account.
 - Existing historical records created before this fix were not modified.
 - Diagnostic logs are intentionally minimal and do not include full prompts, full responses, snapshots, passwords, API keys, or Authorization headers.
+
+## 2026-07-03 - Anonymous Feedback Loop
+
+### Task Goal
+
+Implement the minimal anonymous user feedback loop for saved assistant answers.
+
+Scope:
+
+- Frontend stores an anonymous `visitor_id`.
+- User can submit like or dislike feedback for a saved assistant answer.
+- Backend receives `POST /api/feedback`.
+- API builds `IdentityContext(user_id=None, visitor_id=...)`.
+- `FeedbackApplicationService` validates the assistant message and creates or updates `agent_feedback`.
+- No login, JWT, authentication service, `agent_issue`, or `agent_issue_verification` was added.
+
+### Modified Files
+
+- `backend/app/domain/identity/context.py`
+- `backend/app/domain/identity/__init__.py`
+- `backend/app/domain/feedback/enums.py`
+- `backend/app/domain/feedback/exceptions.py`
+- `backend/app/domain/feedback/__init__.py`
+- `backend/app/schemas/feedback.py`
+- `backend/app/infrastructure/database/models/feedback.py`
+- `backend/app/infrastructure/database/models/__init__.py`
+- `backend/app/infrastructure/database/repositories/message_repository.py`
+- `backend/app/infrastructure/database/repositories/feedback_repository.py`
+- `backend/app/application/feedback_service.py`
+- `backend/app/api/feedback.py`
+- `backend/app/main.py`
+- `backend/tests/test_identity_and_feedback_schema.py`
+- `backend/tests/test_feedback_service.py`
+- `backend/tests/test_feedback_api.py`
+- `backend/tests/test_feedback_repository.py`
+- `frontend/src/api.js`
+- `frontend/src/App.vue`
+- `frontend/src/style.css`
+- `README.md`
+- `backend/README.md`
+- `docs/anonymous-feedback-flow.md`
+- `docs/agent-conversation-storage.md`
+- `log/codex-task-log.md`
+
+### IdentityContext Design
+
+- `IdentityContext` contains `user_id` and `visitor_id`.
+- Current anonymous mode sets `user_id=None`.
+- `visitor_id` is required for feedback submission.
+- `FeedbackApplicationService` depends on `IdentityContext`, not HTTP headers, localStorage, JWT, or future auth adapters.
+
+### visitor_id Generation And Storage
+
+- Frontend localStorage key: `mes_agent_visitor_id`.
+- Generation order:
+  - `crypto.randomUUID()`
+  - `crypto.getRandomValues()`
+  - random browser string fallback
+- `visitor_id` is only sent to `POST /api/feedback`.
+- `/api/chat` protocol was not changed.
+- `visitor_id` is not treated or described as an authentication credential.
+
+### FeedbackRepository Behavior
+
+- Queries active feedback with `deleted=0`.
+- Supports `message_id + visitor_id` query for current anonymous mode.
+- Includes `message_id + user_id` query for the future authentication boundary.
+- Creates and updates `agent_feedback` using the same SQLAlchemy Session supplied by the application service transaction.
+- Does not inspect HTTP requests, create identities, or call the LLM client.
+
+### Feedback Create And Update Rules
+
+- Target message must exist.
+- Target message must be an assistant message.
+- Target message must be normal status.
+- First feedback creates one `agent_feedback` row.
+- Same visitor and same message updates the existing active row.
+- Like uses `feedback_type=1`, clears `reason_type` and `comment`.
+- Dislike uses `feedback_type=2`, allows `reason_type` and optional `comment`.
+- Different visitors can create separate feedback rows for the same assistant message.
+
+### API Protocol
+
+Endpoint:
+
+```text
+POST /api/feedback
+```
+
+Request fields:
+
+- `response_message_key`
+- `visitor_id`
+- `feedback_type`
+- `reason_type`
+- `comment`
+
+Response fields:
+
+- `feedback_key`
+- `response_message_key`
+- `feedback_type`
+- `feedback_type_label`
+- `reason_type`
+- `reason_type_label`
+- `comment`
+- `created_at`
+- `updated_at`
+
+The API rejects `user_id` and does not return database auto-increment IDs.
+
+### Frontend Interaction
+
+- Feedback controls appear only after a chat response includes `response_message_key`.
+- Like submits immediately.
+- Dislike opens reason radio options and an optional comment field.
+- The dislike submit button is disabled until a reason is selected.
+- Buttons are disabled while feedback is submitting.
+- Successful feedback displays the saved feedback state.
+- Failed feedback displays a clear error message.
+- New chat success resets page-level feedback state for the new answer.
+
+### Automatic Test Results
+
+- Passed: `cd backend && .venv/bin/python -m py_compile $(find app tests -name '*.py' -not -path '*/__pycache__/*')`
+- Passed: `cd backend && .venv/bin/pytest`
+  - `56 passed in 0.64s`.
+- Passed: FastAPI TestClient regression for:
+  - `/api/health`
+  - `/api/chat`
+  - `/api/feedback`
+
+### Frontend Build Result
+
+- Passed: `cd frontend && npm run build`
+  - Vite build completed successfully.
+
+### Real Database Verification
+
+Real MySQL structure check:
+
+- `agent_feedback` table exists.
+- Columns match the SQL file, including generated owner columns.
+- Unique active feedback index exists on `message_id + active_feedback_owner_key`.
+- Foreign keys exist for conversation and message.
+
+Real API and database verification:
+
+- Performed one real `POST /api/chat` and received a `response_message_key`.
+- Submitted like feedback for one anonymous visitor.
+  - API returned 200.
+  - `agent_feedback` row was created.
+- Submitted dislike feedback for the same visitor and same message.
+  - API returned 200.
+  - Existing `feedback_key` was preserved.
+  - No duplicate active row was created.
+- Submitted like again for the same visitor and same message.
+  - API returned 200.
+  - Existing `feedback_key` was preserved.
+  - `reason_type` was cleared.
+  - `comment` was cleared.
+- Submitted like from a second anonymous visitor for the same message.
+  - API returned 200.
+  - A second feedback row was created for the second visitor.
+- After moving the feedback commit-success log outside the transaction context, reran a real `POST /api/feedback` against the latest assistant message.
+  - API returned 200.
+  - A `feedback_key` was returned.
+
+### Data Consistency Check
+
+Global consistency queries returned:
+
+- `ORPHAN_FEEDBACKS=0`
+- `NON_ASSISTANT_FEEDBACKS=0`
+- `CONVERSATION_MISMATCH_FEEDBACKS=0`
+- `DUPLICATE_ACTIVE_VISITOR_FEEDBACKS=0`
+- `LIKE_WITH_REASON=0`
+- `LIKE_WITH_COMMENT=0`
+
+### Sensitive Logging Check
+
+- Feedback logs use a hashed visitor digest, not the full `visitor_id`.
+- Feedback logs do not include full comments.
+- No database password, API key, Authorization header, or full connection string was added to code, README, docs, tests, or logs.
+
+### Open Items And Risks
+
+- The current DB account is still `root`; replace it with a least-privilege application account.
+- Frontend validation requires a dislike reason before submit, while the backend still allows dislike with no reason for API compatibility.
+- No real browser click-through was performed; frontend behavior was covered by code review and production build.
+- This task intentionally does not create issue records or feedback management screens.

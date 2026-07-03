@@ -254,7 +254,7 @@ class ChatPersistenceService:
             ) from exc
 
     def _request_snapshot(self, request: ChatRequest) -> str:
-        return self._to_json(
+        return self._to_json( # type: ignore
             {
                 "messages": [
                     {"role": message.role, "content": message.content}
@@ -268,7 +268,7 @@ class ChatPersistenceService:
 
     def _response_snapshot(self, response: ChatResponse) -> str:
         usage = response.usage
-        return self._to_json(
+        return self._to_json( # type: ignore
             {
                 "content": response.content,
                 "provider": response.provider,
@@ -290,7 +290,7 @@ class ChatPersistenceService:
                 return message.content
         return None
 
-    def _to_json(self, value) -> str:
+    def _to_json(self, value) -> str: # type: ignore
         return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
     def _sanitize_error_message(self, message: str) -> str:

@@ -6,9 +6,10 @@ Current backend capabilities:
 
 - `GET /api/health`
 - `POST /api/chat`
+- `POST /api/feedback`
 - Provider-independent LLM client protocol with DeepSeek as the first provider.
 
-It does not include MES data access, Agent orchestration, tool calling, streaming, multi-turn context, or history-query APIs.
+It does not include MES data access, Agent orchestration, tool calling, streaming, multi-turn context, login, JWT, authentication service calls, issue workflow, or history-query APIs.
 
 The chat API is single-turn only: one request creates one independent conversation, stores the user message and model call, then stores the assistant message on success. The backend does not load or reuse previous user messages as model context.
 
@@ -52,6 +53,14 @@ curl -X POST http://127.0.0.1:8000/api/chat \
   -d '{"message":"hello"}'
 ```
 
+Feedback request:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/feedback \
+  -H "Content-Type: application/json" \
+  -d '{"response_message_key":"assistant-message-key","visitor_id":"anonymous-visitor-id","feedback_type":1}'
+```
+
 If `LLM_API_KEY` is not configured, `/api/chat` returns a configuration error. Health checks remain available without LLM credentials.
 
 Response fields:
@@ -64,6 +73,20 @@ Response fields:
 - `call_key`
 - `finish_reason`
 - `usage`
+
+Feedback response fields:
+
+- `feedback_key`
+- `response_message_key`
+- `feedback_type`
+- `feedback_type_label`
+- `reason_type`
+- `reason_type_label`
+- `comment`
+- `created_at`
+- `updated_at`
+
+Feedback can only target a saved assistant message. The same anonymous visitor updating feedback for the same message updates the existing active row instead of inserting duplicates. `visitor_id` is received through `IdentityContext` as an anonymous identifier, not as a trusted authentication credential.
 
 Database variables:
 
@@ -94,6 +117,8 @@ For each `/api/chat` request, persistence logs show:
 - `stage=initialized`
 - model call result with `call_key` and `duration_ms`
 - `stage=success_saved` or `stage=failure_saved`
+
+For each `/api/feedback` request, logs show submit start, response message key, hashed visitor digest, feedback type, create/update action, feedback key, and commit success. Logs do not include the full visitor ID or full comment.
 
 If `/api/chat` returns 200 but no rows appear in MySQL, check in this order:
 

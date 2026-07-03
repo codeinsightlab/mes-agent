@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.chat import close_chat_service, router as chat_router
+from app.api.feedback import close_feedback_service, router as feedback_router
 from app.core.config import get_settings
 from app.domain.persistence.exceptions import PersistenceError
 from app.infrastructure.database.engine import (
@@ -34,6 +35,7 @@ async def lifespan(app_instance: FastAPI):
         )
     yield
     close_chat_service()
+    close_feedback_service()
 
 
 app = FastAPI(title=APP_NAME, lifespan=lifespan)
@@ -47,6 +49,7 @@ app.add_middleware(
 )
 
 app.include_router(chat_router)
+app.include_router(feedback_router)
 
 
 @app.get("/api/health")

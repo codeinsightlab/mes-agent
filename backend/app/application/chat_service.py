@@ -12,7 +12,7 @@ from app.domain.llm.exceptions import (
     LlmTimeoutError,
     LlmUnavailableError,
 )
-from app.domain.llm.models import ChatRequest, ChatResponse, LlmMessage
+from app.domain.llm.models import ChatRequest, LlmMessage
 
 
 logger = logging.getLogger(__name__)
