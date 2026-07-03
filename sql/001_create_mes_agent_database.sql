@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS `agent_feedback` (
   `message_id` BIGINT UNSIGNED NOT NULL COMMENT 'Assistant message id evaluated by the user',
   `user_id` VARCHAR(64) NULL COMMENT 'Future logged-in user identifier',
   `visitor_id` VARCHAR(64) NULL COMMENT 'Anonymous visitor identifier',
+  `deleted` TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Logical delete flag: 0 active, 1 deleted',
   `feedback_owner_key` VARCHAR(140) GENERATED ALWAYS AS (
     CASE
       WHEN `user_id` IS NOT NULL THEN CONCAT('user:', `user_id`)
@@ -109,7 +110,6 @@ CREATE TABLE IF NOT EXISTS `agent_feedback` (
   `comment` TEXT NULL COMMENT 'User feedback comment',
   `created_at` DATETIME(3) NOT NULL COMMENT 'Creation time',
   `updated_at` DATETIME(3) NOT NULL COMMENT 'Last update time',
-  `deleted` TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Logical delete flag: 0 active, 1 deleted',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_agent_feedback_key` (`feedback_key`),
   UNIQUE KEY `uk_agent_feedback_active_message_owner` (`message_id`, `active_feedback_owner_key`),

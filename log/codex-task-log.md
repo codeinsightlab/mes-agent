@@ -334,3 +334,217 @@ Expected behavior after the fix: content wraps inside the panel, debug JSON stay
 
 - No browser screenshot-based visual QA was run in this turn.
 - The fix relies on CSS wrapping/containment; real model outputs with unusual binary/control characters were not tested.
+
+## 2026-07-03 - MySQL Conversation Storage Schema
+
+### Task Goal
+
+Prepare the MySQL initialization schema for `mes_agent`, covering conversation context, messages, model calls, user feedback, issue handling, and version regression verification.
+
+Security reminder from the task: the previously exposed remote MySQL `root` password must be changed immediately outside this log. No database password is recorded here.
+
+### SQL File
+
+- `sql/001_create_mes_agent_database.sql`
+
+### Documentation File
+
+- `docs/agent-conversation-storage.md`
+
+### Database Name
+
+- `mes_agent`
+
+### Tables Defined
+
+- `agent_conversation`
+- `agent_message`
+- `agent_model_call`
+- `agent_feedback`
+- `agent_issue`
+- `agent_issue_verification`
+
+### Key Constraints
+
+- `CREATE DATABASE IF NOT EXISTS mes_agent` with `utf8mb4`.
+- Six `CREATE TABLE IF NOT EXISTS` statements using InnoDB and `utf8mb4`.
+- Stable external key unique indexes on conversation, message, model call, feedback, issue, and verification tables.
+- Message sequence uniqueness per conversation.
+- Feedback uniqueness for one active feedback per message and normalized user or visitor owner.
+- One issue per feedback in the first version.
+- Version verification uses non-unique version combination index so repeated verification history is preserved.
+- Foreign keys use `ON DELETE RESTRICT ON UPDATE RESTRICT`; no physical cascade delete.
+- Status and type fields use `tinyint unsigned` numeric enums.
+- Snapshot fields use `longtext`; upper layers must serialize, validate, and redact sensitive content.
+
+### Execution Status
+
+- Not executed against MySQL in this turn.
+- Reason: required environment variables were missing in the current terminal environment:
+  - `MYSQL_HOST`
+  - `MYSQL_PORT`
+  - `MYSQL_ADMIN_USER`
+  - `MYSQL_ADMIN_PASSWORD`
+- MySQL client availability was checked successfully with `mysql --version`; client version reported MySQL 8.0.32.
+- Because connection variables were missing, target MySQL version, existing `mes_agent` database, existing same-name tables, indexes, and foreign keys could not be inspected.
+
+### Static Validation
+
+- Confirmed SQL contains one database creation statement and six table creation statements.
+- Confirmed SQL includes foreign keys, unique keys, indexes, CHECK constraints, table comments, and field comments.
+- Confirmed SQL does not include a database password, API key, or login command.
+- Sensitive keyword matches were limited to safety documentation such as forbidden Authorization Header storage and root-account warnings.
+
+### Existing Objects And Incremental Handling
+
+- Existing remote database or tables could not be checked because no MySQL connection variables were available.
+- No destructive statements were added.
+- No `DROP DATABASE`, `DROP TABLE`, trigger, stored procedure, or application account creation was added.
+- No increment was executed.
+
+### Open Items And Risks
+
+- The exposed remote MySQL `root` password must be rotated immediately before any later database work continues.
+- Actual database creation and structure verification still require connection variables supplied through the environment.
+- FastAPI must not use `root`; before ORM/database integration, create a least-privilege application account limited to the `mes_agent` database.
+
+## 2026-07-03 - Single-Turn Chat Persistence Loop
+
+### Task Goal
+
+Implement the single-turn chat persistence loop for `POST /api/chat`:
+
+```text
+frontend message
+-> ChatApplicationService
+-> create conversation, user message, and model-call-in-progress records
+-> call LlmClient
+-> save assistant message and model-call success result
+-> or save model-call failure/timeout result
+-> return unified response with business keys
+```
+
+This task does not add multi-turn context, history queries, feedback APIs, MES data access, tool calls, Agent loops, or streaming.
+
+### Modified Files
+
+- `README.md`
+- `backend/README.md`
+- `backend/.env.example`
+- `backend/requirements.txt`
+- `backend/app/api/chat.py`
+- `backend/app/application/chat_service.py`
+- `backend/app/application/chat_persistence_service.py`
+- `backend/app/application/chat_result.py`
+- `backend/app/core/config.py`
+- `backend/app/domain/persistence/__init__.py`
+- `backend/app/domain/persistence/exceptions.py`
+- `backend/app/infrastructure/database/__init__.py`
+- `backend/app/infrastructure/database/engine.py`
+- `backend/app/infrastructure/database/session.py`
+- `backend/app/infrastructure/database/models/base.py`
+- `backend/app/infrastructure/database/models/conversation.py`
+- `backend/app/infrastructure/database/models/message.py`
+- `backend/app/infrastructure/database/models/model_call.py`
+- `backend/app/infrastructure/database/repositories/__init__.py`
+- `backend/app/infrastructure/database/repositories/conversation_repository.py`
+- `backend/app/infrastructure/database/repositories/message_repository.py`
+- `backend/app/infrastructure/database/repositories/model_call_repository.py`
+- `backend/app/schemas/chat.py`
+- `backend/tests/test_chat_api.py`
+- `backend/tests/test_chat_service.py`
+- `backend/tests/test_chat_persistence_service.py`
+- `docs/agent-conversation-storage.md`
+- `docs/chat-persistence-flow.md`
+- `log/codex-task-log.md`
+
+### Database Technology Choice
+
+- Synchronous SQLAlchemy 2.x.
+- PyMySQL driver.
+- One synchronous database stack only.
+- No ORM auto-create-table behavior was added; MySQL table structure remains governed by `sql/001_create_mes_agent_database.sql`.
+
+### Repository Design
+
+- `ConversationRepository`: create conversation and update message summary/status.
+- `MessageRepository`: create fixed single-turn user message (`sequence_no=1`) and assistant message (`sequence_no=2`).
+- `ModelCallRepository`: create calling record, update success result, update failure or timeout result.
+
+Repositories do not call models, do not handle HTTP, and do not execute arbitrary table-name SQL.
+
+### Transaction Boundary
+
+- First transaction: create `agent_conversation`, user `agent_message`, and calling `agent_model_call`; update conversation summary; commit and close Session.
+- LLM call happens after the first transaction has committed and without holding a database transaction.
+- Second success transaction: create assistant `agent_message`, update `agent_model_call` success fields, update conversation summary and status.
+- Second failure transaction: do not create assistant message; update `agent_model_call` with failure or timeout status, stable error code, sanitized message, and duration.
+
+### API Response Change
+
+`POST /api/chat` retains:
+
+- `content`
+- `model`
+- `provider`
+- `finish_reason`
+- `usage`
+
+It now also returns:
+
+- `conversation_key`
+- `response_message_key`
+- `call_key`
+
+It does not return database auto-increment ids.
+
+### Security Notes
+
+- `backend/.env.example` was sanitized to placeholders for DB host/user/password.
+- No database password, API key, full connection string, or Authorization header was written to README, docs, tests, logs, or final output.
+- `request_snapshot` excludes API key and Authorization header.
+- `response_snapshot` stores unified response fields only.
+- Error text is sanitized before persistence.
+
+### Validation Commands And Results
+
+- Passed: `cd backend && .venv/bin/pip install -r requirements.txt`
+  - Installed `SQLAlchemy==2.0.36` and `PyMySQL==1.1.1`.
+  - pip cache warning remained because the local pip cache directory is not writable; install succeeded.
+- Passed: `cd backend && .venv/bin/python -m py_compile $(find app tests -name '*.py' -not -path '*/__pycache__/*')`
+- Passed: `cd backend && .venv/bin/python -c "from app.main import app; print(app.title)"`
+  - Printed `MES Agent Backend`.
+- Passed: `cd backend && .venv/bin/pytest`
+  - `24 passed in 0.55s`.
+- Passed: `cd frontend && npm run build`
+  - Vite production build completed successfully.
+- Port `8000` was already in use, so short backend verification used temporary port `8001`.
+- Passed: `curl -sS http://127.0.0.1:8001/api/health`
+  - Returned `{"status":"ok","service":"mes-agent-backend","message":"Backend is reachable."}`.
+- Passed: `curl -sS -X POST http://127.0.0.1:8001/api/chat -H 'Content-Type: application/json' -d '{"message":"hello"}'`
+  - Returned stable `database_configuration_error` because DB configuration is missing.
+
+### Real Database Verification
+
+- Not executed.
+- Reason: `backend/.env` exists but contains only LLM-related keys; it does not contain `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, or `DB_PASSWORD`, and the current shell environment also lacks DB variables.
+- Therefore no real insert, table-structure comparison, index/foreign-key verification, success-path model call persistence, or failure-path database persistence verification was performed.
+
+### Data Consistency Verification
+
+- Verified by unit tests with fakes:
+  - First persistence stage happens before LLM call.
+  - First persistence failure prevents LLM call.
+  - Success path saves assistant response metadata, usage, duration, and business keys.
+  - Timeout and generic model failures call failure persistence.
+  - Second-stage persistence failure is not returned as fake success.
+  - API returns `conversation_key`, `response_message_key`, and `call_key`.
+  - API does not return auto-increment database ids.
+  - `request_snapshot` does not contain API key or Authorization/Bearer text.
+  - Error message sanitizer redacts Authorization/Bearer terms.
+
+### Open Items And Risks
+
+- Real MySQL success and failure persistence validation remains pending until DB environment variables are supplied.
+- Current app must not be run with a long-lived `root` database account; create a least-privilege `mes_agent` application account before live use.
+- SQLAlchemy mappings cover only the three tables used in this task; feedback, issue, and verification tables remain unused by application code.

@@ -15,6 +15,9 @@ class ChatApiResponse(BaseModel):
     content: str
     model: str
     provider: str
+    conversation_key: str
+    response_message_key: str
+    call_key: str
     finish_reason: str | None = None
     usage: TokenUsageApiResponse | None = None
 

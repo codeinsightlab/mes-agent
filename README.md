@@ -2,9 +2,9 @@
 
 Independent MES Agent research project. The current skeleton verifies project structure, startup commands, HTTP communication, and a minimal provider-independent LLM chat layer.
 
-DeepSeek is the first supported LLM provider. No Agent orchestration, MES database, login, permission, queue, cache, vector-store, tool calling, streaming, or session persistence functionality is included.
+DeepSeek is the first supported LLM provider. Single-turn chat persistence stores each request in MySQL. No Agent orchestration, MES data access, login, permission, queue, cache, vector-store, tool calling, streaming, or history-query functionality is included.
 
-The current chat page supports one independent request and one response at a time. It does not preserve context or display a message history.
+The current chat page supports one independent request and one response at a time. Each request creates a new conversation record, but it does not send prior messages as context or display a message history.
 
 ## Project Structure
 
@@ -24,6 +24,8 @@ The current chat page supports one independent request and one response at a tim
 │   ├── tests
 │   └── requirements.txt
 ├── docs
+│   ├── agent-conversation-storage.md
+│   ├── chat-persistence-flow.md
 │   └── llm-client-layer.md
 ├── frontend
 │   ├── .env.example
@@ -60,7 +62,7 @@ Create local backend environment configuration:
 cp .env.example .env
 ```
 
-Then edit `backend/.env` and set `LLM_API_KEY` to your own DeepSeek API key. Do not put real tokens in `.env.example`, README, logs, or tests.
+Then edit `backend/.env` and set `LLM_API_KEY` and database variables to your own local values. Do not put real tokens or database passwords in `.env.example`, README, logs, or tests.
 
 ## Backend Startup
 
@@ -91,6 +93,9 @@ Response fields:
 - `content`: model answer
 - `model`: model name returned by the provider or configured fallback
 - `provider`: provider name
+- `conversation_key`: stable key for the saved conversation
+- `response_message_key`: stable key for the saved assistant message
+- `call_key`: stable key for the saved model call
 - `finish_reason`: optional provider finish reason
 - `usage`: optional token usage
 
@@ -131,3 +136,26 @@ LLM_TIMEOUT_SECONDS=30
 ```
 
 The LLM abstraction is documented in [docs/llm-client-layer.md](/Users/user/Documents/mes-agent/docs/llm-client-layer.md).
+
+## Database Configuration
+
+Backend database variables:
+
+```text
+DB_HOST=replace-with-db-host
+DB_PORT=3306
+DB_NAME=mes_agent
+DB_USER=replace-with-db-user
+DB_PASSWORD=replace-with-db-password
+DB_POOL_SIZE=5
+DB_MAX_OVERFLOW=10
+DB_POOL_RECYCLE_SECONDS=1800
+DB_CONNECT_TIMEOUT_SECONDS=5
+AGENT_VERSION=0.1.0
+PROMPT_VERSION=chat-v1
+TOOL_VERSION=
+```
+
+FastAPI must not use a long-lived `root` account. Use a least-privilege application account scoped to `mes_agent` with the required `SELECT`, `INSERT`, and `UPDATE` permissions.
+
+The persistence flow is documented in [docs/chat-persistence-flow.md](/Users/user/Documents/mes-agent/docs/chat-persistence-flow.md).
