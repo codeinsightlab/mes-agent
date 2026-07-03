@@ -16,7 +16,7 @@ Current backend capabilities:
 - `POST /api/agent/query`
 - Provider-independent LLM client protocol with DeepSeek as the first provider.
 
-It does not include MES production data access, streaming, multi-turn context, login, JWT, authentication service calls, automatic issue analysis, issue verification, or history-query APIs. The Agent endpoint currently uses mock heat-treatment Tools and a Text-to-SQL placeholder only.
+It does not include MES production data access, streaming, multi-turn context, login, JWT, authentication service calls, automatic issue analysis, issue verification, or history-query APIs. The Agent endpoint currently uses mock heat-treatment Tools and a controlled heat-treatment Text-to-SQL fallback for unmatched analysis questions.
 
 The chat API is single-turn only: one request creates one independent conversation, stores the user message and model call, then stores the assistant message on success. The backend does not load or reuse previous user messages as model context.
 
@@ -36,6 +36,7 @@ cp .env.example .env
 ```
 
 Set `LLM_API_KEY` and database variables in `.env` before calling `/api/chat`.
+Set `AGENT_MES_DB_*` only when validating `/api/agent/query` Text-to-SQL against an independent MES read-only test database.
 The backend loads this file from `backend/.env` using an absolute path derived from the code location, so behavior is stable whether `uvicorn` is started from the repository root or from `backend/`.
 
 ## Run
@@ -86,7 +87,19 @@ curl -X POST http://127.0.0.1:8000/api/agent/query \
   -d '{"message":"TRACE-HTR-K2-T-FG-001到哪了"}'
 ```
 
-`/api/agent/query` does not replace `/api/chat`. It does not write to chat persistence and does not execute real Text-to-SQL.
+`/api/agent/query` does not replace `/api/chat` and does not write to chat persistence.
+
+For unmatched heat-treatment analysis questions, `/api/agent/query` uses:
+
+```text
+HeatTreatmentSchemaProvider
+-> TextToSqlGenerator
+-> SqlValidator
+-> ReadonlySqlExecutor
+-> ResultNormalizer
+```
+
+The Text-to-SQL path only allows the fixed heat-treatment Schema allowlist, validates generated SQL before execution, enforces SELECT-only single statements and row limits, and uses the independent `AGENT_MES_DB_*` read-only database configuration. If that configuration is missing, the endpoint returns `mes_db_configuration_error`.
 
 If `LLM_API_KEY` is not configured, `/api/chat` returns a configuration error. Health checks remain available without LLM credentials.
 

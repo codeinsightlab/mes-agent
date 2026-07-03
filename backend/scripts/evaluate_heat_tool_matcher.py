@@ -26,6 +26,7 @@ def main():
     graph = build_agent_graph(
         matcher=matcher,
         match_threshold=settings.agent_tool_match_threshold,
+        text_to_sql_node=text_to_sql_eval_node,
     )
 
     rows = []
@@ -104,6 +105,18 @@ def route_accuracy_for(rows, route):
     if not expected:
         return None
     return sum(1 for row in expected if row["route_pass"]) / len(expected)
+
+
+def text_to_sql_eval_node(state):
+    return {
+        **state,
+        "text_to_sql_status": "eval_only",
+        "tool_result": {
+            "route": "text_to_sql",
+            "status": "eval_only",
+            "message": "Matcher evaluation only; SQL generation and execution are not run.",
+        },
+    }
 
 
 if __name__ == "__main__":

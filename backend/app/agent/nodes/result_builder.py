@@ -34,5 +34,7 @@ def _final_message(state: AgentState) -> str:
     if route == "clarification":
         return tool_result.get("question") or "需要补充参数后才能执行。"
     if route == "text_to_sql":
-        return tool_result.get("message") or "当前进入 Text-to-SQL 占位路径。"
+        if tool_result.get("status") == "success":
+            return "已完成热处理 Text-to-SQL 只读查询。"
+        return tool_result.get("message") or tool_result.get("error", {}).get("message") or "热处理 Text-to-SQL 查询未完成。"
     return state.get("error_message") or "Agent 执行失败。"

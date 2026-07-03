@@ -2,7 +2,7 @@
 
 Independent MES Agent research project. The current skeleton verifies project structure, startup commands, HTTP communication, a minimal provider-independent LLM chat layer, and anonymous feedback for saved assistant answers.
 
-DeepSeek is the first supported LLM provider. Single-turn chat persistence stores each request in MySQL. Anonymous feedback stores likes or dislikes in `agent_feedback`. Disliked feedback can be manually converted into `agent_issue` through development/test admin APIs. A standalone LangGraph Agent development endpoint now routes heat-treatment Tool matches and Text-to-SQL placeholders without replacing `/api/chat`.
+DeepSeek is the first supported LLM provider. Single-turn chat persistence stores each request in MySQL. Anonymous feedback stores likes or dislikes in `agent_feedback`. Disliked feedback can be manually converted into `agent_issue` through development/test admin APIs. A standalone LangGraph Agent development endpoint now routes heat-treatment Tool matches and controlled Text-to-SQL fallback without replacing `/api/chat`.
 
 The current chat page supports one independent request and one response at a time. Each request creates a new conversation record, but it does not send prior messages as context or display a message history.
 
@@ -118,7 +118,17 @@ curl -X POST http://127.0.0.1:8000/api/agent/query \
   -d '{"message":"TRACE-HTR-K2-T-FG-001到哪了"}'
 ```
 
-This endpoint uses LangGraph orchestration and currently supports heat-treatment mock Tools plus a Text-to-SQL placeholder. It does not execute generated SQL.
+This endpoint uses LangGraph orchestration. Heat-treatment Tool hits still execute the existing mock Tools. Unmatched heat-treatment analysis questions enter a controlled Text-to-SQL path:
+
+```text
+HeatTreatmentSchemaProvider
+-> TextToSqlGenerator
+-> SqlValidator
+-> ReadonlySqlExecutor
+-> ResultNormalizer
+```
+
+Text-to-SQL uses an independent MES read-only data source configured with `AGENT_MES_DB_*`. It does not use the Agent metadata database. If the MES read-only configuration is missing, the endpoint returns a stable `mes_db_configuration_error`.
 
 If `LLM_API_KEY` is missing, `/api/chat` returns a stable configuration error instead of calling the provider. `/api/health` does not require an API key.
 
@@ -191,6 +201,14 @@ AGENT_VERSION=0.1.0
 PROMPT_VERSION=chat-v1
 TOOL_VERSION=
 AGENT_TOOL_MATCH_THRESHOLD=0.75
+AGENT_MES_DB_HOST=replace-with-readonly-mes-db-host
+AGENT_MES_DB_PORT=3306
+AGENT_MES_DB_NAME=replace-with-readonly-mes-db-name
+AGENT_MES_DB_USER=replace-with-readonly-mes-db-user
+AGENT_MES_DB_PASSWORD=replace-with-readonly-mes-db-password
+AGENT_MES_DB_CONNECT_TIMEOUT_SECONDS=5
+AGENT_TEXT_TO_SQL_MAX_LIMIT=100
+AGENT_TEXT_TO_SQL_TIMEOUT_SECONDS=5
 ```
 
 FastAPI must not use a long-lived `root` account. Use a least-privilege application account scoped to `mes_agent` with the required `SELECT`, `INSERT`, and `UPDATE` permissions.

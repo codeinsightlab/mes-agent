@@ -1289,3 +1289,197 @@ Result:
 - Heat-treatment Tools use mock data and must later be replaced by repository or MES read-only API implementations.
 - The installed `langgraph` package emits one pending-deprecation warning from its checkpoint serializer import, even though this project does not enable a checkpointer.
 - `/api/agent/query` is not integrated into the frontend chat flow yet.
+
+## 2026-07-04 - Heat Treatment Text-to-SQL Minimal Readonly Loop
+
+### Task Goal
+
+Replace the unmatched Agent `text_to_sql_placeholder` path with a real, controlled heat-treatment Text-to-SQL minimal loop:
+
+```text
+Tool Matcher miss
+-> HeatTreatmentSchemaProvider
+-> TextToSqlGenerator
+-> SqlValidator
+-> ReadonlySqlExecutor
+-> ResultNormalizer
+-> structured result
+```
+
+Tool hit paths must remain unchanged.
+
+### Modified Files
+
+- `backend/app/agent/graph.py`
+- `backend/app/api/agent.py`
+- `backend/app/agent/nodes/result_builder.py`
+- `backend/app/agent/nodes/text_to_sql.py`
+- deleted `backend/app/agent/nodes/text_to_sql_placeholder.py`
+- `backend/app/agent/text_to_sql/models.py`
+- `backend/app/agent/text_to_sql/schema_provider.py`
+- `backend/app/agent/text_to_sql/generator.py`
+- `backend/app/agent/text_to_sql/validator.py`
+- `backend/app/agent/text_to_sql/executor.py`
+- `backend/app/agent/text_to_sql/normalizer.py`
+- `backend/app/core/config.py`
+- `backend/.env.example`
+- `backend/requirements.txt`
+- `backend/scripts/evaluate_heat_tool_matcher.py`
+- `backend/sql/003_create_agent_query_execution.sql`
+- `backend/tests/test_agent_graph.py`
+- `backend/tests/test_text_to_sql_validator.py`
+- `backend/tests/test_text_to_sql_executor.py`
+- `README.md`
+- `backend/README.md`
+- `docs/agent-tool-text-to-sql-routing-v1.md`
+- `log/codex-task-log.md`
+
+### Actual Implementation
+
+- Added fixed `heat-treatment-schema-v1` package with:
+  - `mes_heat_treatment_record`
+  - `mes_equipment`
+  - `mes_heat_treatment_param_record`
+- Documented allowed columns, forbidden columns, status semantics, relationships, and business rules.
+- Added `TextToSqlGenerator` using the configured LLM and JSON fallback when model-side structured response format is unavailable.
+- Added deterministic `SqlValidator` using `sqlglot` AST parsing.
+- Added `ReadonlySqlExecutor` using independent `AGENT_MES_DB_*` configuration, MySQL `MAX_EXECUTION_TIME`, row limiting, and structured execution result.
+- Added `ResultNormalizer` returning:
+  - `route`
+  - `status`
+  - `generated_sql`
+  - `validated_sql`
+  - `used_tables`
+  - `columns`
+  - `rows`
+  - `row_count`
+  - `duration_ms`
+  - `error`
+  - `schema_version`
+  - `query_intent`
+  - `assumptions`
+- Added audit DDL `backend/sql/003_create_agent_query_execution.sql`.
+
+### SQL Safety Rules
+
+Validated:
+
+- single statement only
+- `SELECT` only
+- non-SELECT rejected
+- multiple statements rejected
+- table allowlist enforced
+- forbidden columns rejected
+- `SELECT *` rejected while allowing `COUNT(*)`
+- missing or oversized `LIMIT` rewritten to `AGENT_TEXT_TO_SQL_MAX_LIMIT`
+- unbounded detail scans rejected
+- projection aliases such as `ORDER BY batch_count` allowed after validation fix
+
+### Configuration
+
+Added placeholders only:
+
+```text
+AGENT_MES_DB_HOST
+AGENT_MES_DB_PORT
+AGENT_MES_DB_NAME
+AGENT_MES_DB_USER
+AGENT_MES_DB_PASSWORD
+AGENT_MES_DB_CONNECT_TIMEOUT_SECONDS
+AGENT_TEXT_TO_SQL_MAX_LIMIT
+AGENT_TEXT_TO_SQL_TIMEOUT_SECONDS
+```
+
+No real token or database password was written to source, README, docs, tests, or logs.
+
+### Validation Commands And Results
+
+Dependency install:
+
+```text
+backend/.venv/bin/pip install -r backend/requirements.txt
+```
+
+Result:
+
+- `sqlglot==25.34.1` installed.
+- pip cache directory warning appeared because the user cache directory is not writable.
+
+Python compile:
+
+```text
+backend/.venv/bin/python -m compileall backend/app
+```
+
+Result:
+
+- passed.
+
+Backend tests:
+
+```text
+cd backend && .venv/bin/pytest
+```
+
+Result:
+
+- `86 passed, 1 warning`
+- warning is from LangGraph/LangChain checkpoint serializer import.
+
+Tool matcher evaluation:
+
+```text
+cd backend && .venv/bin/python scripts/evaluate_heat_tool_matcher.py
+```
+
+Result:
+
+- total: `20`
+- passed: `20`
+- overall accuracy: `1.0`
+- text_to_sql fallback accuracy: `1.0`
+- failed IDs: none
+
+Short-lived API validation:
+
+```text
+cd backend && .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8010
+curl -s http://127.0.0.1:8010/api/health
+curl -s -X POST http://127.0.0.1:8010/api/agent/query -H 'Content-Type: application/json' -d '{"message":"TRACE-HTR-K2-T-FG-001到哪了"}'
+curl -s -X POST http://127.0.0.1:8010/api/agent/query -H 'Content-Type: application/json' -d '{"message":"统计本月每台热处理设备完成了多少批次"}'
+```
+
+Results:
+
+- `/api/health`: HTTP 200, `status=ok`
+- Tool query: route `tool`, capability `heat_current_stage`, mock status `FINISHED`
+- Text-to-SQL query:
+  - route `text_to_sql`
+  - generated SQL present
+  - validated SQL present
+  - used tables: `mes_equipment`, `mes_heat_treatment_record`
+  - execution stopped with stable `mes_db_configuration_error` because independent MES readonly DB variables are missing
+
+Port note:
+
+- Port `8000` was already occupied by another service, so short-lived validation used port `8010`.
+
+### Real MES Execution
+
+Real MES database execution was not completed because the current environment does not configure:
+
+```text
+AGENT_MES_DB_HOST
+AGENT_MES_DB_NAME
+AGENT_MES_DB_USER
+AGENT_MES_DB_PASSWORD
+```
+
+The Agent metadata database was checked earlier and does not contain the heat-treatment MES tables, so it was not reused as a MES datasource.
+
+### Current Open Items
+
+- Apply `backend/sql/003_create_agent_query_execution.sql` when audit persistence is required.
+- Configure an independent MES readonly test account before validating actual row results.
+- Heat-treatment Tools still return mock data.
+- `/api/agent/query` remains separate from the frontend and `/api/chat`.

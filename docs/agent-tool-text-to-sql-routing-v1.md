@@ -2,6 +2,8 @@
 
 ## 2026-07-03 - LangGraph Skeleton And Heat Treatment Tool Matcher
 
+Historical note: this section records the first routing skeleton. Its Text-to-SQL placeholder limits were superseded by the 2026-07-04 controlled readonly Text-to-SQL loop below.
+
 ### Goal
 
 This version introduces a standalone Agent development path:
@@ -169,3 +171,133 @@ Before executing any generated SQL, add:
 - query timeout and row limit
 - audit record for generated SQL and validator result
 - strict separation from current Tool execution path
+
+## 2026-07-04 - Heat Treatment Text-to-SQL Minimal Readonly Loop
+
+### Goal
+
+This update replaces the unmatched-query placeholder with a controlled heat-treatment Text-to-SQL path:
+
+```text
+user natural language
+-> heat treatment Tool Matcher
+   -> Tool hit: existing Tool path unchanged
+   -> Tool miss:
+      -> HeatTreatmentSchemaProvider
+      -> TextToSqlGenerator
+      -> SqlValidator
+      -> ReadonlySqlExecutor
+      -> ResultNormalizer
+      -> structured Agent result
+```
+
+### Fixed Schema Package
+
+The first schema package is code-loaded and versioned as `heat-treatment-schema-v1`. It does not scan the whole MES database and does not use dynamic retrieval.
+
+Opened tables:
+
+- `mes_heat_treatment_record`
+- `mes_equipment`
+- `mes_heat_treatment_param_record`
+
+Key relationships:
+
+- `mes_heat_treatment_record.equipment_id = mes_equipment.equipment_id`
+- `mes_heat_treatment_record.equipment_code = mes_equipment.equipment_code` as a fallback relationship
+- `mes_heat_treatment_param_record.heat_treatment_record_id = mes_heat_treatment_record.id`
+
+Important business rules:
+
+- Normal statistics exclude `status = 'CANCELLED'`.
+- Completed records use `status IN ('FINISHED','TRANSFERRED','ENDED')` and `finished_time IS NOT NULL`.
+- Processing duration uses `TIMESTAMPDIFF(MINUTE, started_time, finished_time)`.
+- The current allowed schema does not contain a unified planned-completion field, so generated SQL must not invent `planned_finish_time` or `plan_duration`.
+
+Forbidden columns include operator names, phone/contact data, remarks, void reasons, image/QR fields, photo IDs, and audit user fields.
+
+### SQL Validation
+
+`SqlValidator` uses `sqlglot` AST parsing. It enforces:
+
+- one statement only
+- `SELECT` only
+- no DML, DDL, command, or stored-procedure style SQL
+- table allowlist
+- forbidden-column rejection
+- no `SELECT *`
+- automatic LIMIT enforcement with maximum `AGENT_TEXT_TO_SQL_MAX_LIMIT`
+- unbounded detail scan rejection
+- projection alias support for safe `ORDER BY` aggregate aliases
+
+### Readonly Execution
+
+`ReadonlySqlExecutor` uses an independent MES data source configured by:
+
+```text
+AGENT_MES_DB_HOST
+AGENT_MES_DB_PORT
+AGENT_MES_DB_NAME
+AGENT_MES_DB_USER
+AGENT_MES_DB_PASSWORD
+AGENT_MES_DB_CONNECT_TIMEOUT_SECONDS
+AGENT_TEXT_TO_SQL_MAX_LIMIT
+AGENT_TEXT_TO_SQL_TIMEOUT_SECONDS
+```
+
+It does not use the Agent metadata database. It sets MySQL `MAX_EXECUTION_TIME`, limits returned rows, and returns columns, rows, row count, duration, and stable error fields.
+
+### Structured Result
+
+The Text-to-SQL fallback returns normalized data under `tool_result`:
+
+```text
+route
+status
+generated_sql
+validated_sql
+used_tables
+columns
+rows
+row_count
+duration_ms
+error
+schema_version
+query_intent
+assumptions
+```
+
+### Traceability
+
+Added SQL DDL for a dedicated audit table:
+
+```text
+backend/sql/003_create_agent_query_execution.sql
+```
+
+The current API response also includes generated SQL, validated SQL, schema version, used tables, execution status, duration, row count, and stable error code for each Text-to-SQL request.
+
+### Validation Results
+
+Automated backend tests:
+
+- `cd backend && .venv/bin/pytest`
+- result: `86 passed, 1 warning`
+
+Tool matcher evaluation:
+
+- `cd backend && .venv/bin/python scripts/evaluate_heat_tool_matcher.py`
+- result: `20/20 passed`, overall accuracy `1.0`
+
+Short-lived API validation on port `8010`:
+
+- `GET /api/health`: HTTP 200, status `ok`
+- `POST /api/agent/query` with `TRACE-HTR-K2-T-FG-001到哪了`: route `tool`, capability `heat_current_stage`, status `FINISHED`
+- `POST /api/agent/query` with `统计本月每台热处理设备完成了多少批次`: route `text_to_sql`, generated SQL present, validated SQL present, execution stopped with stable `mes_db_configuration_error`
+
+### Current Limits
+
+- Real MES data execution was not completed in this environment because `AGENT_MES_DB_*` was not configured.
+- Heat-treatment Tool implementations still use mock data.
+- The frontend chat page is not connected to `/api/agent/query`.
+- There is no Agent loop, RAG, dynamic schema retrieval, cache, or natural-language result polishing.

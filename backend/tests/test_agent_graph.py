@@ -1,5 +1,9 @@
 from app.agent.graph import build_agent_graph
 from app.agent.models import HeatToolArguments, ToolMatchDecision
+from app.agent.text_to_sql.models import (
+    NormalizedTextToSqlResult,
+    TextToSqlGeneration,
+)
 
 
 def fake_matcher_for(message: str) -> ToolMatchDecision:
@@ -49,7 +53,11 @@ def fake_matcher_for(message: str) -> ToolMatchDecision:
 
 
 def invoke(message: str):
-    graph = build_agent_graph(fake_matcher_for, match_threshold=0.75)
+    graph = build_agent_graph(
+        fake_matcher_for,
+        match_threshold=0.75,
+        text_to_sql_node=FakeTextToSqlNode(),
+    )
     result = graph.invoke(
         {
             "user_query": message,
@@ -60,6 +68,57 @@ def invoke(message: str):
         }
     )
     return result["final_result"]
+
+
+def invoke_with_text_to_sql(message: str):
+    graph = build_agent_graph(
+        fake_matcher_for,
+        match_threshold=0.75,
+        text_to_sql_node=FakeTextToSqlNode(),
+    )
+    result = graph.invoke(
+        {
+            "user_query": message,
+            "conversation_key": None,
+            "agent_version": "0.1.0",
+            "prompt_version": "chat-v1",
+            "tool_version": "heat-treatment-tools-v1",
+        }
+    )
+    return result["final_result"]
+
+
+class FakeTextToSqlNode:
+    def __call__(self, state):
+        generation = TextToSqlGeneration(
+            sql=(
+                "SELECT equipment_name, COUNT(*) AS batch_count "
+                "FROM mes_heat_treatment_record "
+                "WHERE status IN ('FINISHED','TRANSFERRED','ENDED') "
+                "GROUP BY equipment_name LIMIT 100"
+            ),
+            used_tables=["mes_heat_treatment_record"],
+            query_intent="统计每台热处理设备完成批次",
+            assumptions=["测试 fake 节点不访问真实数据库"],
+        )
+        result = NormalizedTextToSqlResult(
+            status="success",
+            generated_sql=generation.sql,
+            validated_sql=generation.sql,
+            used_tables=generation.used_tables,
+            columns=["equipment_name", "batch_count"],
+            rows=[{"equipment_name": "HT-01", "batch_count": 3}],
+            row_count=1,
+            duration_ms=2,
+            schema_version="heat-treatment-schema-v1",
+            query_intent=generation.query_intent,
+            assumptions=generation.assumptions,
+        )
+        return {
+            **state,
+            "text_to_sql_status": "success",
+            "tool_result": result.model_dump(),
+        }
 
 
 def test_graph_routes_complete_match_to_tool_executor():
@@ -86,9 +145,27 @@ def test_graph_routes_blocked_capability_without_tool_execution():
     assert result["tool_result"]["status"] == "blocked"
 
 
-def test_graph_routes_unmatched_to_text_to_sql_placeholder():
+def test_graph_routes_unmatched_to_text_to_sql_node():
     result = invoke("统计本月每台热处理设备处理了多少批次")
 
     assert result["route"] == "text_to_sql"
     assert result["matched"] is False
-    assert result["tool_result"]["status"] == "not_implemented"
+    assert result["tool_result"]["status"] == "success"
+
+
+def test_graph_routes_unmatched_to_real_text_to_sql_node_when_injected():
+    result = invoke_with_text_to_sql("统计本月每台热处理设备处理了多少批次")
+
+    assert result["route"] == "text_to_sql"
+    assert result["matched"] is False
+    assert result["tool_result"]["status"] == "success"
+    assert result["tool_result"]["validated_sql"].startswith("SELECT equipment_name")
+    assert result["tool_result"]["rows"] == [{"equipment_name": "HT-01", "batch_count": 3}]
+
+
+def test_tool_path_does_not_execute_text_to_sql_node():
+    result = invoke_with_text_to_sql("TRACE-HTR-K2-T-FG-001到哪了")
+
+    assert result["route"] == "tool"
+    assert result["capability_name"] == "heat_current_stage"
+    assert result["tool_result"]["status"] == "FINISHED"

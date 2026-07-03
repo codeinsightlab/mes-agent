@@ -26,6 +26,8 @@ DEFAULT_DB_CONNECT_TIMEOUT_SECONDS = 5
 DEFAULT_AGENT_VERSION = "0.1.0"
 DEFAULT_PROMPT_VERSION = "chat-v1"
 DEFAULT_AGENT_TOOL_MATCH_THRESHOLD = 0.75
+DEFAULT_AGENT_TEXT_TO_SQL_MAX_LIMIT = 100
+DEFAULT_AGENT_TEXT_TO_SQL_TIMEOUT_SECONDS = 5
 
 
 def _parse_cors_origins(value: str) -> list[str]:
@@ -53,6 +55,14 @@ class Settings:
     prompt_version: str = DEFAULT_PROMPT_VERSION
     tool_version: str | None = None
     agent_tool_match_threshold: float = DEFAULT_AGENT_TOOL_MATCH_THRESHOLD
+    agent_mes_db_host: str | None = None
+    agent_mes_db_port: int = DEFAULT_DB_PORT
+    agent_mes_db_name: str | None = None
+    agent_mes_db_user: str | None = None
+    agent_mes_db_password: str | None = None
+    agent_mes_db_connect_timeout_seconds: int = DEFAULT_DB_CONNECT_TIMEOUT_SECONDS
+    agent_text_to_sql_max_limit: int = DEFAULT_AGENT_TEXT_TO_SQL_MAX_LIMIT
+    agent_text_to_sql_timeout_seconds: int = DEFAULT_AGENT_TEXT_TO_SQL_TIMEOUT_SECONDS
     env_file_path: str = str(BACKEND_ENV_PATH)
 
 
@@ -115,4 +125,21 @@ def get_settings() -> Settings:
         prompt_version=os.getenv("PROMPT_VERSION", DEFAULT_PROMPT_VERSION).strip(),
         tool_version=os.getenv("TOOL_VERSION") or None,
         agent_tool_match_threshold=threshold,
+        agent_mes_db_host=os.getenv("AGENT_MES_DB_HOST"),
+        agent_mes_db_port=_int_env("AGENT_MES_DB_PORT", DEFAULT_DB_PORT),
+        agent_mes_db_name=os.getenv("AGENT_MES_DB_NAME"),
+        agent_mes_db_user=os.getenv("AGENT_MES_DB_USER"),
+        agent_mes_db_password=os.getenv("AGENT_MES_DB_PASSWORD"),
+        agent_mes_db_connect_timeout_seconds=_int_env(
+            "AGENT_MES_DB_CONNECT_TIMEOUT_SECONDS",
+            DEFAULT_DB_CONNECT_TIMEOUT_SECONDS,
+        ),
+        agent_text_to_sql_max_limit=_int_env(
+            "AGENT_TEXT_TO_SQL_MAX_LIMIT",
+            DEFAULT_AGENT_TEXT_TO_SQL_MAX_LIMIT,
+        ),
+        agent_text_to_sql_timeout_seconds=_int_env(
+            "AGENT_TEXT_TO_SQL_TIMEOUT_SECONDS",
+            DEFAULT_AGENT_TEXT_TO_SQL_TIMEOUT_SECONDS,
+        ),
     )
