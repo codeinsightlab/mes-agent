@@ -85,3 +85,92 @@ export async function submitFeedback({
 
   return result;
 }
+
+async function requestJson(path, options = {}, fallbackMessage = "请求失败。") {
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: {
+        Accept: "application/json",
+        ...(options.body ? { "Content-Type": "application/json" } : {})
+      },
+      ...options
+    });
+  } catch (error) {
+    throw new Error(fallbackMessage);
+  }
+
+  const result = await response.json().catch(() => null);
+  if (!response.ok) {
+    const detail = result?.detail;
+    const messageText =
+      detail?.message || result?.message || `${fallbackMessage} HTTP ${response.status}`;
+    throw new Error(messageText);
+  }
+  return result;
+}
+
+function queryString(params = {}) {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== "") {
+      search.set(key, value);
+    }
+  });
+  const text = search.toString();
+  return text ? `?${text}` : "";
+}
+
+export function listDislikedFeedbacks(params = {}) {
+  return requestJson(
+    `/admin/feedbacks/disliked${queryString(params)}`,
+    { method: "GET" },
+    "无法查询差评列表，请确认后端服务已启动。"
+  );
+}
+
+export function getDislikedFeedbackDetail(feedbackKey) {
+  return requestJson(
+    `/admin/feedbacks/${encodeURIComponent(feedbackKey)}`,
+    { method: "GET" },
+    "无法查询差评详情，请确认后端服务已启动。"
+  );
+}
+
+export function createIssue(feedbackKey, priority = 2) {
+  return requestJson(
+    "/admin/issues",
+    {
+      method: "POST",
+      body: JSON.stringify({ feedback_key: feedbackKey, priority })
+    },
+    "无法创建问题，请确认后端服务已启动。"
+  );
+}
+
+export function listIssues(params = {}) {
+  return requestJson(
+    `/admin/issues${queryString(params)}`,
+    { method: "GET" },
+    "无法查询问题列表，请确认后端服务已启动。"
+  );
+}
+
+export function getIssue(issueKey) {
+  return requestJson(
+    `/admin/issues/${encodeURIComponent(issueKey)}`,
+    { method: "GET" },
+    "无法查询问题详情，请确认后端服务已启动。"
+  );
+}
+
+export function updateIssue(issueKey, payload) {
+  return requestJson(
+    `/admin/issues/${encodeURIComponent(issueKey)}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(payload)
+    },
+    "无法保存问题处理结果，请确认后端服务已启动。"
+  );
+}

@@ -4,6 +4,8 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.admin_issue import close_admin_issue_services, router as admin_issue_router
+from app.api.agent import close_agent_query_service, router as agent_router
 from app.api.chat import close_chat_service, router as chat_router
 from app.api.feedback import close_feedback_service, router as feedback_router
 from app.core.config import get_settings
@@ -34,6 +36,8 @@ async def lifespan(app_instance: FastAPI):
             type(exc).__name__,
         )
     yield
+    close_agent_query_service()
+    close_admin_issue_services()
     close_chat_service()
     close_feedback_service()
 
@@ -50,6 +54,8 @@ app.add_middleware(
 
 app.include_router(chat_router)
 app.include_router(feedback_router)
+app.include_router(admin_issue_router)
+app.include_router(agent_router)
 
 
 @app.get("/api/health")

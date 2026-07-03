@@ -25,6 +25,7 @@ DEFAULT_DB_POOL_RECYCLE_SECONDS = 1800
 DEFAULT_DB_CONNECT_TIMEOUT_SECONDS = 5
 DEFAULT_AGENT_VERSION = "0.1.0"
 DEFAULT_PROMPT_VERSION = "chat-v1"
+DEFAULT_AGENT_TOOL_MATCH_THRESHOLD = 0.75
 
 
 def _parse_cors_origins(value: str) -> list[str]:
@@ -51,6 +52,7 @@ class Settings:
     agent_version: str = DEFAULT_AGENT_VERSION
     prompt_version: str = DEFAULT_PROMPT_VERSION
     tool_version: str | None = None
+    agent_tool_match_threshold: float = DEFAULT_AGENT_TOOL_MATCH_THRESHOLD
     env_file_path: str = str(BACKEND_ENV_PATH)
 
 
@@ -74,6 +76,17 @@ def get_settings() -> Settings:
 
     if timeout_seconds <= 0:
         raise LlmConfigurationError("LLM_TIMEOUT_SECONDS must be greater than 0.")
+
+    threshold_raw = os.getenv(
+        "AGENT_TOOL_MATCH_THRESHOLD",
+        str(DEFAULT_AGENT_TOOL_MATCH_THRESHOLD),
+    )
+    try:
+        threshold = float(threshold_raw)
+    except ValueError as exc:
+        raise LlmConfigurationError("AGENT_TOOL_MATCH_THRESHOLD must be a number.") from exc
+    if threshold < 0 or threshold > 1:
+        raise LlmConfigurationError("AGENT_TOOL_MATCH_THRESHOLD must be between 0 and 1.")
 
     return Settings(
         env_file_path=str(BACKEND_ENV_PATH),
@@ -101,4 +114,5 @@ def get_settings() -> Settings:
         agent_version=os.getenv("AGENT_VERSION", DEFAULT_AGENT_VERSION).strip(),
         prompt_version=os.getenv("PROMPT_VERSION", DEFAULT_PROMPT_VERSION).strip(),
         tool_version=os.getenv("TOOL_VERSION") or None,
+        agent_tool_match_threshold=threshold,
     )

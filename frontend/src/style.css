@@ -165,6 +165,18 @@ textarea {
   line-height: 1.5;
 }
 
+input,
+select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #cfd6e1;
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: #202124;
+  background: #ffffff;
+  font: inherit;
+}
+
 textarea:focus {
   border-color: #2563eb;
   outline: 2px solid rgba(37, 99, 235, 0.15);
@@ -239,6 +251,88 @@ textarea:focus {
   color: #15803d;
 }
 
+.view-tabs,
+.filter-row,
+.pagination-row,
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.view-tabs {
+  margin-bottom: 18px;
+}
+
+.admin-panel,
+.feedback-list,
+.detail-panel,
+.issue-form {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.filter-row {
+  align-items: stretch;
+}
+
+.filter-row select {
+  flex: 1 1 150px;
+}
+
+.feedback-item,
+.detail-panel {
+  border: 1px solid #e6e9ef;
+  border-radius: 6px;
+  padding: 14px;
+  min-width: 0;
+}
+
+.feedback-item p,
+.text-box {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.6;
+}
+
+.muted,
+.meta-row {
+  color: #5f6b7a;
+  font-size: 13px;
+}
+
+.scene-grid,
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  min-width: 0;
+}
+
+.issue-form label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: #374151;
+  font-weight: 600;
+}
+
+details {
+  min-width: 0;
+}
+
+summary {
+  cursor: pointer;
+  color: #374151;
+  font-weight: 600;
+}
+
 @media (max-width: 560px) {
   .page-shell {
     padding: 16px;
@@ -259,6 +353,13 @@ textarea:focus {
   }
 
   .feedback-actions {
+    flex-direction: column;
+  }
+
+  .view-tabs,
+  .filter-row,
+  .pagination-row {
+    align-items: stretch;
     flex-direction: column;
   }
 }

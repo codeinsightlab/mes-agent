@@ -1,0 +1,39 @@
+{
+  "total": 20,
+  "passed": 20,
+  "overall_accuracy": 1.0,
+  "route_accuracy": 1.0,
+  "capability_match_accuracy": 1.0,
+  "parameter_extraction_accuracy": 1.0,
+  "clarification_accuracy": 1.0,
+  "blocked_capability_accuracy": 1.0,
+  "text_to_sql_fallback_accuracy": 1.0,
+  "by_expected_capability": {
+    "heat_current_stage": {
+      "total": 9,
+      "passed": 9,
+      "accuracy": 1.0
+    },
+    "heat_equipment_assignment": {
+      "total": 3,
+      "passed": 3,
+      "accuracy": 1.0
+    },
+    "heat_batch_products": {
+      "total": 3,
+      "passed": 3,
+      "accuracy": 1.0
+    },
+    "heat_param_submitted": {
+      "total": 2,
+      "passed": 2,
+      "accuracy": 1.0
+    },
+    "text_to_sql": {
+      "total": 3,
+      "passed": 3,
+      "accuracy": 1.0
+    }
+  },
+  "failed_ids": []
+}

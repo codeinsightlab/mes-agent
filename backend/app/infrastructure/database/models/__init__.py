@@ -1,6 +1,7 @@
 from app.infrastructure.database.models.base import Base
 from app.infrastructure.database.models.conversation import AgentConversation
 from app.infrastructure.database.models.feedback import AgentFeedback
+from app.infrastructure.database.models.issue import AgentIssue
 from app.infrastructure.database.models.message import AgentMessage
 from app.infrastructure.database.models.model_call import AgentModelCall
 
@@ -8,6 +9,7 @@ from app.infrastructure.database.models.model_call import AgentModelCall
 __all__ = [
     "AgentConversation",
     "AgentFeedback",
+    "AgentIssue",
     "AgentMessage",
     "AgentModelCall",
     "Base",

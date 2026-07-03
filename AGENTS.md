@@ -594,3 +594,27 @@ MES 数据接入必须优先只读。
 - 不让分层变成形式主义
 - 不让 Agent 绕过 MES 业务边界
 - 不让研究项目因为过度设计失去推进速度
+
+---
+
+## 19. LangGraph / LangChain Agent 约束
+
+LangGraph 只负责 Agent 流程编排和条件分支。
+
+LangChain 只负责模型调用、Tool 定义和结构化输出能力。
+
+要求：
+
+- Agent 节点保持单一职责
+- Catalog、Matcher、Executor、Graph、API 分离
+- Graph State 不保存数据库 Session、FastAPI Request/Response、ORM 对象或 LLM Client
+- LangGraph 不接管身份、反馈、Issue、聊天持久化或数据库事务
+- Text-to-SQL 生成结果未经 Validator 不得执行
+
+禁止：
+
+- 将 Graph、Prompt、Tool、SQL 全部揉进一个文件
+- 在 Agent 节点中直接读取环境变量
+- 让模型返回任意 Tool 名称后直接执行
+- 让 Tool 生成或执行自由 SQL
+- 启用未明确要求的 Checkpointer、缓存、多 Agent 或自动重试循环

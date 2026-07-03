@@ -907,3 +907,385 @@ Global consistency queries returned:
 - Frontend validation requires a dislike reason before submit, while the backend still allows dislike with no reason for API compatibility.
 - No real browser click-through was performed; frontend behavior was covered by code review and production build.
 - This task intentionally does not create issue records or feedback management screens.
+
+## 2026-07-03 - Disliked Feedback Issue Management
+
+### Task Goal
+
+Implement the minimal manual issue-management loop for disliked feedback:
+
+```text
+disliked feedback list
+-> feedback scene detail
+-> manually create agent_issue
+-> update status, priority, root cause, and solution
+```
+
+This task did not add automatic model analysis, automatic issue creation, prompt repair, issue verification, login, JWT, or authentication service integration.
+
+### Modified Files
+
+- `backend/app/domain/issue/enums.py`
+- `backend/app/domain/issue/exceptions.py`
+- `backend/app/domain/issue/__init__.py`
+- `backend/app/infrastructure/database/models/issue.py`
+- `backend/app/infrastructure/database/models/__init__.py`
+- `backend/app/infrastructure/database/repositories/issue_repository.py`
+- `backend/app/infrastructure/database/repositories/feedback_repository.py`
+- `backend/app/application/feedback_review_service.py`
+- `backend/app/application/issue_service.py`
+- `backend/app/api/admin_issue.py`
+- `backend/app/main.py`
+- `backend/app/schemas/issue.py`
+- `backend/tests/test_admin_issue_api.py`
+- `backend/tests/test_issue_service_rules.py`
+- `frontend/src/api.js`
+- `frontend/src/App.vue`
+- `frontend/src/style.css`
+- `README.md`
+- `backend/README.md`
+- `docs/disliked-feedback-issue-flow.md`
+- `docs/agent-conversation-storage.md`
+- `log/codex-task-log.md`
+
+### Database Structure Used
+
+Real `agent_issue` structure matched `sql/001_create_mes_agent_database.sql`:
+
+- `issue_key` unique key exists.
+- `feedback_id` unique key exists.
+- `feedback_id` foreign key points to `agent_feedback`.
+- Status, priority, and root cause type are numeric fields.
+- No migration was required.
+
+### Query Design
+
+- `FeedbackRepository.list_disliked_feedbacks()` filters `feedback_type=2` and `deleted=0`.
+- Pagination is done in SQL with `offset` and `limit`.
+- List query joins conversation, assistant message, parent user message, model call, and optional issue.
+- List response returns summaries only.
+- Detail query returns full feedback scene and model-call snapshots after sensitive marker checks.
+- Full `visitor_id` and database IDs are not returned.
+
+### IssueApplicationService Design
+
+- Creates issue from disliked feedback only.
+- Repeated create for the same `feedback_key` returns the existing issue.
+- Does not call LLM.
+- Does not write back to `agent_feedback`.
+- Controls one short transaction per create or update use case.
+
+### State Transition Rules
+
+Allowed:
+
+- `1 -> 2`
+- `1 -> 5`
+- `2 -> 3`
+- `2 -> 5`
+- `3 -> 4`
+- `3 -> 5`
+- `4 -> 6`
+- `5 -> 6`
+- `3 -> 2`
+- `4 -> 3`
+
+Rules:
+
+- Located and fixed issues require root cause type and root cause text.
+- Fixed issues require solution.
+- Fixed, ignored, and closed states write `processed_at`.
+- Closed issues cannot be modified through the current API.
+
+### API List
+
+- `GET /api/admin/feedbacks/disliked`
+- `GET /api/admin/feedbacks/{feedback_key}`
+- `POST /api/admin/issues`
+- `GET /api/admin/issues`
+- `GET /api/admin/issues/{issue_key}`
+- `PUT /api/admin/issues/{issue_key}`
+
+### Frontend Management Entry
+
+- Added a simple page-level switch: `聊天` / `差评管理`.
+- Difference management shows disliked feedback list, filters, pagination, and detail panel.
+- Detail panel shows user message, assistant answer, feedback, model metadata, and model-call snapshot JSON.
+- Existing long-text wrapping styles are reused and extended for the management area.
+- Issue form supports status, priority, root cause type, root cause, solution, and processor.
+
+### Automatic Test Results
+
+- Passed: `cd backend && .venv/bin/python -m py_compile $(find app tests -name '*.py' -not -path '*/__pycache__/*')`
+- Passed: `cd backend && .venv/bin/pytest`
+  - `64 passed in 0.67s`.
+- Added tests for admin issue API success/error paths and issue required-field rules.
+
+### Frontend Build Result
+
+- Passed: `cd frontend && npm run build`
+  - Vite build completed successfully.
+
+### Real Database Verification
+
+Executed against the real test database:
+
+- Created a real chat and obtained `response_message_key`.
+- Created a real disliked feedback.
+- Queried disliked feedback list by `feedback_key`.
+  - Returned HTTP 200.
+  - Total was `1`.
+  - `has_issue=false` before issue creation.
+- Queried feedback detail.
+  - User message was present.
+  - Assistant message was present.
+  - Model call was present.
+  - Version information was present.
+- Created issue from disliked feedback.
+  - Returned HTTP 200.
+  - Returned `issue_key`.
+- Repeated issue creation for the same feedback.
+  - Returned HTTP 200.
+  - Returned the same `issue_key`.
+- Queried issue list and detail.
+  - Both returned HTTP 200.
+- Updated status:
+  - `1 -> 2` returned HTTP 200.
+  - invalid direct close returned HTTP 409.
+  - `2 -> 3` returned HTTP 200.
+  - `3 -> 4` returned HTTP 200.
+  - `4 -> 6` returned HTTP 200.
+- Verified a liked feedback cannot create issue.
+  - Returned HTTP 400.
+- Verified `/api/health`.
+  - Returned HTTP 200 and `status=ok`.
+
+### Data Consistency Check
+
+Global consistency queries returned:
+
+- `ORPHAN_ISSUES=0`
+- `ISSUES_FOR_NON_DISLIKES=0`
+- `DUPLICATE_ISSUES_PER_FEEDBACK=0`
+- `DUPLICATE_ISSUE_KEYS=0`
+- `LOCATED_MISSING_ROOT_CAUSE=0`
+- `FIXED_MISSING_SOLUTION=0`
+
+### Open Items And Risks
+
+- `/api/admin/*` currently has no real administrator authentication and should not be exposed directly to a public production network.
+- This task intentionally did not implement `agent_issue_verification`.
+- This task intentionally did not implement model-based root cause analysis or automatic remediation.
+- No real browser click-through was performed; frontend behavior was validated by code review and production build.
+
+## 2026-07-03 - LangGraph Heat Treatment Tool Routing Skeleton
+
+### Task Goal
+
+Introduce a standalone LangChain + LangGraph Agent development path:
+
+```text
+user query
+-> heat treatment Tool Matcher
+-> enabled Tool execution
+-> blocked capability
+-> clarification
+-> Text-to-SQL placeholder
+```
+
+This task did not replace `/api/chat`, did not execute real Text-to-SQL, did not connect to MES production data, and did not let LangGraph take over chat persistence, feedback, issue, identity, or database transactions.
+
+### Old Version Review
+
+Reviewed:
+
+- `/Users/user/work/heri/mes-chat-bot/src/mes_bot/catalog.py`
+- `/Users/user/work/heri/mes-chat-bot/src/mes_bot/models.py`
+- `/Users/user/work/heri/mes-chat-bot/src/mes_bot/parser.py`
+- `/Users/user/work/heri/mes-chat-bot/data/mes_fact_stability_testset.jsonl`
+- memory notes for heat-treatment safe execution and stability evaluation
+
+Effective facts extracted:
+
+- `heat_current_stage`
+- `heat_equipment_assignment`
+- `heat_batch_products`
+- blocked `heat_param_submitted`
+
+Boundaries extracted:
+
+- heat-treatment record status belongs to `heat_current_stage`.
+- `transfer_status` is transfer document status and must not absorb heat-treatment record status questions.
+- `trace_route_by_item_lot` is route/path by item and lot, not current stage of one heat-treatment record.
+
+Not migrated:
+
+- Ollama direct HTTP parser
+- CLI
+- JSONL audit implementation
+- old DB cursor executors
+- regex parameter fallback that silently overwrote model output
+- broad non-heat-treatment facts
+
+### New Dependencies
+
+Added to `backend/requirements.txt`:
+
+- `langchain==0.3.26`
+- `langchain-openai==0.3.28`
+- `langgraph==0.5.3`
+
+Installed successfully in the backend virtualenv.
+
+### Agent Directory Structure
+
+- `backend/app/agent/state.py`
+- `backend/app/agent/models.py`
+- `backend/app/agent/exceptions.py`
+- `backend/app/agent/catalog/heat_treatment.py`
+- `backend/app/agent/prompts/tool_matcher.py`
+- `backend/app/agent/tools/heat_treatment.py`
+- `backend/app/agent/tools/registry.py`
+- `backend/app/agent/nodes/tool_matcher.py`
+- `backend/app/agent/nodes/tool_executor.py`
+- `backend/app/agent/nodes/blocked_capability.py`
+- `backend/app/agent/nodes/clarification.py`
+- `backend/app/agent/nodes/text_to_sql_placeholder.py`
+- `backend/app/agent/nodes/result_builder.py`
+- `backend/app/agent/graph.py`
+
+### Graph Routing
+
+```text
+START
+-> tool_matcher
+-> route_decision
+   -> tool_executor
+   -> blocked_capability
+   -> clarification
+   -> text_to_sql_placeholder
+   -> result_builder
+-> END
+```
+
+Graph State contains only request and routing data. It does not store Session, HTTP objects, ORM objects, global mutable state, or LLM client instances.
+
+### Tool Catalog
+
+Tool version:
+
+- `heat-treatment-tools-v1`
+
+Enabled:
+
+- `heat_current_stage`
+- `heat_equipment_assignment`
+- `heat_batch_products`
+
+Blocked:
+
+- `heat_param_submitted`
+  - reason: current submitted state has no unique stable business binding
+
+### Mock Tools
+
+- `heat_current_stage`
+  - returns `FINISHED / 已完成` for `TRACE-HTR-K2-T-FG-001` and `HT001`
+- `heat_equipment_assignment`
+  - returns mock furnace metadata
+- `heat_batch_products`
+  - returns mock bound item and lot rows
+
+Tools do not call the model, access the Agent database, generate SQL, or execute SQL.
+
+### Text-to-SQL Placeholder
+
+Unmatched queries route to:
+
+```text
+route=text_to_sql
+status=not_implemented
+```
+
+No DDL is loaded, no SQL is generated, and no SQL is executed.
+
+### API
+
+Added:
+
+- `POST /api/agent/query`
+
+The endpoint returns stable Agent result fields and does not return LangGraph internal objects or raw model responses.
+
+### Automatic Test Results
+
+- Passed: `cd backend && .venv/bin/python -m py_compile $(find app tests scripts -name '*.py' -not -path '*/__pycache__/*')`
+- Passed: `cd backend && .venv/bin/pytest`
+  - `75 passed, 1 warning in 1.12s`
+- Passed: `cd frontend && npm run build`
+  - Vite build completed successfully.
+
+### Real Model Evaluation
+
+Executed:
+
+```text
+cd backend && .venv/bin/python scripts/evaluate_heat_tool_matcher.py
+```
+
+Outputs:
+
+- `results/heat_tool_matcher_eval_raw.jsonl`
+- `results/heat_tool_matcher_eval_summary.json`
+
+Summary:
+
+- total: `20`
+- passed: `20`
+- overall accuracy: `1.0`
+- route accuracy: `1.0`
+- capability match accuracy: `1.0`
+- parameter extraction accuracy: `1.0`
+- clarification accuracy: `1.0`
+- blocked capability accuracy: `1.0`
+- Text-to-SQL fallback accuracy: `1.0`
+
+By capability:
+
+- `heat_current_stage`: `9/9`
+- `heat_equipment_assignment`: `3/3`
+- `heat_batch_products`: `3/3`
+- `heat_param_submitted`: `2/2`
+- `text_to_sql`: `3/3`
+
+Old tricky expressions covered:
+
+- `到哪了`
+- `处理完没`
+- `还没结束吗`
+- `状态`
+- `炉子处理完没`
+
+No failed IDs were reported.
+
+### Real API Check
+
+Executed one real `/api/agent/query` call with:
+
+```text
+TRACE-HTR-K2-T-FG-001到哪了
+```
+
+Result:
+
+- HTTP 200
+- route: `tool`
+- capability: `heat_current_stage`
+- mock tool status: `FINISHED`
+
+### Open Items And Risks
+
+- Text-to-SQL is still a placeholder.
+- Heat-treatment Tools use mock data and must later be replaced by repository or MES read-only API implementations.
+- The installed `langgraph` package emits one pending-deprecation warning from its checkpoint serializer import, even though this project does not enable a checkpointer.
+- `/api/agent/query` is not integrated into the frontend chat flow yet.

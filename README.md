@@ -2,7 +2,7 @@
 
 Independent MES Agent research project. The current skeleton verifies project structure, startup commands, HTTP communication, a minimal provider-independent LLM chat layer, and anonymous feedback for saved assistant answers.
 
-DeepSeek is the first supported LLM provider. Single-turn chat persistence stores each request in MySQL. Anonymous feedback stores likes or dislikes in `agent_feedback`. No Agent orchestration, MES data access, login, permission, queue, cache, vector-store, tool calling, streaming, issue workflow, or history-query functionality is included.
+DeepSeek is the first supported LLM provider. Single-turn chat persistence stores each request in MySQL. Anonymous feedback stores likes or dislikes in `agent_feedback`. Disliked feedback can be manually converted into `agent_issue` through development/test admin APIs. A standalone LangGraph Agent development endpoint now routes heat-treatment Tool matches and Text-to-SQL placeholders without replacing `/api/chat`.
 
 The current chat page supports one independent request and one response at a time. Each request creates a new conversation record, but it does not send prior messages as context or display a message history.
 
@@ -25,8 +25,10 @@ The current chat page supports one independent request and one response at a tim
 │   └── requirements.txt
 ├── docs
 │   ├── agent-conversation-storage.md
+│   ├── agent-tool-text-to-sql-routing-v1.md
 │   ├── anonymous-feedback-flow.md
 │   ├── chat-persistence-flow.md
+│   ├── disliked-feedback-issue-flow.md
 │   └── llm-client-layer.md
 ├── frontend
 │   ├── .env.example
@@ -94,6 +96,29 @@ curl -X POST http://127.0.0.1:8000/api/feedback \
   -H "Content-Type: application/json" \
   -d '{"response_message_key":"assistant-message-key","visitor_id":"anonymous-visitor-id","feedback_type":1}'
 ```
+
+Development/test issue management APIs:
+
+```text
+GET  /api/admin/feedbacks/disliked
+GET  /api/admin/feedbacks/{feedback_key}
+POST /api/admin/issues
+GET  /api/admin/issues
+GET  /api/admin/issues/{issue_key}
+PUT  /api/admin/issues/{issue_key}
+```
+
+These admin APIs do not include real authentication in the current version.
+
+Agent development API:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/agent/query \
+  -H "Content-Type: application/json" \
+  -d '{"message":"TRACE-HTR-K2-T-FG-001到哪了"}'
+```
+
+This endpoint uses LangGraph orchestration and currently supports heat-treatment mock Tools plus a Text-to-SQL placeholder. It does not execute generated SQL.
 
 If `LLM_API_KEY` is missing, `/api/chat` returns a stable configuration error instead of calling the provider. `/api/health` does not require an API key.
 
@@ -165,9 +190,12 @@ DB_CONNECT_TIMEOUT_SECONDS=5
 AGENT_VERSION=0.1.0
 PROMPT_VERSION=chat-v1
 TOOL_VERSION=
+AGENT_TOOL_MATCH_THRESHOLD=0.75
 ```
 
 FastAPI must not use a long-lived `root` account. Use a least-privilege application account scoped to `mes_agent` with the required `SELECT`, `INSERT`, and `UPDATE` permissions.
 
 The persistence flow is documented in [docs/chat-persistence-flow.md](/Users/user/Documents/mes-agent/docs/chat-persistence-flow.md).
 Anonymous feedback is documented in [docs/anonymous-feedback-flow.md](/Users/user/Documents/mes-agent/docs/anonymous-feedback-flow.md).
+Manual disliked-feedback issue management is documented in [docs/disliked-feedback-issue-flow.md](/Users/user/Documents/mes-agent/docs/disliked-feedback-issue-flow.md).
+Agent Tool/Text-to-SQL routing is documented in [docs/agent-tool-text-to-sql-routing-v1.md](/Users/user/Documents/mes-agent/docs/agent-tool-text-to-sql-routing-v1.md).

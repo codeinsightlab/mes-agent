@@ -7,9 +7,16 @@ Current backend capabilities:
 - `GET /api/health`
 - `POST /api/chat`
 - `POST /api/feedback`
+- `GET /api/admin/feedbacks/disliked`
+- `GET /api/admin/feedbacks/{feedback_key}`
+- `POST /api/admin/issues`
+- `GET /api/admin/issues`
+- `GET /api/admin/issues/{issue_key}`
+- `PUT /api/admin/issues/{issue_key}`
+- `POST /api/agent/query`
 - Provider-independent LLM client protocol with DeepSeek as the first provider.
 
-It does not include MES data access, Agent orchestration, tool calling, streaming, multi-turn context, login, JWT, authentication service calls, issue workflow, or history-query APIs.
+It does not include MES production data access, streaming, multi-turn context, login, JWT, authentication service calls, automatic issue analysis, issue verification, or history-query APIs. The Agent endpoint currently uses mock heat-treatment Tools and a Text-to-SQL placeholder only.
 
 The chat API is single-turn only: one request creates one independent conversation, stores the user message and model call, then stores the assistant message on success. The backend does not load or reuse previous user messages as model context.
 
@@ -61,6 +68,26 @@ curl -X POST http://127.0.0.1:8000/api/feedback \
   -d '{"response_message_key":"assistant-message-key","visitor_id":"anonymous-visitor-id","feedback_type":1}'
 ```
 
+Create issue from disliked feedback:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/admin/issues \
+  -H "Content-Type: application/json" \
+  -d '{"feedback_key":"feedback-key","priority":2}'
+```
+
+The `/api/admin/*` APIs are current development/test management APIs and do not include real administrator authentication.
+
+Agent query:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/agent/query \
+  -H "Content-Type: application/json" \
+  -d '{"message":"TRACE-HTR-K2-T-FG-001到哪了"}'
+```
+
+`/api/agent/query` does not replace `/api/chat`. It does not write to chat persistence and does not execute real Text-to-SQL.
+
 If `LLM_API_KEY` is not configured, `/api/chat` returns a configuration error. Health checks remain available without LLM credentials.
 
 Response fields:
@@ -103,6 +130,7 @@ DB_CONNECT_TIMEOUT_SECONDS=5
 AGENT_VERSION=0.1.0
 PROMPT_VERSION=chat-v1
 TOOL_VERSION=
+AGENT_TOOL_MATCH_THRESHOLD=0.75
 ```
 
 Use a least-privilege application database account. Do not run the FastAPI application with a long-lived `root` account.

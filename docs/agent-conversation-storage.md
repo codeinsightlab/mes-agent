@@ -185,6 +185,21 @@ agent_message
 
 详细流程见 [anonymous-feedback-flow.md](/Users/user/Documents/mes-agent/docs/anonymous-feedback-flow.md)。
 
+## 2026-07-03 - 差评问题管理接口接入状态
+
+当前已实现人工差评问题管理最小闭环：
+
+- 分页查询 `feedback_type=2` 的差评反馈。
+- 查看差评关联的会话、用户消息、助手消息和模型调用现场。
+- 手工将差评创建为 `agent_issue`。
+- 同一个 feedback 重复创建 issue 时返回已有 issue，不重复插入。
+- 更新 `process_status`、`priority`、`root_cause_type`、`root_cause`、`solution`、`processed_by`。
+- `agent_feedback` 原始反馈事实不被写回或覆盖。
+- 未接入 `agent_issue_verification`。
+- 未使用模型自动分析根因。
+
+详细流程见 [disliked-feedback-issue-flow.md](/Users/user/Documents/mes-agent/docs/disliked-feedback-issue-flow.md)。
+
 ### 应用账号原则
 
 本轮不创建正式应用账号。管理员账号只用于初始化数据库和表。
