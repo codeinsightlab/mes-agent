@@ -1483,3 +1483,72 @@ The Agent metadata database was checked earlier and does not contain the heat-tr
 - Configure an independent MES readonly test account before validating actual row results.
 - Heat-treatment Tools still return mock data.
 - `/api/agent/query` remains separate from the frontend and `/api/chat`.
+
+## 2026-07-04 - Frontend Agent API Migration
+
+### Task Goal
+
+Migrate the frontend from the old Chat API to the Agent API and render structured Agent execution results.
+
+### Scope
+
+Frontend only. No backend API, Agent, model, Tool, or database code was changed in this task.
+
+### Modified Files
+
+- `frontend/src/api.js`
+- `frontend/src/App.vue`
+- `frontend/src/style.css`
+- `log/codex-task-log.md`
+
+### Actual Changes
+
+- Replaced frontend execution request from `/api/chat` to `/api/agent/query`.
+- Request payload now sends `{ message }` and supports optional `context`.
+- Renamed the frontend API function from `sendChatMessage` to `sendAgentMessage`.
+- Changed UI wording from chat/model-answer semantics to Agent execution semantics.
+- Added route-aware rendering for:
+  - `tool`: capability name and Tool result JSON
+  - `text_to_sql`: SQL, execution status, rows table, and structured JSON
+  - `clarification`: Agent follow-up message
+  - `error`: stable error message
+  - `legacy_chat`: fallback rendering for old `{ content }` responses
+- Added a debug panel showing:
+  - `route`
+  - `capability_name`
+  - `execution_time`
+  - `tool_name`
+  - SQL when present
+- Added table, SQL, JSON, and debug styles with local overflow handling.
+
+### Compatibility
+
+If the backend returns the old `{ content: string }` shape, the UI maps it to route `legacy_chat` and displays the content directly.
+
+### Validation
+
+Command:
+
+```text
+cd frontend && npm run build
+```
+
+Result:
+
+- Passed.
+- Vite built successfully in `503ms`.
+
+Search check:
+
+```text
+rg -n "/api/chat|/chat|sendChatMessage|模型回答|无法访问数据库|聊天接口|聊天输入" frontend/src
+```
+
+Result:
+
+- No matches.
+
+### Current Open Items
+
+- The old chat feedback widget remains present in code but is hidden for Agent responses because Agent responses do not include `response_message_key`.
+- No frontend live browser click-through was performed in this task; validation was by build and source inspection.

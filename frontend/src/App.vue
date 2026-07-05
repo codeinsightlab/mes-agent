@@ -1,11 +1,11 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import {
   checkHealth,
   createIssue,
   getDislikedFeedbackDetail,
   listDislikedFeedbacks,
-  sendChatMessage,
+  sendAgentMessage,
   submitFeedback,
   updateIssue
 } from "./api";
@@ -85,6 +85,8 @@ const issueForm = ref({
   processed_by: ""
 });
 
+const agentView = computed(() => normalizeAgentResult(chatResult.value));
+
 function createVisitorId() {
   if (window.crypto?.randomUUID) {
     return window.crypto.randomUUID();
@@ -147,13 +149,113 @@ async function submitChat() {
   resetFeedbackState();
 
   try {
-    chatResult.value = await sendChatMessage(message);
+    chatResult.value = await sendAgentMessage(message);
   } catch (error) {
     chatErrorMessage.value =
-      error instanceof Error ? error.message : "未知聊天请求错误";
+      error instanceof Error ? error.message : "未知 Agent 执行错误";
   } finally {
     chatLoading.value = false;
   }
+}
+
+function normalizeAgentResult(result) {
+  if (!result) {
+    return null;
+  }
+  if (typeof result.content === "string") {
+    return {
+      route: "legacy_chat",
+      title: "Legacy Chat Result",
+      message: result.content,
+      raw: result,
+      debug: {
+        route: "legacy_chat",
+        capability_name: null,
+        execution_time: result.duration_ms || null,
+        sql: null,
+        tool_name: null
+      }
+    };
+  }
+
+  const route = result.route || "error";
+  const toolResult = result.tool_result || result.final_result || {};
+  const sqlResult = result.sql_result || (route === "text_to_sql" ? toolResult : {});
+  const generatedSql = result.generated_sql || sqlResult.generated_sql || toolResult.generated_sql;
+  const validatedSql = result.validated_sql || sqlResult.validated_sql || toolResult.validated_sql;
+  const rows = Array.isArray(sqlResult.rows)
+    ? sqlResult.rows
+    : Array.isArray(toolResult.rows)
+      ? toolResult.rows
+      : [];
+  const columns = Array.isArray(sqlResult.columns)
+    ? sqlResult.columns
+    : Array.isArray(toolResult.columns)
+      ? toolResult.columns
+      : deriveColumns(rows);
+  const message =
+    result.final_message ||
+    result.message ||
+    toolResult.message ||
+    result.error_message ||
+    result.error ||
+    toolResult.error?.message ||
+    "";
+
+  return {
+    route,
+    title: routeTitle(route),
+    capabilityName: result.capability_name || null,
+    toolResult,
+    sql: generatedSql || validatedSql || "",
+    generatedSql,
+    validatedSql,
+    rows,
+    columns,
+    executionStatus: result.execution_status || sqlResult.execution_status || sqlResult.status || toolResult.status || "",
+    message,
+    raw: result,
+    debug: {
+      route,
+      capability_name: result.capability_name || null,
+      execution_time:
+        result.execution_time ||
+        result.duration_ms ||
+        sqlResult.duration_ms ||
+        toolResult.duration_ms ||
+        null,
+      sql: generatedSql || validatedSql || null,
+      tool_name: result.tool_name || result.capability_name || null
+    }
+  };
+}
+
+function deriveColumns(rows) {
+  if (!rows.length || typeof rows[0] !== "object" || rows[0] === null) {
+    return [];
+  }
+  return Object.keys(rows[0]);
+}
+
+function routeTitle(route) {
+  const titles = {
+    tool: "Tool Result",
+    text_to_sql: "SQL Execution Result",
+    clarification: "Clarification",
+    error: "Execution Error",
+    legacy_chat: "Legacy Chat Result"
+  };
+  return titles[route] || "Execution Result";
+}
+
+function formatCell(value) {
+  if (value === null || value === undefined) {
+    return "-";
+  }
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  return String(value);
 }
 
 async function sendFeedback(feedbackType) {
@@ -341,25 +443,117 @@ onMounted(() => {
       <pre class="result-box">{{ healthResult ? JSON.stringify(healthResult, null, 2) : "暂无后端返回结果" }}</pre>
 
       <form class="chat-form" @submit.prevent="submitChat">
-        <label for="chat-message">聊天输入</label>
+        <label for="chat-message">Agent 输入</label>
         <textarea
           id="chat-message"
           v-model="chatMessage"
           maxlength="4000"
           rows="5"
-          placeholder="输入一段文本，发送到后端模型接入层"
+          placeholder="输入问题，发送到 Agent 执行接口"
         />
         <button type="submit" :disabled="chatLoading || !chatMessage.trim()">
-          {{ chatLoading ? "发送中..." : "发送" }}
+          {{ chatLoading ? "执行中..." : "执行" }}
         </button>
       </form>
 
       <p v-if="chatErrorMessage" class="error-message">{{ chatErrorMessage }}</p>
 
       <section class="answer-box">
-        <span class="label">模型回答</span>
-        <p>{{ chatResult?.content || "暂无模型回答" }}</p>
-        <pre v-if="chatResult" class="result-box">{{ JSON.stringify(chatResult, null, 2) }}</pre>
+        <span class="label">Agent 执行结果</span>
+        <p v-if="!agentView">暂无 Agent 执行结果</p>
+
+        <section v-else class="agent-result">
+          <div class="result-heading">
+            <strong>{{ agentView.title }}</strong>
+            <span>{{ agentView.route }}</span>
+          </div>
+
+          <p v-if="agentView.message" class="execution-message">{{ agentView.message }}</p>
+
+          <section v-if="agentView.route === 'tool'" class="structured-section">
+            <span class="label">Capability</span>
+            <p class="inline-value">{{ agentView.capabilityName || "-" }}</p>
+            <details open>
+              <summary>Tool Result JSON</summary>
+              <pre class="result-box">{{ JSON.stringify(agentView.toolResult, null, 2) }}</pre>
+            </details>
+          </section>
+
+          <section v-else-if="agentView.route === 'text_to_sql'" class="structured-section">
+            <div class="meta-row">
+              <span>Execution Status: {{ agentView.executionStatus || "-" }}</span>
+              <span>Rows: {{ agentView.rows.length }}</span>
+            </div>
+
+            <details v-if="agentView.generatedSql || agentView.validatedSql" open>
+              <summary>SQL</summary>
+              <pre class="sql-box">{{ agentView.validatedSql || agentView.generatedSql }}</pre>
+            </details>
+
+            <div v-if="agentView.rows.length && agentView.columns.length" class="table-scroll">
+              <table class="result-table">
+                <thead>
+                  <tr>
+                    <th v-for="column in agentView.columns" :key="column">{{ column }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, rowIndex) in agentView.rows" :key="rowIndex">
+                    <td v-for="column in agentView.columns" :key="column">
+                      {{ formatCell(row[column]) }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p v-else class="empty-state">暂无 SQL 返回行数据</p>
+
+            <details>
+              <summary>Structured SQL Result JSON</summary>
+              <pre class="result-box">{{ JSON.stringify(agentView.toolResult, null, 2) }}</pre>
+            </details>
+          </section>
+
+          <section v-else-if="agentView.route === 'clarification'" class="structured-section">
+            <p class="execution-message">{{ agentView.message || "Agent 需要补充信息。" }}</p>
+          </section>
+
+          <section v-else-if="agentView.route === 'legacy_chat'" class="structured-section">
+            <p class="execution-message">{{ agentView.message }}</p>
+          </section>
+
+          <section v-else class="structured-section">
+            <p class="error-message">{{ agentView.message || "Agent 执行失败。" }}</p>
+          </section>
+
+          <details class="debug-panel" open>
+            <summary>Debug</summary>
+            <dl>
+              <div>
+                <dt>route</dt>
+                <dd>{{ agentView.debug.route || "-" }}</dd>
+              </div>
+              <div>
+                <dt>capability_name</dt>
+                <dd>{{ agentView.debug.capability_name || "-" }}</dd>
+              </div>
+              <div>
+                <dt>execution_time</dt>
+                <dd>{{ agentView.debug.execution_time ?? "-" }}</dd>
+              </div>
+              <div>
+                <dt>tool_name</dt>
+                <dd>{{ agentView.debug.tool_name || "-" }}</dd>
+              </div>
+            </dl>
+            <pre v-if="agentView.debug.sql" class="sql-box">{{ agentView.debug.sql }}</pre>
+          </details>
+
+          <details>
+            <summary>Raw Agent Result JSON</summary>
+            <pre class="result-box">{{ JSON.stringify(agentView.raw, null, 2) }}</pre>
+          </details>
+        </section>
 
         <section v-if="chatResult?.response_message_key" class="feedback-panel">
           <div class="feedback-actions">

@@ -202,6 +202,123 @@ textarea:focus {
   line-height: 1.6;
 }
 
+.agent-result,
+.structured-section {
+  display: grid;
+  gap: 12px;
+  max-width: 100%;
+  min-width: 0;
+  margin-top: 10px;
+}
+
+.result-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #e6e9ef;
+  border-radius: 6px;
+  padding: 12px 14px;
+  background: #ffffff;
+}
+
+.result-heading span,
+.inline-value,
+.execution-message,
+.empty-state {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.inline-value,
+.execution-message,
+.empty-state {
+  min-height: 0;
+}
+
+.sql-box {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  border: 1px solid #d8dde6;
+  border-radius: 6px;
+  padding: 14px;
+  color: #0f172a;
+  background: #f8fafc;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.table-scroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  border: 1px solid #e6e9ef;
+  border-radius: 6px;
+}
+
+.result-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.result-table th,
+.result-table td {
+  max-width: 260px;
+  border-bottom: 1px solid #e6e9ef;
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.result-table th {
+  color: #374151;
+  background: #f9fafb;
+  font-weight: 700;
+}
+
+.debug-panel {
+  max-width: 100%;
+  min-width: 0;
+  border: 1px solid #e6e9ef;
+  border-radius: 6px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.debug-panel dl {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.debug-panel dl > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.35fr) minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+}
+
+.debug-panel dt {
+  color: #5f6b7a;
+}
+
+.debug-panel dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .feedback-panel {
   display: grid;
   gap: 12px;

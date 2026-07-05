@@ -20,19 +20,22 @@ export async function checkHealth() {
   return response.json();
 }
 
-export async function sendChatMessage(message) {
+export async function sendAgentMessage(message, context = undefined) {
   let response;
   try {
-    response = await fetch(`${API_BASE_URL}/chat`, {
+    response = await fetch(`${API_BASE_URL}/agent/query`, {
       method: "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ message })
+      body: JSON.stringify({
+        message,
+        ...(context ? { context } : {})
+      })
     });
   } catch (error) {
-    throw new Error("无法连接后端聊天接口，请确认后端服务已启动。");
+    throw new Error("无法连接 Agent 执行接口，请确认后端服务已启动。");
   }
 
   const result = await response.json().catch(() => null);
@@ -40,7 +43,7 @@ export async function sendChatMessage(message) {
   if (!response.ok) {
     const detail = result?.detail;
     const messageText =
-      detail?.message || result?.message || `Chat request failed with HTTP ${response.status}`;
+      detail?.message || result?.error_message || result?.message || `Agent request failed with HTTP ${response.status}`;
     throw new Error(messageText);
   }
 
