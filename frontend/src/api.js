@@ -23,7 +23,7 @@ export async function checkHealth() {
 export async function sendAgentMessage(message, context = undefined) {
   let response;
   try {
-    response = await fetch(`${API_BASE_URL}/agent/query`, {
+    response = await fetch(`${API_BASE_URL}/agent/run`, {
       method: "POST",
       headers: {
         Accept: "application/json",

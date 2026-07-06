@@ -1,0 +1,11 @@
+{
+  "total_failed": 0,
+  "categories": {
+    "TOOL_MISROUTE": [],
+    "SQL_INVALID": [],
+    "PLANNER_ERROR": [],
+    "LOOP_FAILURE": [],
+    "VALIDATION_BLOCK": [],
+    "ORCHESTRATOR_ERROR": []
+  }
+}

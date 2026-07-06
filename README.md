@@ -110,15 +110,17 @@ PUT  /api/admin/issues/{issue_key}
 
 These admin APIs do not include real authentication in the current version.
 
-Agent development API:
+Agent Orchestrator API:
 
 ```bash
-curl -X POST http://127.0.0.1:8000/api/agent/query \
+curl -X POST http://127.0.0.1:8000/api/agent/run \
   -H "Content-Type: application/json" \
   -d '{"message":"TRACE-HTR-K2-T-FG-001到哪了"}'
 ```
 
-This endpoint uses LangGraph orchestration. Heat-treatment Tool hits still execute the existing mock Tools. Unmatched heat-treatment analysis questions enter a controlled Text-to-SQL path:
+The frontend uses `/api/agent/run` as the unified Agent entrypoint. It returns `trace_id`, `plan_trace`, `execution_trace`, `final_result`, and `debug`.
+
+Heat-treatment Tool hits still execute the existing mock Tools. Unmatched heat-treatment analysis questions enter a controlled Text-to-SQL path through the Orchestrator:
 
 ```text
 HeatTreatmentSchemaProvider

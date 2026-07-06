@@ -1,54 +1,10 @@
 from fastapi.testclient import TestClient
 
-from app.agent.models import AgentResult
-from app.api.agent import get_agent_query_service
+from app.api.agent import get_orchestrator
 from app.api.chat import get_chat_service
 from app.api.feedback import get_feedback_service
 from app.api.admin_issue import get_issue_service, get_review_service
 from app.main import app
-
-
-class FakeAgentService:
-    def query(self, message):
-        return AgentResult(
-            route="text_to_sql",
-            matched=False,
-            capability_name=None,
-            capability_status=None,
-            confidence=0.1,
-            extracted_arguments={},
-            missing_fields=[],
-            matcher_reason="fake",
-            tool_result={"status": "not_implemented"},
-            final_message="fake result",
-            agent_version="0.1.0",
-            prompt_version="chat-v1",
-            tool_version="heat-treatment-tools-v1",
-        )
-
-
-def test_agent_query_api_returns_stable_schema():
-    app.dependency_overrides[get_agent_query_service] = lambda: FakeAgentService()
-    client = TestClient(app)
-
-    response = client.post("/api/agent/query", json={"message": "统计本月热处理数据"})
-
-    app.dependency_overrides.clear()
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["route"] == "text_to_sql"
-    assert "id" not in payload
-    assert "raw_response" not in payload
-
-
-def test_agent_query_api_rejects_blank_message():
-    app.dependency_overrides[get_agent_query_service] = lambda: FakeAgentService()
-    client = TestClient(app)
-
-    response = client.post("/api/agent/query", json={"message": "   "})
-
-    app.dependency_overrides.clear()
-    assert response.status_code == 422
 
 
 def test_existing_routes_remain_registered():
@@ -58,4 +14,75 @@ def test_existing_routes_remain_registered():
     assert "/api/feedback" in route_paths
     assert "/api/admin/issues" in route_paths
     assert "/api/health" in route_paths
-    assert "/api/agent/query" in route_paths
+    assert "/api/agent/run" in route_paths
+
+
+def test_agent_debug_routes_are_not_public_entrypoints():
+    client = TestClient(app)
+
+    assert client.post("/api/agent/query", json={"message": "x"}).status_code == 404
+    assert client.post("/api/agent/plan", json={"user_query": "x"}).status_code == 404
+
+
+class FakeOrchestrator:
+    def run(self, request):
+        return {
+            "trace_id": "trace-test",
+            "plan_trace": {
+                "initial_plan": {"intent": "tool", "steps": []},
+                "replan": None,
+            },
+            "execution_trace": [
+                {
+                    "step": 1,
+                    "result": {
+                        "status": "success",
+                        "data": {"value": "ok"},
+                        "observation": {
+                            "facts_found": ["result"],
+                            "missing_facts": [],
+                            "decision_signals": [],
+                            "failure_type": None,
+                        },
+                        "execution_quality": {
+                            "tool_hit": True,
+                            "sql_valid": None,
+                            "sql_executed": None,
+                        },
+                        "trace": {
+                            "tool_name": "heat_current_stage",
+                            "sql": None,
+                            "used_tables": [],
+                        },
+                    },
+                }
+            ],
+            "final_result": {"status": "success", "data": {"value": "ok"}, "error": None},
+            "debug": {
+                "route": "tool",
+                "failure_analysis": None,
+                "execution_summary": {
+                    "planner_calls": 1,
+                    "execution_loops": 1,
+                    "replanned": False,
+                    "max_execution_loop": 2,
+                    "max_planner_call": 2,
+                },
+            },
+        }
+
+
+def test_agent_run_api_returns_unified_orchestrator_schema():
+    app.dependency_overrides[get_orchestrator] = lambda: FakeOrchestrator()
+    client = TestClient(app)
+
+    response = client.post("/api/agent/run", json={"message": "TRACE-HTR-K2-T-FG-001到哪了"})
+
+    app.dependency_overrides.clear()
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["trace_id"] == "trace-test"
+    assert "plan_trace" in payload
+    assert "execution_trace" in payload
+    assert payload["final_result"]["status"] == "success"
+    assert payload["debug"]["route"] == "tool"

@@ -13,10 +13,10 @@ Current backend capabilities:
 - `GET /api/admin/issues`
 - `GET /api/admin/issues/{issue_key}`
 - `PUT /api/admin/issues/{issue_key}`
-- `POST /api/agent/query`
+- `POST /api/agent/run`
 - Provider-independent LLM client protocol with DeepSeek as the first provider.
 
-It does not include MES production data access, streaming, multi-turn context, login, JWT, authentication service calls, automatic issue analysis, issue verification, or history-query APIs. The Agent endpoint currently uses mock heat-treatment Tools and a controlled heat-treatment Text-to-SQL fallback for unmatched analysis questions.
+It does not include MES production data access, streaming, multi-turn context, login, JWT, authentication service calls, automatic issue analysis, issue verification, or history-query APIs. `/api/agent/run` is the unified Orchestrator entrypoint. The Agent execution path currently uses mock heat-treatment Tools and a controlled heat-treatment Text-to-SQL fallback for unmatched analysis questions.
 
 The chat API is single-turn only: one request creates one independent conversation, stores the user message and model call, then stores the assistant message on success. The backend does not load or reuse previous user messages as model context.
 
@@ -36,7 +36,7 @@ cp .env.example .env
 ```
 
 Set `LLM_API_KEY` and database variables in `.env` before calling `/api/chat`.
-Set `AGENT_MES_DB_*` only when validating `/api/agent/query` Text-to-SQL against an independent MES read-only test database.
+Set `AGENT_MES_DB_*` only when validating `/api/agent/run` Text-to-SQL against an independent MES read-only test database.
 The backend loads this file from `backend/.env` using an absolute path derived from the code location, so behavior is stable whether `uvicorn` is started from the repository root or from `backend/`.
 
 ## Run
@@ -79,17 +79,17 @@ curl -X POST http://127.0.0.1:8000/api/admin/issues \
 
 The `/api/admin/*` APIs are current development/test management APIs and do not include real administrator authentication.
 
-Agent query:
+Agent Orchestrator:
 
 ```bash
-curl -X POST http://127.0.0.1:8000/api/agent/query \
+curl -X POST http://127.0.0.1:8000/api/agent/run \
   -H "Content-Type: application/json" \
   -d '{"message":"TRACE-HTR-K2-T-FG-001到哪了"}'
 ```
 
-`/api/agent/query` does not replace `/api/chat` and does not write to chat persistence.
+`/api/agent/run` returns `trace_id`, `plan_trace`, `execution_trace`, `final_result`, and `debug`. It orchestrates Planner, Execution Loop, Observation, optional replan, and final result normalization.
 
-For unmatched heat-treatment analysis questions, `/api/agent/query` uses:
+For unmatched heat-treatment analysis questions, `/api/agent/run` uses:
 
 ```text
 HeatTreatmentSchemaProvider

@@ -162,6 +162,9 @@ function normalizeAgentResult(result) {
   if (!result) {
     return null;
   }
+  if (result.trace_id && result.final_result) {
+    return normalizeOrchestratorResult(result);
+  }
   if (typeof result.content === "string") {
     return {
       route: "legacy_chat",
@@ -230,6 +233,71 @@ function normalizeAgentResult(result) {
   };
 }
 
+function normalizeOrchestratorResult(result) {
+  const route = result.debug?.route || result.plan_trace?.initial_plan?.intent || "unknown";
+  const finalData = result.final_result?.data || {};
+  const lastResult = finalData.last_result || finalData;
+  const sqlPayload = findSqlPayload(result) || lastResult;
+  const rows = Array.isArray(sqlPayload.rows) ? sqlPayload.rows : [];
+  const columns = Array.isArray(sqlPayload.columns) ? sqlPayload.columns : deriveColumns(rows);
+  const generatedSql = sqlPayload.generated_sql || null;
+  const validatedSql = sqlPayload.validated_sql || null;
+  const firstToolStep = findToolStep(result);
+  const message =
+    result.final_result?.error?.message ||
+    lastResult.final_message ||
+    result.debug?.failure_analysis?.reason ||
+    "";
+
+  return {
+    route,
+    title: routeTitle(route),
+    capabilityName: firstToolStep?.name || null,
+    toolResult: firstToolStep?.observation?.data?.tool_result || finalData,
+    sql: generatedSql || validatedSql || "",
+    generatedSql,
+    validatedSql,
+    rows,
+    columns,
+    executionStatus: result.final_result?.status || "",
+    message,
+    raw: result,
+    debug: {
+      route,
+      capability_name: firstToolStep?.name || null,
+      execution_time: result.debug?.execution_summary?.execution_loops ?? null,
+      sql: generatedSql || validatedSql || null,
+      tool_name: firstToolStep?.name || null
+    }
+  };
+}
+
+function findSqlPayload(result) {
+  const traces = result.execution_trace || [];
+  for (let traceIndex = traces.length - 1; traceIndex >= 0; traceIndex -= 1) {
+    const stepResults = traces[traceIndex]?.result?.data?.step_results || [];
+    for (let index = stepResults.length - 1; index >= 0; index -= 1) {
+      const data = stepResults[index]?.observation?.data;
+      if (data?.generated_sql || data?.validated_sql || Array.isArray(data?.rows)) {
+        return data;
+      }
+    }
+  }
+  return null;
+}
+
+function findToolStep(result) {
+  const traces = result.execution_trace || [];
+  for (const trace of traces) {
+    const stepResults = trace?.result?.data?.step_results || [];
+    const found = stepResults.find((step) => step.type === "tool");
+    if (found) {
+      return found;
+    }
+  }
+  return null;
+}
+
 function deriveColumns(rows) {
   if (!rows.length || typeof rows[0] !== "object" || rows[0] === null) {
     return [];
@@ -240,7 +308,9 @@ function deriveColumns(rows) {
 function routeTitle(route) {
   const titles = {
     tool: "Tool Result",
+    sql: "SQL Execution Result",
     text_to_sql: "SQL Execution Result",
+    mixed: "Mixed Execution Result",
     clarification: "Clarification",
     error: "Execution Error",
     legacy_chat: "Legacy Chat Result"
@@ -479,7 +549,7 @@ onMounted(() => {
             </details>
           </section>
 
-          <section v-else-if="agentView.route === 'text_to_sql'" class="structured-section">
+          <section v-else-if="agentView.route === 'text_to_sql' || agentView.route === 'sql'" class="structured-section">
             <div class="meta-row">
               <span>Execution Status: {{ agentView.executionStatus || "-" }}</span>
               <span>Rows: {{ agentView.rows.length }}</span>
@@ -520,6 +590,13 @@ onMounted(() => {
 
           <section v-else-if="agentView.route === 'legacy_chat'" class="structured-section">
             <p class="execution-message">{{ agentView.message }}</p>
+          </section>
+
+          <section v-else-if="agentView.route === 'mixed'" class="structured-section">
+            <details open>
+              <summary>Mixed Execution Result JSON</summary>
+              <pre class="result-box">{{ JSON.stringify(agentView.toolResult, null, 2) }}</pre>
+            </details>
           </section>
 
           <section v-else class="structured-section">
