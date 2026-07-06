@@ -6,8 +6,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.admin_issue import close_admin_issue_services, router as admin_issue_router
 from app.api.agent import close_agent_query_service, router as agent_router
+from app.api.analytics_report import (
+    close_report_generator,
+    get_report_generator,
+    router as analytics_report_router,
+)
 from app.api.chat import close_chat_service, router as chat_router
 from app.api.feedback import close_feedback_service, router as feedback_router
+from app.analytics.report.scheduler import DailyReportScheduler
 from app.core.config import get_settings
 from app.domain.persistence.exceptions import PersistenceError
 from app.infrastructure.database.engine import (
@@ -19,10 +25,12 @@ from app.infrastructure.database.engine import (
 APP_NAME = "MES Agent Backend"
 logger = logging.getLogger(__name__)
 settings = get_settings()
+_report_scheduler: DailyReportScheduler | None = None
 
 
 @asynccontextmanager
 async def lifespan(app_instance: FastAPI):
+    global _report_scheduler
     logger.info("Backend settings loaded env_file=%s", settings.env_file_path)
     try:
         startup_engine = create_database_engine(settings)
@@ -35,8 +43,22 @@ async def lifespan(app_instance: FastAPI):
             "Database startup check failed exception_type=%s",
             type(exc).__name__,
         )
+    if settings.analytics_report_scheduler_enabled:
+        try:
+            _report_scheduler = DailyReportScheduler(get_report_generator())
+            _report_scheduler.start()
+            logger.info("Analytics report scheduler started daily_time=00:10")
+        except Exception as exc:
+            logger.error(
+                "Analytics report scheduler startup failed exception_type=%s",
+                type(exc).__name__,
+            )
     yield
+    if _report_scheduler is not None:
+        _report_scheduler.stop()
+        _report_scheduler = None
     close_agent_query_service()
+    close_report_generator()
     close_admin_issue_services()
     close_chat_service()
     close_feedback_service()
@@ -56,6 +78,7 @@ app.include_router(chat_router)
 app.include_router(feedback_router)
 app.include_router(admin_issue_router)
 app.include_router(agent_router)
+app.include_router(analytics_report_router)
 
 
 @app.get("/api/health")

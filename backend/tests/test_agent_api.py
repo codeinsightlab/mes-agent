@@ -15,6 +15,7 @@ def test_existing_routes_remain_registered():
     assert "/api/admin/issues" in route_paths
     assert "/api/health" in route_paths
     assert "/api/agent/run" in route_paths
+    assert "/api/analytics/report/generate" in route_paths
 
 
 def test_agent_debug_routes_are_not_public_entrypoints():

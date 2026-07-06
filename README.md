@@ -132,6 +132,26 @@ HeatTreatmentSchemaProvider
 
 Text-to-SQL uses an independent MES read-only data source configured with `AGENT_MES_DB_*`. It does not use the Agent metadata database. If the MES read-only configuration is missing, the endpoint returns a stable `mes_db_configuration_error`.
 
+Analytics report API:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/analytics/report/generate \
+  -H "Content-Type: application/json" \
+  -d '{"type":"daily"}'
+```
+
+Supported report types are `daily`, `failure`, and `health`. Reports are rebuilt from the Agent analytics MySQL tables `agent_trace`, `agent_event`, `agent_metrics_snapshot`, and `agent_failure`.
+
+Generated files:
+
+```text
+backend/reports/daily/YYYY-MM-DD.md
+backend/reports/failure/YYYY-MM-DD.md
+backend/reports/health/latest.md
+```
+
+Set `ANALYTICS_REPORT_SCHEDULER_ENABLED=true` to enable the background daily report scheduler. It generates daily reports at `00:10`. The scheduler is disabled by default for local development.
+
 If `LLM_API_KEY` is missing, `/api/chat` returns a stable configuration error instead of calling the provider. `/api/health` does not require an API key.
 
 Response fields:

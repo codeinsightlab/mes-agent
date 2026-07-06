@@ -101,6 +101,22 @@ HeatTreatmentSchemaProvider
 
 The Text-to-SQL path only allows the fixed heat-treatment Schema allowlist, validates generated SQL before execution, enforces SELECT-only single statements and row limits, and uses the independent `AGENT_MES_DB_*` read-only database configuration. If that configuration is missing, the endpoint returns `mes_db_configuration_error`.
 
+Analytics reports:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/analytics/report/generate \
+  -H "Content-Type: application/json" \
+  -d '{"type":"health"}'
+```
+
+Supported report types:
+
+- `daily`: writes `backend/reports/daily/YYYY-MM-DD.md`
+- `failure`: writes `backend/reports/failure/YYYY-MM-DD.md`
+- `health`: writes `backend/reports/health/latest.md`
+
+The report layer reads only `agent_trace`, `agent_event`, `agent_metrics_snapshot`, and `agent_failure` from the Agent metadata MySQL database. Markdown reports store aggregate summaries and conclusions, not raw trace/event rows. Set `ANALYTICS_REPORT_SCHEDULER_ENABLED=true` to enable daily generation at `00:10`; it is disabled by default.
+
 If `LLM_API_KEY` is not configured, `/api/chat` returns a configuration error. Health checks remain available without LLM credentials.
 
 Response fields:

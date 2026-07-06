@@ -28,6 +28,7 @@ DEFAULT_PROMPT_VERSION = "chat-v1"
 DEFAULT_AGENT_TOOL_MATCH_THRESHOLD = 0.75
 DEFAULT_AGENT_TEXT_TO_SQL_MAX_LIMIT = 100
 DEFAULT_AGENT_TEXT_TO_SQL_TIMEOUT_SECONDS = 5
+DEFAULT_ANALYTICS_REPORT_SCHEDULER_ENABLED = False
 
 
 def _parse_cors_origins(value: str) -> list[str]:
@@ -63,6 +64,7 @@ class Settings:
     agent_mes_db_connect_timeout_seconds: int = DEFAULT_DB_CONNECT_TIMEOUT_SECONDS
     agent_text_to_sql_max_limit: int = DEFAULT_AGENT_TEXT_TO_SQL_MAX_LIMIT
     agent_text_to_sql_timeout_seconds: int = DEFAULT_AGENT_TEXT_TO_SQL_TIMEOUT_SECONDS
+    analytics_report_scheduler_enabled: bool = DEFAULT_ANALYTICS_REPORT_SCHEDULER_ENABLED
     env_file_path: str = str(BACKEND_ENV_PATH)
 
 
@@ -75,6 +77,18 @@ def _int_env(name: str, default: int) -> int:
     if value < 0:
         raise DatabaseConfigurationError(f"{name} must be greater than or equal to 0.")
     return value
+
+
+def _bool_env(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    normalized = raw.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise DatabaseConfigurationError(f"{name} must be a boolean.")
 
 
 def get_settings() -> Settings:
@@ -141,5 +155,9 @@ def get_settings() -> Settings:
         agent_text_to_sql_timeout_seconds=_int_env(
             "AGENT_TEXT_TO_SQL_TIMEOUT_SECONDS",
             DEFAULT_AGENT_TEXT_TO_SQL_TIMEOUT_SECONDS,
+        ),
+        analytics_report_scheduler_enabled=_bool_env(
+            "ANALYTICS_REPORT_SCHEDULER_ENABLED",
+            DEFAULT_ANALYTICS_REPORT_SCHEDULER_ENABLED,
         ),
     )

@@ -2111,3 +2111,175 @@ Result:
 
 - The Agent OS test runner does not call a real LLM or a real MES read-only database.
 - Mixed diagnosis still reports capability gaps for unavailable diagnosis Tools because expanding Tool Catalog was out of scope.
+
+## 2026-07-06 - Analytics MD Report Pipeline V1
+
+### Task Goal
+
+Add a Markdown report generation layer on top of Agent OS analytics data:
+
+```text
+MySQL analytics tables
+-> reusable analytics metrics engine
+-> Markdown report generator
+```
+
+This round did not modify Planner, Execution Loop, Tool, SQL, Schema, Orchestrator logic, or the existing Agent API response structure.
+
+### Modified Files
+
+- `backend/app/analytics/__init__.py`
+- `backend/app/analytics/report/__init__.py`
+- `backend/app/analytics/report/models.py`
+- `backend/app/analytics/report/repository.py`
+- `backend/app/analytics/report/metrics_engine.py`
+- `backend/app/analytics/report/report_generator.py`
+- `backend/app/analytics/report/scheduler.py`
+- `backend/app/analytics/report/templates/daily_report.md.tpl`
+- `backend/app/analytics/report/templates/failure_report.md.tpl`
+- `backend/app/analytics/report/templates/system_health_report.md.tpl`
+- `backend/app/api/analytics_report.py`
+- `backend/app/main.py`
+- `backend/app/core/config.py`
+- `backend/.env.example`
+- `backend/tests/test_analytics_report.py`
+- `backend/tests/test_agent_api.py`
+- `README.md`
+- `backend/README.md`
+- `docs/agent-analytics-md-report-layer.md`
+- `log/codex-task-log.md`
+
+### Implemented Behavior
+
+Added Report Layer:
+
+```text
+backend/app/analytics/report/
+```
+
+Implemented:
+
+- `SqlAlchemyAnalyticsRepository`
+- shared `build_report_metrics`
+- `MdReportGenerator`
+- Markdown templates for daily, failure, and health reports
+- `DailyReportScheduler`
+- `POST /api/analytics/report/generate`
+
+The repository reads only:
+
+```text
+agent_trace
+agent_event
+agent_metrics_snapshot
+agent_failure
+```
+
+### Report Outputs
+
+Daily report:
+
+```text
+backend/reports/daily/YYYY-MM-DD.md
+```
+
+Failure analysis report:
+
+```text
+backend/reports/failure/YYYY-MM-DD.md
+```
+
+System health report:
+
+```text
+backend/reports/health/latest.md
+```
+
+### API Trigger
+
+```text
+POST /api/analytics/report/generate
+```
+
+Request:
+
+```json
+{
+  "type": "daily"
+}
+```
+
+Supported values:
+
+```text
+daily
+failure
+health
+```
+
+### Scheduler
+
+Added `DailyReportScheduler`, scheduled for:
+
+```text
+00:10
+```
+
+Config:
+
+```text
+ANALYTICS_REPORT_SCHEDULER_ENABLED=false
+```
+
+The scheduler is disabled by default to avoid local startup failures when analytics tables are unavailable.
+
+### Validation Commands And Results
+
+Focused tests:
+
+```text
+cd backend && .venv/bin/pytest tests/test_analytics_report.py
+```
+
+Result:
+
+- `5 passed`
+
+Full backend tests:
+
+```text
+cd backend && .venv/bin/pytest
+```
+
+Result:
+
+- `107 passed, 1 warning`
+
+Compile check:
+
+```text
+cd backend && .venv/bin/python -m compileall app scripts
+```
+
+Result:
+
+- Passed.
+
+### Documentation
+
+Added:
+
+```text
+docs/agent-analytics-md-report-layer.md
+```
+
+Updated:
+
+- `README.md`
+- `backend/README.md`
+
+### Current Open Items
+
+- No live MySQL analytics table validation was executed in this environment.
+- Tests use a fake analytics repository and do not generate reports from real `agent_trace`, `agent_event`, `agent_metrics_snapshot`, or `agent_failure` rows.
+- This round did not create database migrations or table DDL for analytics tables.
