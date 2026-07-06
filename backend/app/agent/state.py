@@ -1,27 +1,29 @@
-from typing import Any, Literal, TypedDict
+from typing import Literal, NotRequired, Required, TypedDict
+
+from app.core.type_defs import JsonObject
 
 
 RouteName = Literal["tool", "text_to_sql", "blocked", "clarification", "error"]
 
 
 class AgentState(TypedDict, total=False):
-    user_query: str
-    conversation_key: str | None
-    route: RouteName
-    matched: bool
-    capability_name: str | None
-    capability_status: str | None
-    confidence: float | None
-    extracted_arguments: dict[str, Any]
-    missing_fields: list[str]
-    matcher_reason: str | None
-    candidate_capabilities: list[str]
-    tool_result: dict[str, Any] | None
-    text_to_sql_status: str | None
-    final_result: dict[str, Any] | None
-    error_code: str | None
-    error_message: str | None
-    clarification_question: str | None
-    agent_version: str
-    prompt_version: str
-    tool_version: str
+    user_query: Required[str]
+    conversation_key: Required[str | None]
+    agent_version: Required[str]
+    prompt_version: Required[str]
+    tool_version: Required[str]
+    route: NotRequired[RouteName]
+    matched: NotRequired[bool]
+    capability_name: NotRequired[str | None]
+    capability_status: NotRequired[str | None]
+    confidence: NotRequired[float | None]
+    extracted_arguments: NotRequired[JsonObject]
+    missing_fields: NotRequired[list[str]]
+    matcher_reason: NotRequired[str | None]
+    candidate_capabilities: NotRequired[list[str]]
+    tool_result: NotRequired[JsonObject | None]
+    text_to_sql_status: NotRequired[str | None]
+    final_result: NotRequired[JsonObject | None]
+    error_code: NotRequired[str | None]
+    error_message: NotRequired[str | None]
+    clarification_question: NotRequired[str | None]

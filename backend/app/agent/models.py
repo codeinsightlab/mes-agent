@@ -1,6 +1,8 @@
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from app.core.type_defs import JsonObject
 
 
 RouteName = Literal["tool", "text_to_sql", "blocked", "clarification", "error"]
@@ -56,8 +58,8 @@ class CapabilitySpec(BaseModel):
     not_applicable_when: list[str]
     required_argument_groups: list[list[str]]
     optional_arguments: list[str]
-    argument_schema: dict[str, Any]
-    result_schema: dict[str, Any]
+    argument_schema: JsonObject
+    result_schema: JsonObject
     examples: list[str]
     confusing_with: list[str]
     version: str
@@ -71,10 +73,10 @@ class AgentResult(BaseModel):
     capability_name: str | None = None
     capability_status: CapabilityStatus | None = None
     confidence: float | None = None
-    extracted_arguments: dict[str, Any] = Field(default_factory=dict)
+    extracted_arguments: JsonObject = Field(default_factory=dict)
     missing_fields: list[str] = Field(default_factory=list)
     matcher_reason: str | None = None
-    tool_result: dict[str, Any] | None = None
+    tool_result: JsonObject | None = None
     final_message: str
     agent_version: str
     prompt_version: str

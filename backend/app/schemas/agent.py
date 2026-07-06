@@ -1,6 +1,6 @@
-from typing import Any
-
 from pydantic import BaseModel, Field, field_validator
+
+from app.core.type_defs import JsonObject
 
 
 class AgentQueryRequest(BaseModel):
@@ -21,10 +21,10 @@ class AgentQueryResponse(BaseModel):
     capability_name: str | None = None
     capability_status: str | None = None
     confidence: float | None = None
-    extracted_arguments: dict[str, Any] = Field(default_factory=dict)
+    extracted_arguments: JsonObject = Field(default_factory=dict)
     missing_fields: list[str] = Field(default_factory=list)
     matcher_reason: str | None = None
-    tool_result: dict[str, Any] | None = None
+    tool_result: JsonObject | None = None
     final_message: str
     agent_version: str
     prompt_version: str

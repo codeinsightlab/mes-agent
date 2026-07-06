@@ -1,12 +1,13 @@
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
-from typing import Any
 
-from app.analytics.report.metrics_engine import build_report_metrics
 from app.analytics.report.models import (
     AnalyticsRepository,
     AnalyticsWindow,
+    CountGroup,
+    MetricValue,
     ReportArtifact,
+    ReportArtifactMetrics,
     ReportType,
 )
 
@@ -27,11 +28,25 @@ class MdReportGenerator:
         self._report_dir = report_dir
         self._template_dir = template_dir
 
+    @property
+    def repository(self) -> AnalyticsRepository:
+        return self._repository
+
     def generate(self, report_type: ReportType, report_date: date | None = None) -> ReportArtifact:
         target_date = report_date or date.today()
         window = _daily_window(target_date)
-        raw_data = self._repository.fetch_window(window)
-        metrics = build_report_metrics(raw_data)
+        report_data = self._repository.fetch_report_data(window)
+        metrics: ReportArtifactMetrics = {
+            **report_data.metrics,
+            "top_failure_types": report_data.top_failure_types,
+            "top_sql_errors": report_data.top_sql_errors,
+            "tool_usage": report_data.tool_usage,
+            "tool_miss_analysis": report_data.tool_miss_analysis,
+            "schema_gaps": report_data.schema_gaps,
+            "execution_failures": report_data.execution_failures,
+            "degradation_signals": report_data.degradation_signals,
+            "root_cause_summary": report_data.root_cause_summary,
+        }
         template_name = {
             "daily": "daily_report.md.tpl",
             "failure": "failure_report.md.tpl",
@@ -75,14 +90,17 @@ def _daily_window(report_date: date) -> AnalyticsWindow:
     return AnalyticsWindow(start_at=start_at, end_at=start_at + timedelta(days=1))
 
 
-def _render_template(path: Path, values: dict[str, Any]) -> str:
+TemplateValue = str | MetricValue | list[CountGroup] | list[str]
+
+
+def _render_template(path: Path, values: dict[str, str]) -> str:
     content = path.read_text(encoding="utf-8")
     for key, value in values.items():
         content = content.replace("{{ " + key + " }}", str(value))
     return content
 
 
-def _format_metrics(metrics: dict[str, Any]) -> dict[str, str]:
+def _format_metrics(metrics: ReportArtifactMetrics) -> dict[str, str]:
     formatted: dict[str, str] = {}
     for key, value in metrics.items():
         if isinstance(value, list):
@@ -94,10 +112,10 @@ def _format_metrics(metrics: dict[str, Any]) -> dict[str, str]:
     return formatted
 
 
-def _format_list(values: list[Any]) -> str:
+def _format_list(values: list[CountGroup] | list[str]) -> str:
     if not values:
         return "- N/A"
-    lines = []
+    lines: list[str] = []
     for item in values:
         if isinstance(item, dict):
             name = item.get("name", "N/A")

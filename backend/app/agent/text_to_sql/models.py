@@ -1,6 +1,6 @@
-from typing import Any
-
 from pydantic import BaseModel, Field
+
+from app.core.type_defs import JsonObject
 
 
 class SchemaColumn(BaseModel):
@@ -62,7 +62,7 @@ class SqlValidationResult(BaseModel):
 class SqlExecutionResult(BaseModel):
     status: str
     columns: list[str] = Field(default_factory=list)
-    rows: list[dict[str, Any]] = Field(default_factory=list)
+    rows: list[JsonObject] = Field(default_factory=list)
     row_count: int = 0
     duration_ms: int = 0
     error_code: str | None = None
@@ -76,7 +76,7 @@ class NormalizedTextToSqlResult(BaseModel):
     validated_sql: str | None = None
     used_tables: list[str] = Field(default_factory=list)
     columns: list[str] = Field(default_factory=list)
-    rows: list[dict[str, Any]] = Field(default_factory=list)
+    rows: list[JsonObject] = Field(default_factory=list)
     row_count: int = 0
     duration_ms: int = 0
     error: dict[str, str] | None = None

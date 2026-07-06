@@ -1,9 +1,10 @@
 import logging
 import time
-from typing import Any
+from collections.abc import Mapping
 
 import httpx
 
+from app.core.type_defs import JsonObject, JsonValue
 from app.domain.llm.exceptions import (
     LlmAuthenticationError,
     LlmCallError,
@@ -52,7 +53,7 @@ class DeepSeekLlmClient:
                 json=payload,
             )
             self._raise_for_status(response)
-            data = response.json()
+            data: object = response.json()
             chat_response = self._parse_response(data)
             elapsed_ms = int((time.perf_counter() - started_at) * 1000)
             logger.info(
@@ -70,8 +71,8 @@ class DeepSeekLlmClient:
         except ValueError as exc:
             raise LlmResponseFormatError("LLM provider returned invalid JSON.") from exc
 
-    def _build_payload(self, request: ChatRequest) -> dict[str, Any]:
-        payload: dict[str, Any] = {
+    def _build_payload(self, request: ChatRequest) -> JsonObject:
+        payload: JsonObject = {
             "model": request.model or self._default_model,
             "messages": [
                 {"role": message.role, "content": message.content}
@@ -97,8 +98,8 @@ class DeepSeekLlmClient:
         except httpx.HTTPStatusError as exc:
             raise LlmCallError("LLM provider returned an error status.") from exc
 
-    def _parse_response(self, data: Any) -> ChatResponse:
-        if not isinstance(data, dict):
+    def _parse_response(self, data: object) -> ChatResponse:
+        if not isinstance(data, Mapping):
             raise LlmResponseFormatError("LLM provider response must be an object.")
 
         choices = data.get("choices")
@@ -106,11 +107,11 @@ class DeepSeekLlmClient:
             raise LlmResponseFormatError("LLM provider response has no choices.")
 
         first_choice = choices[0]
-        if not isinstance(first_choice, dict):
+        if not isinstance(first_choice, Mapping):
             raise LlmResponseFormatError("LLM provider choice must be an object.")
 
         message = first_choice.get("message")
-        if not isinstance(message, dict):
+        if not isinstance(message, Mapping):
             raise LlmResponseFormatError("LLM provider choice has no message.")
 
         content = message.get("content")
@@ -121,18 +122,22 @@ class DeepSeekLlmClient:
         if not isinstance(model, str) or not model.strip():
             model = self._default_model
 
+        finish_reason = first_choice.get("finish_reason")
+        if finish_reason is not None and not isinstance(finish_reason, str):
+            finish_reason = None
+
         return ChatResponse(
             content=content,
             model=model,
             provider=self.provider,
-            finish_reason=first_choice.get("finish_reason"),
+            finish_reason=finish_reason,
             usage=self._parse_usage(data.get("usage")),
         )
 
-    def _parse_usage(self, usage: Any) -> TokenUsage | None:
+    def _parse_usage(self, usage: object) -> TokenUsage | None:
         if usage is None:
             return None
-        if not isinstance(usage, dict):
+        if not isinstance(usage, Mapping):
             raise LlmResponseFormatError("LLM provider usage must be an object.")
 
         return TokenUsage(
@@ -141,7 +146,7 @@ class DeepSeekLlmClient:
             total_tokens=self._optional_int(usage.get("total_tokens")),
         )
 
-    def _optional_int(self, value: Any) -> int | None:
+    def _optional_int(self, value: JsonValue) -> int | None:
         if value is None:
             return None
         if isinstance(value, int):

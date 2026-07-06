@@ -117,6 +117,14 @@ Supported report types:
 
 The report layer reads only `agent_trace`, `agent_event`, `agent_metrics_snapshot`, and `agent_failure` from the Agent metadata MySQL database. Markdown reports store aggregate summaries and conclusions, not raw trace/event rows. Set `ANALYTICS_REPORT_SCHEDULER_ENABLED=true` to enable daily generation at `00:10`; it is disabled by default.
 
+Initialize the analytics tables with `backend/app/analytics/schema.sql`. Set `ANALYTICS_METRICS_SNAPSHOT_ENABLED=true` to enable SQL-based metrics snapshots; `ANALYTICS_METRICS_SNAPSHOT_INTERVAL_MINUTES` must be `10`, `30`, or `60`.
+
+Replay a stored trace:
+
+```bash
+curl http://127.0.0.1:8000/api/analytics/report/traces/{trace_id}
+```
+
 If `LLM_API_KEY` is not configured, `/api/chat` returns a configuration error. Health checks remain available without LLM credentials.
 
 Response fields:

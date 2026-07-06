@@ -1,8 +1,9 @@
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.agent.execution_observation import ExecutionObservation
+from app.core.type_defs import JsonObject, JsonValue
 
 
 PlanIntent = Literal["tool", "sql", "mixed", "unknown"]
@@ -15,17 +16,17 @@ class ExecutionHistoryItem(BaseModel):
 
     step: int
     route: str
-    input: Any
-    output: Any = None
+    input: JsonValue
+    output: JsonValue = None
     status: Literal["success", "failed"]
 
 
 class PlannerRequest(BaseModel):
     user_query: str = Field(..., min_length=1, max_length=4000)
-    tool_catalog: list[dict[str, Any]] = Field(default_factory=list)
+    tool_catalog: list[JsonObject] = Field(default_factory=list)
     schema_context: str = ""
     execution_history: list[ExecutionHistoryItem] = Field(default_factory=list)
-    previous_plan: dict[str, Any] | None = None
+    previous_plan: JsonObject | None = None
     execution_observation: ExecutionObservation | None = None
 
     @field_validator("user_query")
@@ -42,7 +43,7 @@ class PlanStep(BaseModel):
     type: PlanStepType
     name: str | None = None
     query_goal: str
-    args: dict[str, Any] = Field(default_factory=dict)
+    args: JsonObject = Field(default_factory=dict)
     reason: str
     dependency: list[int] = Field(default_factory=list)
     expected_output: str

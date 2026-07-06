@@ -1,11 +1,14 @@
+import json
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from app.analytics.report.models import ReportArtifactMetrics
 from app.analytics.report.report_generator import MdReportGenerator
 from app.analytics.report.repository import SqlAlchemyAnalyticsRepository
 from app.core.config import get_settings
+from app.core.type_defs import JsonObject, JsonValue
 from app.domain.persistence.exceptions import (
     DatabaseConfigurationError,
     DatabaseConnectionError,
@@ -27,7 +30,17 @@ class ReportGenerateResponse(BaseModel):
     type: str
     path: str
     status: str
-    metrics: dict
+    metrics: ReportArtifactMetrics
+
+
+class TraceReplayResponse(BaseModel):
+    trace_id: str
+    user_query: str
+    plan_json: JsonObject
+    final_result: JsonObject
+    status: str
+    loop_depth: int
+    created_at: str
 
 
 def close_report_generator() -> None:
@@ -80,3 +93,37 @@ def generate_report(
         status="generated",
         metrics=artifact.metrics,
     )
+
+
+@router.get("/traces/{trace_id}", response_model=TraceReplayResponse)
+def replay_trace(
+    trace_id: str,
+    generator: MdReportGenerator = Depends(get_report_generator),
+):
+    repository = generator.repository
+    trace = repository.get_trace(trace_id)
+    if trace is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "trace_not_found", "message": "Trace not found."},
+        )
+    return TraceReplayResponse(
+        trace_id=trace["trace_id"],
+        user_query=trace["user_query"],
+        plan_json=_json_dict(trace["plan_json"]),
+        final_result=_json_dict(trace["final_result"]),
+        status=trace["status"],
+        loop_depth=int(trace["loop_depth"]),
+        created_at=str(trace["created_at"]),
+    )
+
+
+def _json_dict(value: JsonValue | str | None) -> JsonObject:
+    if isinstance(value, dict):
+        return value
+    if value is None or not isinstance(value, str):
+        return {}
+    decoded = json.loads(value)
+    if not isinstance(decoded, dict):
+        return {}
+    return decoded

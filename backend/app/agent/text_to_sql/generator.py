@@ -1,8 +1,10 @@
 import json
 import re
+from typing import cast
 
 from langchain_core.language_models.chat_models import BaseChatModel
 
+from app.core.type_defs import JsonObject
 from app.agent.text_to_sql.models import (
     HeatTreatmentSchemaPackage,
     TextToSqlGeneration,
@@ -70,16 +72,19 @@ Schema Package:
 """.strip()
 
 
-def _extract_json_object(content: str) -> dict:
+def _extract_json_object(content: str) -> JsonObject:
     cleaned = re.sub(r"<think>.*?</think>", "", content, flags=re.S)
     start = cleaned.find("{")
     end = cleaned.rfind("}")
     if start < 0 or end <= start:
         raise ValueError("Text-to-SQL response did not contain a JSON object.")
-    return json.loads(cleaned[start : end + 1])
+    decoded = json.loads(cleaned[start : end + 1])
+    if not isinstance(decoded, dict):
+        raise ValueError("Text-to-SQL response JSON must be an object.")
+    return cast(JsonObject, decoded)
 
 
-def _normalize_generation_payload(payload: dict) -> dict:
+def _normalize_generation_payload(payload: JsonObject) -> JsonObject:
     for field in ("used_tables", "assumptions"):
         value = payload.get(field)
         if value is None:

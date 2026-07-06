@@ -1,6 +1,7 @@
 from collections.abc import Callable
 import json
 import re
+from typing import cast
 
 from langchain_core.language_models.chat_models import BaseChatModel
 
@@ -9,6 +10,7 @@ from app.agent.catalog.heat_treatment import CAPABILITY_BY_NAME
 from app.agent.models import ToolMatchDecision
 from app.agent.prompts.tool_matcher import build_tool_matcher_prompt
 from app.agent.state import AgentState
+from app.core.type_defs import JsonObject
 
 
 MatcherFn = Callable[[str], ToolMatchDecision]
@@ -26,7 +28,7 @@ class LangChainToolMatcher:
             ("user", user_query),
         ]
         try:
-            return self._structured_model.invoke(messages)
+            return cast(ToolMatchDecision, self._structured_model.invoke(messages))
         except Exception:
             response = self._chat_model.invoke(
                 [
@@ -42,14 +44,17 @@ class LangChainToolMatcher:
             return ToolMatchDecision.model_validate(data)
 
 
-def _extract_json_object(content: str) -> dict:
+def _extract_json_object(content: str) -> JsonObject:
     cleaned = re.sub(r"<think>.*?</think>", "", content, flags=re.S)
     start = cleaned.find("{")
     end = cleaned.rfind("}")
     if start < 0 or end <= start:
         raise ToolMatchError("Matcher response did not contain a JSON object.")
     try:
-        return json.loads(cleaned[start : end + 1])
+        decoded = json.loads(cleaned[start : end + 1])
+        if not isinstance(decoded, dict):
+            raise ToolMatchError("Matcher response JSON must be an object.")
+        return cast(JsonObject, decoded)
     except json.JSONDecodeError as exc:
         raise ToolMatchError("Matcher response JSON could not be parsed.") from exc
 
@@ -67,7 +72,7 @@ def make_tool_matcher_node(
                 "matched": decision.matched,
                 "capability_name": decision.capability_name,
                 "confidence": decision.confidence,
-                "extracted_arguments": decision.extracted_arguments.model_dump(exclude_none=True),
+                "extracted_arguments": _decision_arguments(decision),
                 "missing_fields": decision.missing_fields,
                 "matcher_reason": "Matcher returned an unregistered capability.",
                 "candidate_capabilities": decision.candidate_capabilities,
@@ -80,11 +85,14 @@ def make_tool_matcher_node(
             status = None
             missing_fields = decision.missing_fields
         else:
-            capability = CAPABILITY_BY_NAME[decision.capability_name]
+            capability_name = decision.capability_name
+            if capability_name is None:
+                raise ToolMatchError("Matcher returned matched=true without capability_name.")
+            capability = CAPABILITY_BY_NAME[capability_name]
             status = capability.status
             missing_fields = _missing_required_fields(
                 capability.required_argument_groups,
-                decision.extracted_arguments.model_dump(exclude_none=True),
+                _decision_arguments(decision),
             )
             if status == "blocked":
                 route = "blocked"
@@ -106,7 +114,7 @@ def make_tool_matcher_node(
             "capability_name": decision.capability_name,
             "capability_status": status,
             "confidence": decision.confidence,
-            "extracted_arguments": decision.extracted_arguments.model_dump(exclude_none=True),
+            "extracted_arguments": _decision_arguments(decision),
             "missing_fields": missing_fields,
             "matcher_reason": decision.reason,
             "candidate_capabilities": decision.candidate_capabilities,
@@ -117,7 +125,7 @@ def make_tool_matcher_node(
 
 def _missing_required_fields(
     required_argument_groups: list[list[str]],
-    arguments: dict,
+    arguments: JsonObject,
 ) -> list[str]:
     for group in required_argument_groups:
         if all(arguments.get(field) for field in group):
@@ -125,3 +133,7 @@ def _missing_required_fields(
     if len(required_argument_groups) > 1 and all(len(group) == 1 for group in required_argument_groups):
         return ["record identifier: record_id or record_no or object_id"]
     return [field for field in required_argument_groups[0] if not arguments.get(field)]
+
+
+def _decision_arguments(decision: ToolMatchDecision) -> JsonObject:
+    return cast(JsonObject, decision.extracted_arguments.model_dump(mode="json", exclude_none=True))

@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 import sys
+from typing import cast
 
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -10,6 +11,7 @@ from app.agent.catalog.heat_treatment import TOOL_VERSION
 from app.agent.graph import build_agent_graph
 from app.agent.nodes.tool_matcher import LangChainToolMatcher
 from app.core.config import get_settings
+from app.core.type_defs import JsonObject
 from app.infrastructure.agent.langchain_factory import create_agent_chat_model
 
 CASES_PATH = BACKEND_DIR / "tests" / "fixtures" / "heat_treatment_tool_match_cases.json"
@@ -21,7 +23,7 @@ SUMMARY_PATH = RESULTS_DIR / "heat_tool_matcher_eval_summary.json"
 def main():
     settings = get_settings()
     RESULTS_DIR.mkdir(exist_ok=True)
-    cases = json.loads(CASES_PATH.read_text(encoding="utf-8"))
+    cases = cast(list[JsonObject], json.loads(CASES_PATH.read_text(encoding="utf-8")))
     matcher = LangChainToolMatcher(create_agent_chat_model(settings))
     graph = build_agent_graph(
         matcher=matcher,
@@ -29,7 +31,7 @@ def main():
         text_to_sql_node=text_to_sql_eval_node,
     )
 
-    rows = []
+    rows: list[JsonObject] = []
     for case in cases:
         final_result = graph.invoke(
             {
@@ -71,9 +73,9 @@ def main():
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
 
-def build_summary(rows):
+def build_summary(rows: list[JsonObject]) -> JsonObject:
     total = len(rows) or 1
-    by_capability = {}
+    by_capability: dict[str, JsonObject] = {}
     for row in rows:
         key = row["expected_capability"] or "text_to_sql"
         bucket = by_capability.setdefault(key, {"total": 0, "passed": 0})
@@ -82,7 +84,7 @@ def build_summary(rows):
     for bucket in by_capability.values():
         bucket["accuracy"] = bucket["passed"] / bucket["total"] if bucket["total"] else 0
 
-    def accuracy(field):
+    def accuracy(field: str) -> float:
         return sum(1 for row in rows if row[field]) / total
 
     return {
@@ -100,14 +102,14 @@ def build_summary(rows):
     }
 
 
-def route_accuracy_for(rows, route):
+def route_accuracy_for(rows: list[JsonObject], route: str) -> float | None:
     expected = [row for row in rows if row["expected_route"] == route]
     if not expected:
         return None
     return sum(1 for row in expected if row["route_pass"]) / len(expected)
 
 
-def text_to_sql_eval_node(state):
+def text_to_sql_eval_node(state: JsonObject) -> JsonObject:
     return {
         **state,
         "text_to_sql_status": "eval_only",

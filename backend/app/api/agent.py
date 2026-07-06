@@ -13,14 +13,21 @@ from app.agent.text_to_sql.generator import TextToSqlGenerator
 from app.agent.text_to_sql.normalizer import ResultNormalizer
 from app.agent.text_to_sql.schema_provider import HeatTreatmentSchemaProvider
 from app.agent.text_to_sql.validator import SqlValidator
+from app.analytics.event.collector import AgentEventCollector
 from app.core.config import get_settings
 from app.domain.llm.exceptions import LlmConfigurationError
+from app.domain.persistence.exceptions import (
+    DatabaseConfigurationError,
+    DatabaseConnectionError,
+)
 from app.infrastructure.agent.langchain_factory import create_agent_chat_model
+from app.infrastructure.database.engine import check_database_connection, create_database_engine
 
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])
 _planner: DebuggablePlanner | None = None
 _orchestrator: AgentOrchestrator | None = None
+_analytics_engine = None
 
 
 def build_text_to_sql_node(settings, chat_model) -> TextToSqlNode:
@@ -41,8 +48,11 @@ def build_text_to_sql_node(settings, chat_model) -> TextToSqlNode:
 
 
 def close_agent_query_service():
-    global _orchestrator
+    global _orchestrator, _analytics_engine
     _orchestrator = None
+    if _analytics_engine is not None:
+        _analytics_engine.dispose()
+        _analytics_engine = None
 
 
 def get_planner() -> DebuggablePlanner:
@@ -53,22 +63,35 @@ def get_planner() -> DebuggablePlanner:
 
 
 def get_orchestrator() -> AgentOrchestrator:
-    global _orchestrator
+    global _orchestrator, _analytics_engine
     if _orchestrator is not None:
         return _orchestrator
     try:
         settings = get_settings()
+        _analytics_engine = create_database_engine(settings)
+        check_database_connection(_analytics_engine)
         chat_model = create_agent_chat_model(settings)
         text_to_sql_node = build_text_to_sql_node(settings, chat_model)
         _orchestrator = AgentOrchestrator(
             planner=get_planner(),
             execution_layer=PlanExecutionAdapter(text_to_sql_node=text_to_sql_node),
+            event_collector=AgentEventCollector(_analytics_engine),
         )
         return _orchestrator
     except LlmConfigurationError as exc:
         raise HTTPException(
             status_code=500,
             detail={"error": "llm_configuration_error", "message": str(exc)},
+        ) from exc
+    except DatabaseConfigurationError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "database_configuration_error", "message": str(exc)},
+        ) from exc
+    except DatabaseConnectionError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={"error": "database_connection_error", "message": "Database connection failed."},
         ) from exc
 
 

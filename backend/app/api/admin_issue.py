@@ -57,11 +57,13 @@ def _init_services():
 
 def get_review_service() -> FeedbackReviewService:
     _init_services()
+    assert _review_service is not None
     return _review_service
 
 
 def get_issue_service() -> IssueApplicationService:
     _init_services()
+    assert _issue_service is not None
     return _issue_service
 
 

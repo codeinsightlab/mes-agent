@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from typing import cast
 
 from langgraph.graph import END, START, StateGraph
 
@@ -10,6 +11,8 @@ from app.agent.nodes.tool_matcher import MatcherFn, make_tool_matcher_node
 from app.agent.state import AgentState
 from app.agent.tools.registry import DEFAULT_TOOL_REGISTRY, ToolRegistry
 
+NodeAction = Callable[..., AgentState]
+
 
 def build_agent_graph(
     matcher: MatcherFn,
@@ -18,10 +21,10 @@ def build_agent_graph(
     registry: ToolRegistry = DEFAULT_TOOL_REGISTRY,
 ):
     graph = StateGraph(AgentState)
-    graph.add_node("tool_matcher", make_tool_matcher_node(matcher, match_threshold))
-    graph.add_node("tool_executor", make_tool_executor_node(registry))
-    graph.add_node("blocked_capability", blocked_capability_node)
-    graph.add_node("clarification", clarification_node)
+    graph.add_node("tool_matcher", cast(NodeAction, make_tool_matcher_node(matcher, match_threshold)))
+    graph.add_node("tool_executor", cast(NodeAction, make_tool_executor_node(registry)))
+    graph.add_node("blocked_capability", cast(NodeAction, blocked_capability_node))
+    graph.add_node("clarification", cast(NodeAction, clarification_node))
     graph.add_node("text_to_sql", text_to_sql_node)
     graph.add_node("result_builder", result_builder_node)
 

@@ -2,7 +2,7 @@ import datetime as dt
 import decimal
 import json
 import time
-from typing import Any
+from collections.abc import Mapping, Sequence
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
@@ -11,6 +11,7 @@ from sqlalchemy.engine.url import URL
 
 from app.agent.text_to_sql.models import SqlExecutionResult
 from app.core.config import Settings
+from app.core.type_defs import JsonObject, JsonValue
 from app.domain.persistence.exceptions import DatabaseConfigurationError
 
 
@@ -29,7 +30,7 @@ class ReadonlySqlExecutor:
                 timeout_ms = max(self._timeout_seconds, 1) * 1000
                 connection.execute(text("SET SESSION MAX_EXECUTION_TIME = :timeout_ms"), {"timeout_ms": timeout_ms})
                 result = connection.execute(text(sql))
-                rows = [dict(row._mapping) for row in result.fetchmany(self._max_rows)]
+                rows: list[dict[str, object]] = [dict(row._mapping) for row in result.fetchmany(self._max_rows)]
                 columns = list(result.keys())
             duration_ms = int((time.perf_counter() - start) * 1000)
             return SqlExecutionResult(
@@ -95,19 +96,23 @@ def _create_mes_engine(settings: Settings) -> Engine:
     )
 
 
-def _json_safe_row(row: dict[str, Any]) -> dict[str, Any]:
+def _json_safe_row(row: dict[str, object]) -> JsonObject:
     return {key: _json_safe_value(value) for key, value in row.items()}
 
 
-def _json_safe_value(value: Any) -> Any:
+def _json_safe_value(value: object) -> JsonValue:
     if isinstance(value, (dt.datetime, dt.date, dt.time)):
         return value.isoformat()
     if isinstance(value, decimal.Decimal):
         return float(value)
-    if isinstance(value, (dict, list, str, int, float, bool)) or value is None:
+    if isinstance(value, (str, int, float, bool)) or value is None:
         return value
+    if isinstance(value, Mapping):
+        return {str(key): _json_safe_value(item) for key, item in value.items()}
+    if isinstance(value, Sequence):
+        return [_json_safe_value(item) for item in value]
     try:
         json.dumps(value)
-        return value
+        return str(value)
     except TypeError:
         return str(value)

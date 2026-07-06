@@ -1,5 +1,7 @@
+import logging
+import time
 import uuid
-from typing import Any
+from typing import cast
 
 from pydantic import BaseModel, Field
 
@@ -13,13 +15,21 @@ from app.agent.execution_observation import (
     ExecutionQuality,
     ExecutionTrace,
     FailureClassificationReport,
+    FailureType,
     ObservationFacts,
 )
 from app.agent.planner.models import PlannerPlan, PlannerRequest, PlanStep
 from app.agent.planner.planner import DebuggablePlanner
+from app.agent.state import AgentState
 from app.agent.text_to_sql.models import NormalizedTextToSqlResult
 from app.agent.nodes.text_to_sql import TextToSqlNode
 from app.agent.tools.registry import DEFAULT_TOOL_REGISTRY, ToolRegistry
+from app.analytics.event.collector import AgentEventCollector
+from app.core.type_defs import JsonObject, JsonValue
+from app.domain.persistence.exceptions import PersistenceError
+
+
+logger = logging.getLogger(__name__)
 
 
 class AgentRunContext(BaseModel):
@@ -40,16 +50,16 @@ class NormalizedError(BaseModel):
 
 class AgentFinalResult(BaseModel):
     status: str
-    data: dict[str, Any] = Field(default_factory=dict)
+    data: JsonObject = Field(default_factory=dict)
     error: NormalizedError | None = None
 
 
 class AgentRunResult(BaseModel):
     trace_id: str
-    plan_trace: dict[str, Any]
-    execution_trace: list[dict[str, Any]]
+    plan_trace: JsonObject
+    execution_trace: list[JsonObject]
     final_result: AgentFinalResult
-    debug: dict[str, Any]
+    debug: JsonObject
 
 
 class AgentOrchestrator:
@@ -57,28 +67,118 @@ class AgentOrchestrator:
         self,
         planner: DebuggablePlanner,
         execution_layer,
+        event_collector: AgentEventCollector | None = None,
     ):
         self._planner = planner
         self._execution_layer = execution_layer
+        self._event_collector = event_collector
 
     def run(self, request: AgentRunInput) -> AgentRunResult:
         trace_id = uuid.uuid4().hex
         planner_request = PlannerRequest(user_query=request.message)
+        started_at = time.perf_counter()
         try:
             loop_result = ExecutionFeedbackLoop(
                 planner=self._planner,
                 execution_layer=self._execution_layer,
             ).run(planner_request)
         except Exception as exc:
-            return _error_result(
+            result = _error_result(
                 trace_id=trace_id,
                 error_type="execution_error",
                 message="Agent orchestration failed.",
                 recoverable=False,
                 detail=str(exc),
             )
+            self._record_error_trace(request, result, elapsed_ms(started_at))
+            return result
 
-        return _normalize_loop_result(trace_id, loop_result)
+        result = _normalize_loop_result(trace_id, loop_result)
+        self._record_success_trace(request, loop_result, result, elapsed_ms(started_at))
+        return result
+
+    def _record_success_trace(
+        self,
+        request: AgentRunInput,
+        loop_result: ExecutionLoopResult,
+        result: AgentRunResult,
+        duration_ms: int,
+    ) -> None:
+        if self._event_collector is None:
+            return
+        try:
+            _record_loop_events(self._event_collector, result.trace_id, loop_result, duration_ms)
+            self._event_collector.record_trace(
+                trace_id=result.trace_id,
+                user_query=request.message,
+                plan_json=result.plan_trace,
+                final_result=_model_json_object(result.final_result),
+                status=result.final_result.status,
+                loop_depth=loop_result.attempts,
+            )
+            if result.final_result.error is not None:
+                failure_report = loop_result.failure_report or classify_failure(
+                    loop_result.observations[-1]
+                )
+                self._event_collector.record_failure(
+                    trace_id=result.trace_id,
+                    failure_type=(
+                        failure_report.failure_type if failure_report is not None else None
+                    ),
+                    source_layer=(
+                        failure_report.source_layer if failure_report is not None else None
+                    ),
+                    error_code=result.final_result.error.error_type,
+                    summary=result.final_result.error.message,
+                    detail_json=_optional_json_object(result.debug.get("failure_analysis")),
+                )
+        except PersistenceError as exc:
+            logger.error("Agent analytics persistence failed exception_type=%s", type(exc).__name__)
+
+    def _record_error_trace(
+        self,
+        request: AgentRunInput,
+        result: AgentRunResult,
+        duration_ms: int,
+    ) -> None:
+        if self._event_collector is None:
+            return
+        try:
+            self._event_collector.record_event(
+                event_type="LOOP_START",
+                trace_id=result.trace_id,
+                component="execution_loop",
+                input_json={"message": request.message},
+            )
+            self._event_collector.record_event(
+                event_type="LOOP_END",
+                trace_id=result.trace_id,
+                component="execution_loop",
+                output_json={"status": result.final_result.status},
+                latency_ms=duration_ms,
+            )
+            self._event_collector.record_trace(
+                trace_id=result.trace_id,
+                user_query=request.message,
+                plan_json=result.plan_trace,
+                final_result=_model_json_object(result.final_result),
+                status=result.final_result.status,
+                loop_depth=0,
+            )
+            self._event_collector.record_failure(
+                trace_id=result.trace_id,
+                failure_type="execution_error",
+                source_layer="execution",
+                error_code=result.final_result.error.error_type if result.final_result.error else None,
+                summary=(
+                    result.final_result.error.message
+                    if result.final_result.error
+                    else "Agent orchestration failed."
+                ),
+                detail_json=_optional_json_object(result.debug.get("failure_analysis")),
+            )
+        except PersistenceError as exc:
+            logger.error("Agent analytics persistence failed exception_type=%s", type(exc).__name__)
 
 
 class PlanExecutionAdapter:
@@ -101,7 +201,7 @@ class PlanExecutionAdapter:
                 execution_quality=ExecutionQuality(),
             )
 
-        step_results: list[dict[str, Any]] = []
+        step_results: list[JsonObject] = []
         for step in plan.steps:
             observation = self._execute_step(plan, step)
             step_results.append(
@@ -109,7 +209,7 @@ class PlanExecutionAdapter:
                     "step_id": step.step_id,
                     "type": step.type,
                     "name": step.name,
-                    "observation": observation.model_dump(),
+                    "observation": _model_json_object(observation),
                 }
             )
             if observation.status != "success":
@@ -126,7 +226,7 @@ class PlanExecutionAdapter:
             status="success",
             data={
                 "step_results": step_results,
-                "last_result": step_results[-1]["observation"]["data"] if step_results else {},
+                "last_result": _last_step_data(step_results),
             },
             observation=ObservationFacts(
                 facts_found=[f"step_{item['step_id']}" for item in step_results],
@@ -199,8 +299,9 @@ class PlanExecutionAdapter:
             )
 
     def _execute_sql_step(self, plan: PlannerPlan, step: PlanStep) -> ExecutionObservation:
-        state = {
-            "user_query": step.args.get("question") or plan.goal,
+        question = step.args.get("question")
+        state: AgentState = {
+            "user_query": question if isinstance(question, str) else plan.goal,
             "conversation_key": None,
             "agent_version": "orchestrator-v1",
             "prompt_version": "orchestrator-v1",
@@ -212,7 +313,7 @@ class PlanExecutionAdapter:
         if normalized.status == "success":
             return ExecutionObservation(
                 status="success",
-                data=normalized.model_dump(),
+                data=_model_json_object(normalized),
                 observation=ObservationFacts(
                     facts_found=["sql_result"],
                     decision_signals=["sql_validated", "sql_executed"],
@@ -232,7 +333,7 @@ class PlanExecutionAdapter:
         status = "partial" if failure_type == "missing_param" else "fail"
         return ExecutionObservation(
             status=status,
-            data=normalized.model_dump(),
+            data=_model_json_object(normalized),
             observation=ObservationFacts(
                 missing_facts=_sql_missing_facts(error_code),
                 decision_signals=["sql_failed"],
@@ -256,15 +357,15 @@ def _normalize_loop_result(trace_id: str, loop_result: ExecutionLoopResult) -> A
     return AgentRunResult(
         trace_id=trace_id,
         plan_trace={
-            "initial_plan": loop_result.initial_plan.model_dump(),
+            "initial_plan": _model_json_object(loop_result.initial_plan),
             "replan": (
-                loop_result.final_plan.model_dump()
+                _model_json_object(loop_result.final_plan)
                 if loop_result.attempts > 1
                 else None
             ),
         },
         execution_trace=[
-            {"step": index + 1, "result": observation.model_dump()}
+            {"step": index + 1, "result": _model_json_object(observation)}
             for index, observation in enumerate(loop_result.observations)
         ],
         final_result=AgentFinalResult(
@@ -274,7 +375,7 @@ def _normalize_loop_result(trace_id: str, loop_result: ExecutionLoopResult) -> A
         ),
         debug={
             "route": loop_result.final_plan.intent,
-            "failure_analysis": failure_report.model_dump() if failure_report else None,
+            "failure_analysis": _model_json_object(failure_report) if failure_report else None,
             "execution_summary": {
                 "planner_calls": loop_result.attempts,
                 "execution_loops": loop_result.attempts,
@@ -283,7 +384,7 @@ def _normalize_loop_result(trace_id: str, loop_result: ExecutionLoopResult) -> A
                 "max_planner_call": 2,
             },
             "observation_trace": [
-                observation.observation.model_dump()
+                _model_json_object(observation.observation)
                 for observation in loop_result.observations
             ],
         },
@@ -313,7 +414,7 @@ def _error_result(
         ),
         debug={
             "route": "error",
-            "failure_analysis": error.model_dump(),
+            "failure_analysis": _model_json_object(error),
             "execution_summary": {
                 "planner_calls": 0,
                 "execution_loops": 0,
@@ -352,7 +453,7 @@ def _final_status(status: str) -> str:
     return status
 
 
-def _sql_failure_type(error_code: str | None) -> str:
+def _sql_failure_type(error_code: str | None) -> FailureType:
     if error_code in {"mes_db_configuration_error", "mes_sql_execution_error"}:
         return "execution_error"
     if error_code in {"missing_param", "unbounded_scan"}:
@@ -370,10 +471,218 @@ def _sql_missing_facts(error_code: str | None) -> list[str]:
     return []
 
 
-def _collect_used_tables(step_results: list[dict[str, Any]]) -> list[str]:
+def _collect_used_tables(step_results: list[JsonObject]) -> list[str]:
     tables: set[str] = set()
     for item in step_results:
-        trace = item.get("observation", {}).get("trace", {})
-        for table in trace.get("used_tables") or []:
-            tables.add(table)
+        observation = item.get("observation")
+        if not isinstance(observation, dict):
+            continue
+        trace = observation.get("trace")
+        if not isinstance(trace, dict):
+            continue
+        used_tables = trace.get("used_tables")
+        if not isinstance(used_tables, list):
+            continue
+        for table in used_tables:
+            if isinstance(table, str):
+                tables.add(table)
     return sorted(tables)
+
+
+def elapsed_ms(started_at: float) -> int:
+    return max(int((time.perf_counter() - started_at) * 1000), 0)
+
+
+def _record_loop_events(
+    collector: AgentEventCollector,
+    trace_id: str,
+    loop_result: ExecutionLoopResult,
+    duration_ms: int,
+) -> None:
+    collector.record_event(
+        event_type="LOOP_START",
+        trace_id=trace_id,
+        component="execution_loop",
+        input_json={"attempts": loop_result.attempts},
+    )
+    collector.record_event(
+        event_type="PLANNER_START",
+        trace_id=trace_id,
+        component="planner",
+        step_id=1,
+        input_json={"replan": False},
+    )
+    collector.record_event(
+        event_type="PLANNER_END",
+        trace_id=trace_id,
+        component="planner",
+        step_id=1,
+        output_json=_model_json_object(loop_result.initial_plan),
+    )
+    if loop_result.attempts > 1:
+        collector.record_event(
+            event_type="REPLAN_TRIGGER",
+            trace_id=trace_id,
+            component="execution_loop",
+            input_json=_model_json_object(loop_result.observations[0].observation),
+        )
+        collector.record_event(
+            event_type="PLANNER_START",
+            trace_id=trace_id,
+            component="planner",
+            step_id=2,
+            input_json={"replan": True},
+        )
+        collector.record_event(
+            event_type="PLANNER_END",
+            trace_id=trace_id,
+            component="planner",
+            step_id=2,
+            output_json=_model_json_object(loop_result.final_plan),
+        )
+    for observation_index, observation in enumerate(loop_result.observations):
+        _record_observation_events(
+            collector,
+            trace_id,
+            loop_result.final_plan if observation_index else loop_result.initial_plan,
+            observation,
+        )
+    collector.record_event(
+        event_type="LOOP_END",
+        trace_id=trace_id,
+        component="execution_loop",
+        output_json={"status": loop_result.status, "attempts": loop_result.attempts},
+        latency_ms=duration_ms,
+    )
+
+
+def _record_observation_events(
+    collector: AgentEventCollector,
+    trace_id: str,
+    plan: PlannerPlan,
+    observation: ExecutionObservation,
+) -> None:
+    raw_step_results = observation.data.get("step_results")
+    step_results = (
+        [cast(JsonObject, item) for item in raw_step_results if isinstance(item, dict)]
+        if isinstance(raw_step_results, list)
+        else []
+    )
+    if step_results:
+        for item in step_results:
+            step_observation = _json_object_or_empty(item.get("observation"))
+            step_type = item.get("type")
+            component_value = item.get("name")
+            component = component_value if isinstance(component_value, str) else "text_to_sql"
+            step_id_value = item.get("step_id")
+            step_id = step_id_value if isinstance(step_id_value, int) else None
+            if step_type == "tool":
+                collector.record_event(
+                    event_type="TOOL_MATCH",
+                    trace_id=trace_id,
+                    component=component,
+                    step_id=step_id,
+                    input_json={"step": item},
+                )
+                collector.record_event(
+                    event_type=(
+                        "TOOL_EXECUTE_SUCCESS"
+                        if step_observation.get("status") == "success"
+                        else "TOOL_EXECUTE_FAIL"
+                    ),
+                    trace_id=trace_id,
+                    component=component,
+                    step_id=step_id,
+                    output_json=step_observation,
+                )
+            else:
+                _record_sql_events(collector, trace_id, component, step_id, step_observation)
+        return
+
+    if plan.steps:
+        first_step = plan.steps[0]
+        component = first_step.name or "text_to_sql"
+        if first_step.type == "tool":
+            collector.record_event(
+                event_type="TOOL_MATCH",
+                trace_id=trace_id,
+                component=component,
+                step_id=first_step.step_id,
+                input_json=_model_json_object(first_step),
+            )
+            collector.record_event(
+                event_type="TOOL_EXECUTE_FAIL",
+                trace_id=trace_id,
+                component=component,
+                step_id=first_step.step_id,
+                output_json=_model_json_object(observation),
+            )
+        else:
+            _record_sql_events(
+                collector,
+                trace_id,
+                component,
+                first_step.step_id,
+                _model_json_object(observation),
+            )
+
+
+def _record_sql_events(
+    collector: AgentEventCollector,
+    trace_id: str,
+    component: str,
+    step_id: int | None,
+    observation: JsonObject,
+) -> None:
+    data = _json_object_or_empty(observation.get("data")) or observation
+    duration_value = data.get("duration_ms")
+    latency_ms = duration_value if isinstance(duration_value, int) else None
+    collector.record_event(
+        event_type="SQL_GENERATE",
+        trace_id=trace_id,
+        component=component,
+        step_id=step_id,
+        output_json={"generated_sql": data.get("generated_sql")},
+    )
+    collector.record_event(
+        event_type="SQL_VALIDATE",
+        trace_id=trace_id,
+        component=component,
+        step_id=step_id,
+        output_json={"validated_sql": data.get("validated_sql")},
+    )
+    collector.record_event(
+        event_type=(
+            "SQL_EXECUTE_SUCCESS"
+            if observation.get("status") == "success" or data.get("status") == "success"
+            else "SQL_EXECUTE_FAIL"
+        ),
+        trace_id=trace_id,
+        component=component,
+        step_id=step_id,
+        output_json=observation,
+        latency_ms=latency_ms,
+    )
+
+
+def _model_json_object(model: BaseModel) -> JsonObject:
+    return cast(JsonObject, model.model_dump(mode="json"))
+
+
+def _optional_json_object(value: JsonValue) -> JsonObject | None:
+    if isinstance(value, dict):
+        return cast(JsonObject, value)
+    return None
+
+
+def _json_object_or_empty(value: JsonValue | None) -> JsonObject:
+    if isinstance(value, dict):
+        return cast(JsonObject, value)
+    return {}
+
+
+def _last_step_data(step_results: list[JsonObject]) -> JsonValue:
+    if not step_results:
+        return {}
+    observation = _json_object_or_empty(step_results[-1].get("observation"))
+    return observation.get("data") or {}

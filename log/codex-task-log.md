@@ -2283,3 +2283,271 @@ Updated:
 - No live MySQL analytics table validation was executed in this environment.
 - Tests use a fake analytics repository and do not generate reports from real `agent_trace`, `agent_event`, `agent_metrics_snapshot`, or `agent_failure` rows.
 - This round did not create database migrations or table DDL for analytics tables.
+
+## 2026-07-06 - Production Data Grounding V1
+
+### Task Goal
+
+Upgrade the Agent OS analytics/report path from fake analytics and Python in-memory aggregation to a MySQL-grounded data loop:
+
+```text
+Execution
+-> Agent Event
+-> MySQL trace/event/failure tables
+-> SQL Analytics
+-> Metrics Snapshot
+-> MD Report
+```
+
+This round did not modify Planner logic, Execution Loop logic, Tool Layer, SQL Generator, SQL Validator, SQL Executor, Orchestrator API response structure, or frontend code.
+
+### Modified Files
+
+- `backend/app/agent/orchestrator/agent_orchestrator.py`
+- `backend/app/api/agent.py`
+- `backend/app/api/analytics_report.py`
+- `backend/app/analytics/schema.sql`
+- `backend/app/analytics/event/__init__.py`
+- `backend/app/analytics/event/collector.py`
+- `backend/app/analytics/metrics/__init__.py`
+- `backend/app/analytics/metrics/snapshot.py`
+- `backend/app/analytics/report/models.py`
+- `backend/app/analytics/report/repository.py`
+- `backend/app/analytics/report/report_generator.py`
+- `backend/app/core/config.py`
+- `backend/app/infrastructure/database/models/__init__.py`
+- `backend/app/infrastructure/database/models/analytics.py`
+- `backend/.env.example`
+- `backend/tests/test_analytics_report.py`
+- `backend/tests/test_agent_api.py`
+- `README.md`
+- `backend/README.md`
+- `docs/agent-analytics-md-report-layer.md`
+- `log/codex-task-log.md`
+
+Removed:
+
+- `backend/app/analytics/report/metrics_engine.py`
+
+### Added MySQL Analytics Tables
+
+Added DDL:
+
+```text
+backend/app/analytics/schema.sql
+```
+
+Tables:
+
+- `agent_trace`
+- `agent_event`
+- `agent_failure`
+- `agent_metrics_snapshot`
+
+### Event Collector
+
+Added:
+
+```text
+backend/app/analytics/event/collector.py
+```
+
+`AgentEventCollector` writes:
+
+- `agent_event`
+- `agent_trace`
+- `agent_failure`
+
+The Orchestrator now accepts an optional collector. `/api/agent/run` wires a real MySQL-backed collector through the Agent metadata database configuration. The public Orchestrator response schema is unchanged.
+
+Required event types covered:
+
+- `PLANNER_START`
+- `PLANNER_END`
+- `TOOL_MATCH`
+- `TOOL_EXECUTE_SUCCESS`
+- `TOOL_EXECUTE_FAIL`
+- `SQL_GENERATE`
+- `SQL_VALIDATE`
+- `SQL_EXECUTE_SUCCESS`
+- `SQL_EXECUTE_FAIL`
+- `REPLAN_TRIGGER`
+- `LOOP_START`
+- `LOOP_END`
+
+### SQL Analytics
+
+Replaced Python in-memory aggregation with SQL queries in:
+
+```text
+backend/app/analytics/report/repository.py
+```
+
+Metrics now come from SQL over MySQL-shaped tables:
+
+- `tool_hit_rate`
+- `sql_success_rate`
+- `replan_rate`
+- `avg_loop_depth`
+- `success_rate`
+- `planner_success_rate`
+- top failure types
+- SQL error patterns
+- tool usage
+
+### Metrics Snapshot
+
+Added:
+
+```text
+backend/app/analytics/metrics/snapshot.py
+```
+
+`MetricsSnapshotService` calculates metrics through SQL and writes `agent_metrics_snapshot`.
+
+Supported intervals:
+
+```text
+10 / 30 / 60 minutes
+```
+
+Config:
+
+```text
+ANALYTICS_METRICS_SNAPSHOT_ENABLED=false
+ANALYTICS_METRICS_SNAPSHOT_INTERVAL_MINUTES=30
+```
+
+### Trace Replay
+
+Added read-only replay endpoint:
+
+```text
+GET /api/analytics/report/traces/{trace_id}
+```
+
+It reads from `agent_trace` and returns stored `plan_json`, `final_result`, status, loop depth, and created time.
+
+### Report Layer
+
+`MdReportGenerator` now uses:
+
+```text
+MySQL -> SQL aggregation -> Markdown render
+```
+
+It no longer depends on fake analytics data or Python in-memory metrics.
+
+### Validation Commands And Results
+
+Focused analytics tests:
+
+```text
+cd backend && .venv/bin/pytest tests/test_analytics_report.py
+```
+
+Result:
+
+- `9 passed`
+
+Focused API/Orchestrator/Analytics tests:
+
+```text
+cd backend && .venv/bin/pytest tests/test_agent_api.py tests/test_agent_orchestrator.py tests/test_analytics_report.py
+```
+
+Result:
+
+- `17 passed`
+
+Full backend tests:
+
+```text
+cd backend && .venv/bin/pytest
+```
+
+Result:
+
+- `111 passed, 157 warnings`
+
+Compile check:
+
+```text
+cd backend && .venv/bin/python -m compileall app scripts
+```
+
+Result:
+
+- Passed.
+
+Agent OS regression:
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_os_v1_tests.py
+```
+
+Result:
+
+- `15 passed`
+- `0 failed`
+- `SYSTEM STATUS = PASS`
+
+### Current Open Items
+
+- Live MySQL DDL application and live MySQL read/write validation were not executed in this run.
+- Automated tests use SQLite with production-shaped SQL tables to verify SQL behavior without fake repositories.
+- The application does not auto-run `backend/app/analytics/schema.sql`; it must be applied to the configured Agent metadata MySQL database before production use.
+
+## 2026-07-06 - Python Type Safety And Pylance Compatibility Layer
+
+### Task Goal
+
+对当前 Python 项目进行类型系统与 IDE 兼容性修复，减少裸 `dict/list/Any` 对 Pylance 的影响，并建立后续 AI/agent 生成 Python 代码的强类型约束。
+
+### Modified Files
+
+- `.vscode/settings.json`
+- `pyrightconfig.json`
+- `agent_rules/python_type_safety.md`
+- `backend/app/core/type_defs.py`
+- `backend/app/analytics/event/collector.py`
+- `backend/app/analytics/metrics/snapshot.py`
+- `backend/app/analytics/report/models.py`
+- `backend/app/analytics/report/repository.py`
+- `backend/app/analytics/report/report_generator.py`
+- `backend/app/agent/**`
+- `backend/app/api/admin_issue.py`
+- `backend/app/api/analytics_report.py`
+- `backend/app/domain/llm/client.py`
+- `backend/app/infrastructure/agent/langchain_factory.py`
+- `backend/app/infrastructure/llm/deepseek_client.py`
+- `backend/app/schemas/agent.py`
+- `backend/scripts/evaluate_heat_tool_matcher.py`
+- `backend/scripts/run_agent_os_v1_tests.py`
+- `log/codex-task-log.md`
+
+### Key Decisions
+
+- 新增 `JsonObject/JsonValue` 项目级 JSON 边界类型，替换核心业务路径中的 `dict[str, Any]`。
+- 将 analytics 报告核心结构改为 `ReportMetrics`、`CountGroup`、`AnalyticsTraceRecord`、`ReportArtifactMetrics` 等 TypedDict。
+- 将 `tool_usage`、`tool_miss_analysis`、`execution_failures`、`degradation_signals` 等报告事件结构显式 schema 化。
+- 将 Agent state 改为必需字段 + 可选字段 TypedDict，减少图节点访问必需字段时的类型不确定性。
+- 对 DeepSeek/LangChain/JSON/SQLAlchemy 等外部动态边界使用 `object`、`Mapping`、`cast` 和类型守卫，不再默认扩散 `Any`。
+- 新增 `agent_rules/python_type_safety.md`，规定 AI 生成代码不得默认使用裸 `dict/list/Any`，核心日志/事件必须显式 schema。
+- 新增 `pyrightconfig.json`，指向 `backend/.venv` 并配置 `extraPaths`，避免 pyright/Pylance 找不到后端依赖。
+- 更新 `.vscode/settings.json`，设置 Pylance basic mode、`reportUnknownVariableType=warning`、`reportMissingImports=error`。
+
+### Validation Commands And Results
+
+- Passed: `cd backend && .venv/bin/python -m py_compile $(find app scripts tests -name '*.py' -not -path '*/__pycache__/*')`
+- Passed: `cd backend && .venv/bin/pytest`
+  - Result: `111 passed, 157 warnings`.
+- Passed with warnings: `npx --yes pyright backend/app`
+  - Result: `0 errors, 108 warnings`.
+  - `reportMissingImports` is clean after `pyrightconfig.json`.
+  - Remaining warnings are `reportUnknownVariableType` warnings concentrated in dynamic third-party boundaries: Pydantic `Field(default_factory=list)`, SQLAlchemy row/statement typing, LangChain structured output, sqlglot parser stubs, and existing issue/feedback repository row shapes.
+
+### Open Items And Risks
+
+- `reportUnknownVariableType` warnings are no longer pyright errors, but not fully eliminated. Clearing the remaining warnings requires typed repository row DTOs, typed SQLAlchemy query result adapters, and additional wrappers around LangChain/sqlglot dynamic APIs.
+- `JsonValue` intentionally uses a non-recursive `object` boundary because Pydantic 2 on the current Python 3.13 runtime recursed on implicit recursive JSON aliases during model schema generation.

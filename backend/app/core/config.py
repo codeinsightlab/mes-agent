@@ -29,6 +29,8 @@ DEFAULT_AGENT_TOOL_MATCH_THRESHOLD = 0.75
 DEFAULT_AGENT_TEXT_TO_SQL_MAX_LIMIT = 100
 DEFAULT_AGENT_TEXT_TO_SQL_TIMEOUT_SECONDS = 5
 DEFAULT_ANALYTICS_REPORT_SCHEDULER_ENABLED = False
+DEFAULT_ANALYTICS_METRICS_SNAPSHOT_ENABLED = False
+DEFAULT_ANALYTICS_METRICS_SNAPSHOT_INTERVAL_MINUTES = 30
 
 
 def _parse_cors_origins(value: str) -> list[str]:
@@ -65,6 +67,10 @@ class Settings:
     agent_text_to_sql_max_limit: int = DEFAULT_AGENT_TEXT_TO_SQL_MAX_LIMIT
     agent_text_to_sql_timeout_seconds: int = DEFAULT_AGENT_TEXT_TO_SQL_TIMEOUT_SECONDS
     analytics_report_scheduler_enabled: bool = DEFAULT_ANALYTICS_REPORT_SCHEDULER_ENABLED
+    analytics_metrics_snapshot_enabled: bool = DEFAULT_ANALYTICS_METRICS_SNAPSHOT_ENABLED
+    analytics_metrics_snapshot_interval_minutes: int = (
+        DEFAULT_ANALYTICS_METRICS_SNAPSHOT_INTERVAL_MINUTES
+    )
     env_file_path: str = str(BACKEND_ENV_PATH)
 
 
@@ -111,6 +117,15 @@ def get_settings() -> Settings:
         raise LlmConfigurationError("AGENT_TOOL_MATCH_THRESHOLD must be a number.") from exc
     if threshold < 0 or threshold > 1:
         raise LlmConfigurationError("AGENT_TOOL_MATCH_THRESHOLD must be between 0 and 1.")
+
+    metrics_interval = _int_env(
+        "ANALYTICS_METRICS_SNAPSHOT_INTERVAL_MINUTES",
+        DEFAULT_ANALYTICS_METRICS_SNAPSHOT_INTERVAL_MINUTES,
+    )
+    if metrics_interval not in {10, 30, 60}:
+        raise DatabaseConfigurationError(
+            "ANALYTICS_METRICS_SNAPSHOT_INTERVAL_MINUTES must be one of 10, 30, or 60."
+        )
 
     return Settings(
         env_file_path=str(BACKEND_ENV_PATH),
@@ -160,4 +175,9 @@ def get_settings() -> Settings:
             "ANALYTICS_REPORT_SCHEDULER_ENABLED",
             DEFAULT_ANALYTICS_REPORT_SCHEDULER_ENABLED,
         ),
+        analytics_metrics_snapshot_enabled=_bool_env(
+            "ANALYTICS_METRICS_SNAPSHOT_ENABLED",
+            DEFAULT_ANALYTICS_METRICS_SNAPSHOT_ENABLED,
+        ),
+        analytics_metrics_snapshot_interval_minutes=metrics_interval,
     )

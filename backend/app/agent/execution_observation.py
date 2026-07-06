@@ -1,6 +1,8 @@
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import BaseModel, Field
+
+from app.core.type_defs import JsonObject
 
 
 ExecutionStatus = Literal["success", "fail", "partial"]
@@ -34,7 +36,7 @@ class ExecutionTrace(BaseModel):
 
 class ExecutionObservation(BaseModel):
     status: ExecutionStatus
-    data: dict[str, Any] = Field(default_factory=dict)
+    data: JsonObject = Field(default_factory=dict)
     observation: ObservationFacts = Field(default_factory=ObservationFacts)
     execution_quality: ExecutionQuality = Field(default_factory=ExecutionQuality)
     trace: ExecutionTrace = Field(default_factory=ExecutionTrace)

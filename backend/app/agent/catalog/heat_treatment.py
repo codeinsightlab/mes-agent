@@ -1,4 +1,5 @@
 from app.agent.models import CapabilitySpec
+from app.core.type_defs import JsonObject
 
 
 TOOL_VERSION = "heat-treatment-tools-v1"
@@ -12,7 +13,7 @@ HEAT_STATUS_NAMES = {
     "CANCELLED": "已作废",
 }
 
-ARGUMENT_SCHEMA = {
+ARGUMENT_SCHEMA: JsonObject = {
     "record_id": "热处理记录内部标识，可选",
     "record_no": "热处理记录编号，可选，例如 TRACE-HTR-K2-T-FG-001 或 HT001",
     "object_id": "用户提供的对象标识，可选",

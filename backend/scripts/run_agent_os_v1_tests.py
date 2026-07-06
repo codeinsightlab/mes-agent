@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 import sys
-from typing import Any
+from typing import cast
 
 from fastapi.testclient import TestClient
 
@@ -20,6 +20,7 @@ from app.agent.text_to_sql.normalizer import ResultNormalizer
 from app.agent.text_to_sql.schema_provider import HeatTreatmentSchemaProvider
 from app.agent.text_to_sql.validator import SqlValidator
 from app.api.agent import get_orchestrator
+from app.core.type_defs import JsonObject
 from app.main import app
 
 
@@ -34,7 +35,7 @@ class DeterministicTextToSqlNode:
         self._validator = SqlValidator(max_limit=100)
         self._normalizer = ResultNormalizer()
 
-    def __call__(self, state: dict[str, Any]) -> dict[str, Any]:
+    def __call__(self, state: JsonObject) -> JsonObject:
         query = state["user_query"]
         schema = self._schema_provider.load()
         generation = _generate_sql(query)
@@ -45,7 +46,7 @@ class DeterministicTextToSqlNode:
                 validation,
                 schema_version=schema.schema_version,
             )
-            return {**state, "tool_result": normalized.model_dump()}
+            return {**state, "tool_result": normalized.model_dump(mode="json")}
 
         execution = SqlExecutionResult(
             status="success",
@@ -60,7 +61,7 @@ class DeterministicTextToSqlNode:
             execution,
             schema_version=schema.schema_version,
         )
-        return {**state, "tool_result": normalized.model_dump()}
+        return {**state, "tool_result": normalized.model_dump(mode="json")}
 
 
 def _generate_sql(query: str) -> TextToSqlGeneration:
@@ -110,7 +111,7 @@ def _columns_for(query: str) -> list[str]:
     return ["equipment_name", "production_count"]
 
 
-def _rows_for(query: str) -> list[dict[str, Any]]:
+def _rows_for(query: str) -> list[JsonObject]:
     if "平均处理时长" in query:
         return [{"equipment_name": "一号热处理炉", "avg_duration_minutes": 126.5}]
     return [{"equipment_name": "一号热处理炉", "production_count": 12}]
@@ -232,9 +233,9 @@ def main():
         raise SystemExit(1)
 
 
-def _run_case(client: TestClient, case: dict[str, Any]) -> dict[str, Any]:
+def _run_case(client: TestClient, case: JsonObject) -> JsonObject:
     response = client.post("/api/agent/run", json={"message": case["input"]})
-    payload = response.json()
+    payload = cast(JsonObject, response.json())
     actual = _extract_actual(response.status_code, payload)
     passed, failure_reason, failure_type = _evaluate(case, actual, payload)
     return {
@@ -249,7 +250,7 @@ def _run_case(client: TestClient, case: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _extract_actual(status_code: int, payload: dict[str, Any]) -> dict[str, Any]:
+def _extract_actual(status_code: int, payload: JsonObject) -> JsonObject:
     plan = payload.get("plan_trace", {}).get("initial_plan") or {}
     final_result = payload.get("final_result") or {}
     debug = payload.get("debug") or {}
@@ -293,7 +294,7 @@ def _extract_actual(status_code: int, payload: dict[str, Any]) -> dict[str, Any]
     }
 
 
-def _evaluate(case: dict[str, Any], actual: dict[str, Any], payload: dict[str, Any]):
+def _evaluate(case: JsonObject, actual: JsonObject, payload: JsonObject) -> tuple[bool, str, str]:
     expected = case["expected"]
     checks: list[tuple[bool, str, str]] = []
     if "route" in expected:
@@ -347,7 +348,7 @@ def _evaluate(case: dict[str, Any], actual: dict[str, Any], payload: dict[str, A
     return False, "; ".join(item[1] for item in failed), failed[0][2]
 
 
-def _has_trace_shape(actual: dict[str, Any]) -> bool:
+def _has_trace_shape(actual: JsonObject) -> bool:
     return all(
         [
             actual["has_trace_id"],
@@ -359,7 +360,7 @@ def _has_trace_shape(actual: dict[str, Any]) -> bool:
     )
 
 
-def _find_sql(payload: dict[str, Any]) -> str | None:
+def _find_sql(payload: JsonObject) -> str | None:
     for trace in payload.get("execution_trace") or []:
         if trace.get("result", {}).get("trace", {}).get("sql"):
             return trace["result"]["trace"]["sql"]
@@ -370,7 +371,7 @@ def _find_sql(payload: dict[str, Any]) -> str | None:
     return None
 
 
-def _find_tool(payload: dict[str, Any]) -> tuple[str | None, dict[str, Any] | None]:
+def _find_tool(payload: JsonObject) -> tuple[str | None, JsonObject | None]:
     for trace in payload.get("execution_trace") or []:
         for step_result in trace.get("result", {}).get("data", {}).get("step_results", []):
             if step_result.get("type") == "tool":
@@ -379,7 +380,7 @@ def _find_tool(payload: dict[str, Any]) -> tuple[str | None, dict[str, Any] | No
     return None, None
 
 
-def _any_quality(payload: dict[str, Any], field: str) -> bool | None:
+def _any_quality(payload: JsonObject, field: str) -> bool | None:
     found = None
     for trace in payload.get("execution_trace") or []:
         quality = trace.get("result", {}).get("execution_quality", {})
@@ -399,7 +400,7 @@ def _is_unbounded_scan_sql(sql: str | None) -> bool:
     return "SELECT" in upper and "WHERE" not in upper and "GROUP BY" not in upper
 
 
-def _build_report(case_results: list[dict[str, Any]]) -> dict[str, Any]:
+def _build_report(case_results: list[JsonObject]) -> JsonObject:
     total = len(case_results)
     passed = sum(1 for item in case_results if item["pass"])
     failed = total - passed
@@ -429,13 +430,13 @@ def _build_report(case_results: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def _ratio(items: list[dict[str, Any]]) -> float:
+def _ratio(items: list[JsonObject]) -> float:
     if not items:
         return 1.0
     return sum(1 for item in items if item["pass"]) / len(items)
 
 
-def _build_failure_report(case_results: list[dict[str, Any]]) -> dict[str, Any]:
+def _build_failure_report(case_results: list[JsonObject]) -> JsonObject:
     buckets = {
         "TOOL_MISROUTE": [],
         "SQL_INVALID": [],

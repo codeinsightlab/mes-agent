@@ -1,5 +1,5 @@
 import re
-from typing import Any
+from typing import cast
 
 from app.agent.catalog.heat_treatment import CAPABILITIES
 from app.agent.execution_observation import ExecutionObservation
@@ -12,6 +12,7 @@ from app.agent.planner.models import (
     PlannerRequest,
     PlanStep,
 )
+from app.core.type_defs import JsonObject
 
 
 RECORD_NO_PATTERN = re.compile(r"(TRACE-[A-Z0-9-]+|HT[0-9A-Z-]+)", re.I)
@@ -21,7 +22,11 @@ class DebuggablePlanner:
     def plan(self, request: PlannerRequest) -> PlannerPlan:
         query = request.user_query
         catalog = request.tool_catalog or _default_tool_catalog()
-        catalog_names = {item.get("name") for item in catalog if item.get("name")}
+        catalog_names = {
+            name
+            for item in catalog
+            if isinstance(name := item.get("name"), str)
+        }
         history = request.execution_history
 
         if request.execution_observation is not None:
@@ -158,7 +163,7 @@ class DebuggablePlanner:
         missing_tools = [
             step.name
             for step in steps
-            if step.type == "tool" and step.name not in catalog_names
+            if step.type == "tool" and isinstance(step.name, str) and step.name not in catalog_names
         ]
         risk = (
             "当前 Catalog 未注册以下诊断 Tool："
@@ -366,8 +371,8 @@ class DebuggablePlanner:
         return self._unknown_plan(query, history)
 
 
-def _default_tool_catalog() -> list[dict[str, Any]]:
-    return [capability.model_dump() for capability in CAPABILITIES]
+def _default_tool_catalog() -> list[JsonObject]:
+    return [cast(JsonObject, capability.model_dump(mode="json")) for capability in CAPABILITIES]
 
 
 def _is_tool_query(query: str) -> bool:

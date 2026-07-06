@@ -13,6 +13,7 @@ from app.api.analytics_report import (
 )
 from app.api.chat import close_chat_service, router as chat_router
 from app.api.feedback import close_feedback_service, router as feedback_router
+from app.analytics.metrics.snapshot import MetricsSnapshotScheduler, MetricsSnapshotService
 from app.analytics.report.scheduler import DailyReportScheduler
 from app.core.config import get_settings
 from app.domain.persistence.exceptions import PersistenceError
@@ -26,11 +27,13 @@ APP_NAME = "MES Agent Backend"
 logger = logging.getLogger(__name__)
 settings = get_settings()
 _report_scheduler: DailyReportScheduler | None = None
+_metrics_snapshot_scheduler: MetricsSnapshotScheduler | None = None
+_metrics_snapshot_engine = None
 
 
 @asynccontextmanager
 async def lifespan(app_instance: FastAPI):
-    global _report_scheduler
+    global _report_scheduler, _metrics_snapshot_scheduler, _metrics_snapshot_engine
     logger.info("Backend settings loaded env_file=%s", settings.env_file_path)
     try:
         startup_engine = create_database_engine(settings)
@@ -53,10 +56,33 @@ async def lifespan(app_instance: FastAPI):
                 "Analytics report scheduler startup failed exception_type=%s",
                 type(exc).__name__,
             )
+    if settings.analytics_metrics_snapshot_enabled:
+        try:
+            _metrics_snapshot_engine = create_database_engine(settings)
+            _metrics_snapshot_scheduler = MetricsSnapshotScheduler(
+                MetricsSnapshotService(_metrics_snapshot_engine),
+                interval_minutes=settings.analytics_metrics_snapshot_interval_minutes,
+            )
+            _metrics_snapshot_scheduler.start()
+            logger.info(
+                "Analytics metrics snapshot scheduler started interval_minutes=%s",
+                settings.analytics_metrics_snapshot_interval_minutes,
+            )
+        except Exception as exc:
+            logger.error(
+                "Analytics metrics snapshot scheduler startup failed exception_type=%s",
+                type(exc).__name__,
+            )
     yield
     if _report_scheduler is not None:
         _report_scheduler.stop()
         _report_scheduler = None
+    if _metrics_snapshot_scheduler is not None:
+        _metrics_snapshot_scheduler.stop()
+        _metrics_snapshot_scheduler = None
+    if _metrics_snapshot_engine is not None:
+        _metrics_snapshot_engine.dispose()
+        _metrics_snapshot_engine = None
     close_agent_query_service()
     close_report_generator()
     close_admin_issue_services()
