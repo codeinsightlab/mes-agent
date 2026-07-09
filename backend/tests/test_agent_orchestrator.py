@@ -9,6 +9,7 @@ from app.agent.orchestrator.agent_orchestrator import (
     AgentRunInput,
     PlanExecutionAdapter,
 )
+from app.agent.tools.registry import DEFAULT_TOOL_REGISTRY
 from app.agent.planner.models import PlannerPlan, PlanStep, ExecutionPlanPolicy, DebugTrace
 from app.agent.planner.planner import DebuggablePlanner
 
@@ -156,6 +157,89 @@ def test_plan_execution_adapter_runs_sql_step_with_text_to_sql_node():
     assert observation.trace.used_tables == ["mes_heat_treatment_record"]
 
 
+def test_agent_run_executes_known_tool_with_record_no_once_without_replan():
+    registry = SpyRegistry()
+    orchestrator = AgentOrchestrator(
+        DebuggablePlanner(),
+        PlanExecutionAdapter(text_to_sql_node=FakeTextToSqlNode(), registry=registry),
+    )
+
+    result = orchestrator.run(AgentRunInput(message="TRACE-HTR-K2-T-FG-001现在在哪一步"))
+
+    step = result.plan_trace["initial_plan"]["steps"][0]
+    assert result.final_result.status == "success"
+    assert result.debug["route"] == "tool"
+    assert result.debug["execution_summary"]["replanned"] is False
+    assert result.debug["execution_summary"]["planner_calls"] == 1
+    assert step["name"] == "heat_current_stage"
+    assert step["args"]["record_no"] == "TRACE-HTR-K2-T-FG-001"
+    assert registry.calls == [
+        ("heat_current_stage", {"record_no": "TRACE-HTR-K2-T-FG-001"})
+    ]
+    assert result.final_result.error is None
+
+
+def test_agent_run_missing_tool_parameter_does_not_execute_tool_or_enter_sql():
+    registry = SpyRegistry()
+    orchestrator = AgentOrchestrator(
+        DebuggablePlanner(),
+        PlanExecutionAdapter(text_to_sql_node=FakeTextToSqlNode(), registry=registry),
+    )
+
+    result = orchestrator.run(AgentRunInput(message="这个热处理现在到哪一步"))
+
+    assert registry.calls == []
+    assert result.final_result.status == "partial"
+    assert result.final_result.error is not None
+    assert result.final_result.error.error_type == "planner_error"
+    assert "缺少热处理记录标识" in result.final_result.error.message
+    assert result.debug["route"] == "tool"
+    assert result.debug["execution_summary"]["execution_loops"] == 2
+    assert result.execution_trace[-1]["result"]["trace"]["tool_name"] == "heat_current_stage"
+    assert result.execution_trace[-1]["result"]["trace"]["sql"] is None
+
+
+def test_agent_run_executes_equipment_and_batch_tools_without_replan():
+    registry = SpyRegistry()
+    orchestrator = AgentOrchestrator(
+        DebuggablePlanner(),
+        PlanExecutionAdapter(text_to_sql_node=FakeTextToSqlNode(), registry=registry),
+    )
+
+    equipment = orchestrator.run(AgentRunInput(message="TRACE-HTR-K2-T-FG-001分配到了哪个炉子"))
+    batch = orchestrator.run(AgentRunInput(message="TRACE-HTR-K2-T-FG-001包含哪些批次"))
+
+    assert equipment.final_result.status == "success"
+    assert batch.final_result.status == "success"
+    assert equipment.debug["execution_summary"]["replanned"] is False
+    assert batch.debug["execution_summary"]["replanned"] is False
+    assert registry.calls == [
+        ("heat_equipment_assignment", {"record_no": "TRACE-HTR-K2-T-FG-001"}),
+        ("heat_batch_products", {"record_no": "TRACE-HTR-K2-T-FG-001"}),
+    ]
+
+
+def test_agent_run_sql_path_remains_text_to_sql_and_cross_request_isolated():
+    registry = SpyRegistry()
+    orchestrator = AgentOrchestrator(
+        DebuggablePlanner(),
+        PlanExecutionAdapter(text_to_sql_node=FakeTextToSqlNode(), registry=registry),
+    )
+
+    tool = orchestrator.run(AgentRunInput(message="TRACE-HTR-K2-T-FG-001现在在哪一步"))
+    missing = orchestrator.run(AgentRunInput(message="这个热处理现在到哪一步"))
+    sql = orchestrator.run(AgentRunInput(message="统计本月每台热处理设备处理了多少批次"))
+
+    assert len({tool.trace_id, missing.trace_id, sql.trace_id}) == 3
+    assert tool.debug["route"] == "tool"
+    assert missing.debug["route"] == "tool"
+    assert sql.debug["route"] == "sql"
+    assert sql.final_result.status == "success"
+    assert registry.calls == [
+        ("heat_current_stage", {"record_no": "TRACE-HTR-K2-T-FG-001"})
+    ]
+
+
 class FakeTextToSqlNode:
     def __call__(self, state):
         return {
@@ -176,3 +260,15 @@ class FakeTextToSqlNode:
                 "assumptions": [],
             },
         }
+
+
+class SpyRegistry:
+    def __init__(self):
+        self.calls = []
+
+    def get_capability(self, name):
+        return DEFAULT_TOOL_REGISTRY.get_capability(name)
+
+    def execute(self, name, arguments):
+        self.calls.append((name, arguments))
+        return DEFAULT_TOOL_REGISTRY.execute(name, arguments)

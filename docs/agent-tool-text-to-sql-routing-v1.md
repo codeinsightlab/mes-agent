@@ -808,3 +808,128 @@ Results:
 
 - The Agent OS test runner is an automated unit/regression harness; SQL execution is deterministic and does not hit a real MES read-only database.
 - Mixed diagnosis still exposes unavailable diagnosis Tools as capability gaps because Tool Catalog expansion was explicitly out of scope.
+
+## 2026-07-09 - `/api/agent/run` Tool Contract Repair
+
+### Objective
+
+Fix the real `/api/agent/run` chain where a known Tool query:
+
+```text
+TRACE-HTR-K2-T-FG-001现在在哪一步
+```
+
+returned `unknown` and `Plan lacks required parameters or facts to execute completely.`
+
+This round did not add Tool capability, change Text-to-SQL, change SQL validation/execution, or change database schema.
+
+### Actual Protocol Audit
+
+The real internal protocol is:
+
+```text
+API request.message
+-> PlannerRequest.user_query
+-> PlannerPlan.steps[]
+-> PlanStep.name
+-> PlanStep.args
+-> PlanExecutionAdapter._execute_tool_step(step)
+-> ToolRegistry.execute(name, arguments)
+-> ExecutionObservation
+-> AgentRunResult.final_result/debug/execution_trace
+```
+
+Field mapping:
+
+- Planner Tool step uses `step_id`, `type`, `name`, `args`, `query_goal`, `dependency`, `reuse_from_history`.
+- `PlanExecutionAdapter` reads `step.name` as Tool name and `step.args` as Tool arguments.
+- `ToolRegistry.execute` signature is `execute(name, arguments)`.
+- Heat-treatment Tools require one of `record_id`, `record_no`, or `object_id`.
+
+No confirmed parameter loss was found between Planner and Adapter. The break was earlier: Planner did not classify several known heat-treatment Tool phrases as Tool steps, so the plan had no executable Tool step and the loop propagated an `unknown`/missing-plan failure.
+
+### Root Cause
+
+The deterministic Planner Tool heuristic was narrower than the existing Tool Catalog / Tool Matcher coverage:
+
+- `现在在哪一步` was not recognized as `heat_current_stage`.
+- `分配到了哪个炉子` was not recognized as `heat_equipment_assignment`.
+- `包含哪些批次` was not recognized as `heat_batch_products`.
+
+A secondary behavior made missing-identifier cases noisy: Adapter passed empty Tool args into ToolRegistry and then normalized the validation exception, instead of rejecting the step before executing the Tool.
+
+### Fix
+
+Modified:
+
+```text
+backend/app/agent/planner/planner.py
+backend/app/agent/orchestrator/agent_orchestrator.py
+backend/app/agent/execution_loop.py
+backend/tests/test_agent_planner.py
+backend/tests/test_agent_orchestrator.py
+backend/tests/test_analytics_report.py
+```
+
+Key changes:
+
+- Planner now maps known heat-treatment Tool phrases to the registered capabilities:
+  - `heat_current_stage`: `到哪`, `哪一步`, `状态`, `处理完`, `结束`, `阶段`
+  - `heat_equipment_assignment`: explicit equipment assignment phrases such as `分配`, `哪个炉子`, `哪台`
+  - `heat_batch_products`: `包含`, `批次`, `绑定`, `产品`
+- SQL intent is checked before Tool intent so aggregate queries such as `统计本月每台热处理设备处理了多少批次` stay on Text-to-SQL.
+- Adapter validates capability required argument groups before ToolRegistry execution.
+- Missing record identifier returns stable partial/missing_param:
+
+```text
+缺少热处理记录标识，请提供 record_no、record_id 或 object_id。
+```
+
+- Added focused INFO diagnostics for planner intent, step type, capability name, argument keys, observation status, missing fields, replan decision, and final status. Logs do not include API keys, passwords, Authorization headers, full SQL result sets, or sensitive raw data.
+
+### Real API Verification
+
+Backend was started locally on `127.0.0.1:8000` and verified through `POST /api/agent/run`.
+
+Results:
+
+| Input | Capability / Route | Args | Final Status | Replan |
+| --- | --- | --- | --- | --- |
+| `TRACE-HTR-K2-T-FG-001现在在哪一步` | `heat_current_stage` | `record_no=TRACE-HTR-K2-T-FG-001` | `success` | `false` |
+| `这个热处理现在到哪一步` | `heat_current_stage` | `{}` | `partial` | `true` |
+| `TRACE-HTR-K2-T-FG-001分配到了哪个炉子` | `heat_equipment_assignment` | `record_no=TRACE-HTR-K2-T-FG-001` | `success` | `false` |
+| `TRACE-HTR-K2-T-FG-001包含哪些批次` | `heat_batch_products` | `record_no=TRACE-HTR-K2-T-FG-001` | `success` | `false` |
+| `统计本月每台热处理设备处理了多少批次` | `sql` | `question=...` | `success` | `false` |
+
+Browser verification through the Vite page also passed:
+
+- Health check showed `连接成功`.
+- Submitted `TRACE-HTR-K2-T-FG-001现在在哪一步`.
+- UI displayed `Tool Result`, capability `heat_current_stage`, record `TRACE-HTR-K2-T-FG-001`, and status name `已完成`.
+- UI did not display `unknown` or the missing-parameter sentence for the complete Tool query.
+
+### Regression Results
+
+Commands:
+
+```text
+cd backend && .venv/bin/python -m compileall app scripts
+cd backend && .venv/bin/pytest tests/test_agent_planner.py tests/test_agent_orchestrator.py tests/test_execution_loop.py
+cd backend && .venv/bin/pytest
+cd backend && .venv/bin/python scripts/run_agent_os_v1_tests.py
+cd frontend && npm run build
+```
+
+Results:
+
+- compileall: passed
+- focused Planner/Orchestrator/Loop tests: `23 passed`
+- full backend tests: `118 passed, 157 warnings`
+- Agent OS V1 script: `15 passed / 0 failed`, `SYSTEM STATUS = PASS`
+- frontend build: passed
+
+### Remaining Limits
+
+- Planner still uses deterministic phrase matching for the current limited Tool Catalog. It is intentionally not a general Tool Matcher replacement.
+- Missing identifier requests still replan once because ExecutionFeedbackLoop V1 replans all partial observations; the final result remains bounded to two loops and does not enter SQL.
+- Existing mixed diagnosis capability gaps remain unchanged because expanding Tool Catalog was out of scope.

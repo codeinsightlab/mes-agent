@@ -2551,3 +2551,159 @@ Result:
 
 - `reportUnknownVariableType` warnings are no longer pyright errors, but not fully eliminated. Clearing the remaining warnings requires typed repository row DTOs, typed SQLAlchemy query result adapters, and additional wrappers around LangChain/sqlglot dynamic APIs.
 - `JsonValue` intentionally uses a non-recursive `object` boundary because Pydantic 2 on the current Python 3.13 runtime recursed on implicit recursive JSON aliases during model schema generation.
+
+## 2026-07-09 - `/api/agent/run` Known Tool Chain Repair
+
+### Task Goal
+
+审查并修复 `/api/agent/run` 真实调用链路中，已知热处理 Tool 问题无法正常执行的问题。复现场景为：
+
+```text
+TRACE-HTR-K2-T-FG-001现在在哪一步
+```
+
+修复目标是保持现有 Orchestrator / Planner / ExecutionFeedbackLoop / PlanExecutionAdapter / ToolRegistry 架构不变，让完整参数 Tool 查询成功，不再显示 `unknown` 或 `Plan lacks required parameters or facts to execute completely.`。
+
+### Protocol Audit Result
+
+实际链路和字段如下：
+
+```text
+request.message
+-> PlannerRequest.user_query
+-> PlannerPlan.steps[]
+-> PlanStep.name
+-> PlanStep.args
+-> PlanExecutionAdapter._execute_tool_step
+-> ToolRegistry.execute(name, arguments)
+-> ExecutionObservation
+-> AgentRunResult.final_result/debug/execution_trace
+```
+
+确认结果：
+
+- Planner Tool step 当前真实协议是 `name + args`，不是长期双写 `capability_name + arguments`。
+- PlanExecutionAdapter 实际读取 `step.name` 作为 Tool 名称，读取 `step.args` 作为 Tool 参数。
+- ToolRegistry 入口为 `execute(name, arguments)`。
+- 热处理 Tool 必须具备 `record_id`、`record_no`、`object_id` 三者之一。
+- 参数没有在 Adapter 层丢失；根因是 Planner 对已知 Tool 问法覆盖不足，导致没有生成可执行 Tool step。
+
+### Root Cause
+
+Planner 的确定性 Tool 识别规则比 Tool Catalog / 旧 Tool Matcher 覆盖更窄：
+
+- `现在在哪一步` 未命中 `heat_current_stage`
+- `分配到了哪个炉子` 未命中 `heat_equipment_assignment`
+- `包含哪些批次` 未命中 `heat_batch_products`
+
+缺参场景还存在次级问题：Adapter 会把空参数传入 ToolRegistry，再把参数校验异常归一成通用 missing_param。现已改为在 Adapter 执行 Tool 前按 capability.required_argument_groups 做前置校验。
+
+### Modified Files
+
+- `backend/app/agent/planner/planner.py`
+- `backend/app/agent/orchestrator/agent_orchestrator.py`
+- `backend/app/agent/execution_loop.py`
+- `backend/tests/test_agent_planner.py`
+- `backend/tests/test_agent_orchestrator.py`
+- `backend/tests/test_analytics_report.py`
+- `backend/results/agent_os_v1_test_report.json`
+- `docs/agent-tool-text-to-sql-routing-v1.md`
+- `log/codex-task-log.md`
+
+### Key Changes
+
+- Planner 新增对三个已注册热处理 Tool 的最小语义映射：
+  - current stage: `到哪`、`哪一步`、`状态`、`处理完`、`结束`、`阶段`
+  - equipment assignment: `分配`、`哪个炉子`、`哪台`、`绑定设备`、`使用什么设备`
+  - batch products: `包含`、`批次`、`绑定`、`产品`
+- SQL 意图在 Tool 意图前判断，避免统计类问题被 Tool 关键词抢走。
+- Adapter 在调用 ToolRegistry 前检查必需参数组；缺少记录标识时返回稳定 partial/missing_param，不执行 Tool，也不进入 SQL。
+- 增加最小 INFO 诊断日志：planner intent、step type、capability name、argument keys、missing fields、observation status、replan decision、final status。
+- 日志不记录 API Key、数据库密码、Authorization、完整 SQL 结果或敏感原始数据。
+
+### Added / Updated Tests
+
+- Planner 完整 Tool 参数：`TRACE-HTR-K2-T-FG-001现在在哪一步`
+- Planner 设备 Tool：`TRACE-HTR-K2-T-FG-001分配到了哪个炉子`
+- Planner 批次 Tool：`TRACE-HTR-K2-T-FG-001包含哪些批次`
+- Planner 语义优先级：`这个炉子处理完了吗 TRACE-HTR-K2-T-FG-001` 保持 `heat_current_stage`
+- Orchestrator 完整 Tool：ToolRegistry 被调用一次，success，不 replan
+- Orchestrator 缺参 Tool：不执行 ToolRegistry，不进入 SQL，partial/missing_param，最多 2 loop
+- Orchestrator 设备/批次 Tool：success，不 replan
+- 跨请求隔离：Tool 完整参数、Tool 缺参、SQL 连续请求 trace 和参数不串
+
+### Real API Results
+
+短时启动后端：
+
+```text
+cd backend && .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+通过 `POST /api/agent/run` 验证：
+
+| Input | Result |
+| --- | --- |
+| `TRACE-HTR-K2-T-FG-001现在在哪一步` | HTTP 200, intent=`tool`, capability=`heat_current_stage`, args.record_no 完整, final_status=`success`, route=`tool`, replan=`false`, planner_calls=`1`, execution_loops=`1` |
+| `这个热处理现在到哪一步` | HTTP 200, intent=`tool`, capability=`heat_current_stage`, args=`{}`, final_status=`partial`, route=`tool`, replan=`true`, error message=`缺少热处理记录标识，请提供 record_no、record_id 或 object_id。` |
+| `TRACE-HTR-K2-T-FG-001分配到了哪个炉子` | HTTP 200, capability=`heat_equipment_assignment`, args.record_no 完整, final_status=`success`, replan=`false` |
+| `TRACE-HTR-K2-T-FG-001包含哪些批次` | HTTP 200, capability=`heat_batch_products`, args.record_no 完整, final_status=`success`, replan=`false` |
+| `统计本月每台热处理设备处理了多少批次` | HTTP 200, intent=`sql`, route=`sql`, final_status=`success`, replan=`false` |
+
+### Frontend Browser Verification
+
+短时启动前端：
+
+```text
+cd frontend && npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+浏览器验证：
+
+- 页面健康检查显示 `连接成功`。
+- 在前端输入 `TRACE-HTR-K2-T-FG-001现在在哪一步` 并点击 `执行`。
+- 页面展示 `Tool Result`，capability=`heat_current_stage`。
+- Tool Result JSON 包含 `record_no=TRACE-HTR-K2-T-FG-001`、`status=FINISHED`、`status_name=已完成`。
+- 页面未出现 `unknown`。
+- 页面未出现 `Plan lacks required parameters`。
+
+临时前后端服务已停止。
+
+### Validation Commands And Results
+
+```text
+cd backend && .venv/bin/python -m compileall app scripts
+```
+
+Result: passed.
+
+```text
+cd backend && .venv/bin/pytest tests/test_agent_planner.py tests/test_agent_orchestrator.py tests/test_execution_loop.py
+```
+
+Result: `23 passed`.
+
+```text
+cd backend && .venv/bin/pytest
+```
+
+Result: `118 passed, 157 warnings`.
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_os_v1_tests.py
+```
+
+Result: `15 passed`, `0 failed`, `SYSTEM STATUS = PASS`.
+
+```text
+cd frontend && npm run build
+```
+
+Result: passed, Vite built successfully.
+
+### Open Items And Risks
+
+- Planner 仍是面向当前有限 Catalog 的确定性短语映射，不是通用 Tool Matcher 替代品。
+- 缺少记录标识的 Tool 请求仍会按 ExecutionFeedbackLoop V1 触发一次受控 replan；最终保持 partial，不进 SQL，不伪造结果。
+- 混合诊断中未注册的 `production_status` / `quality_status` 能力缺口未处理，本轮禁止扩 Tool，因此保持现状。
+- `backend/tests/test_analytics_report.py` 的测试日期改为当前日期动态生成，避免报告窗口随系统日期变化导致全量测试漂移。

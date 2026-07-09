@@ -39,10 +39,10 @@ class DebuggablePlanner:
 
         if _is_mixed_diagnostic_query(query):
             return self._mixed_diagnostic_plan(query, catalog_names, history)
-        if _is_tool_query(query):
-            return self._tool_plan(query, catalog_names, history)
         if _is_sql_query(query):
             return self._sql_plan(query, history)
+        if _is_tool_query(query):
+            return self._tool_plan(query, catalog_names, history)
         return self._unknown_plan(query, history)
 
     def _tool_plan(
@@ -52,34 +52,36 @@ class DebuggablePlanner:
         history: list[ExecutionHistoryItem],
     ) -> PlannerPlan:
         record_no = _extract_record_no(query)
+        capability_name = _tool_capability_name(query) or "heat_current_stage"
+        tool_label = _tool_label(capability_name)
         step = PlanStep(
             step_id=1,
             type="tool",
-            name="heat_current_stage",
-            query_goal="查询热处理记录当前阶段、状态或是否已完成。",
+            name=capability_name,
+            query_goal=tool_label["query_goal"],
             args={"record_no": record_no} if record_no else {},
-            reason="用户询问'到哪了/状态/是否完成'，该语义由 heat_current_stage Tool 负责。",
+            reason=tool_label["reason"],
             dependency=[],
-            expected_output="包含 found、record_no、status、status_name 的 Tool 结构化结果。",
+            expected_output=tool_label["expected_output"],
         )
         _apply_history_reuse(step, history)
         confidence = 0.9 if record_no else 0.72
         risk = "主要风险是 record_no 未抽取或抽取错误。" if record_no else "缺少记录编号，执行层可能进入澄清。"
         if step.name not in catalog_names:
-            risk += " 当前 Tool Catalog 未注册 heat_current_stage。"
+            risk += f" 当前 Tool Catalog 未注册 {capability_name}。"
             confidence = min(confidence, 0.45)
 
         return PlannerPlan(
             intent="tool",
-            goal="确认指定热处理记录的当前状态。",
+            goal=tool_label["goal"],
             steps=[step],
             execution_plan=ExecutionPlanPolicy(
-                stop_condition="when heat_current_stage returns a found status or asks for a missing record identifier"
+                stop_condition=f"when {capability_name} returns a found result or asks for a missing record identifier"
             ),
             confidence=confidence,
             debug_trace=DebugTrace(
                 classification_reason="问题包含热处理阶段/状态类表达，适合 Tool 查询。",
-                tool_selection_reason="heat_current_stage 是当前 Catalog 中负责热处理当前阶段和完成状态的 Tool。",
+                tool_selection_reason=f"{capability_name} 是当前 Catalog 中匹配该热处理事实的 Tool。",
                 sql_intent_reason="不需要聚合、统计或自由条件查询，因此不进入 SQL。",
                 risk_assessment=risk,
             ),
@@ -376,7 +378,41 @@ def _default_tool_catalog() -> list[JsonObject]:
 
 
 def _is_tool_query(query: str) -> bool:
-    return any(keyword in query for keyword in ["到哪", "状态", "处理完", "结束", "阶段"])
+    return _tool_capability_name(query) is not None
+
+
+def _tool_capability_name(query: str) -> str | None:
+    if any(keyword in query for keyword in ["到哪", "哪一步", "状态", "处理完", "结束", "阶段"]):
+        return "heat_current_stage"
+    if any(keyword in query for keyword in ["分配", "哪个炉子", "哪台", "绑定设备", "使用什么设备", "设备编码", "设备名称"]):
+        return "heat_equipment_assignment"
+    if any(keyword in query for keyword in ["包含", "批次", "绑定", "产品"]):
+        return "heat_batch_products"
+    return None
+
+
+def _tool_label(capability_name: str) -> dict[str, str]:
+    labels = {
+        "heat_equipment_assignment": {
+            "goal": "确认指定热处理记录分配的设备或炉子。",
+            "query_goal": "查询热处理记录分配设备和设备占用情况。",
+            "reason": "用户询问分配炉子、设备或哪台设备，该语义由 heat_equipment_assignment Tool 负责。",
+            "expected_output": "包含 found、record_no、equipment_id、equipment_code、equipment_name 的 Tool 结构化结果。",
+        },
+        "heat_batch_products": {
+            "goal": "确认指定热处理记录包含的产品和批次。",
+            "query_goal": "查询热处理记录绑定产品、批次和数量。",
+            "reason": "用户询问包含哪些批次或绑定产品，该语义由 heat_batch_products Tool 负责。",
+            "expected_output": "包含 found、record_no、items、relation_type 的 Tool 结构化结果。",
+        },
+        "heat_current_stage": {
+            "goal": "确认指定热处理记录的当前状态。",
+            "query_goal": "查询热处理记录当前阶段、状态或是否已完成。",
+            "reason": "用户询问'到哪了/哪一步/状态/是否完成'，该语义由 heat_current_stage Tool 负责。",
+            "expected_output": "包含 found、record_no、status、status_name 的 Tool 结构化结果。",
+        },
+    }
+    return labels[capability_name]
 
 
 def _is_sql_query(query: str) -> bool:

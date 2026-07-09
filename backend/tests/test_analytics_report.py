@@ -21,6 +21,10 @@ from app.api.analytics_report import get_report_generator
 from app.main import app
 
 
+REPORT_DATE = date.today()
+REPORT_DAY = REPORT_DATE.isoformat()
+
+
 class OneShotExecutionLayer:
     def execute(self, plan):
         return ExecutionObservation(
@@ -151,10 +155,14 @@ def seed_analytics_data(engine):
                     trace_id, user_query, plan_json, final_result, status, loop_depth, created_at
                 )
                 VALUES
-                ('raw-trace-1', 'TRACE-HTR-K2-T-FG-001到哪了', '{"intent":"tool"}', '{"status":"success"}', 'success', 1, '2026-07-06 08:00:00'),
-                ('raw-trace-2', '统计本月每台设备产量', '{"intent":"sql"}', '{"status":"failed"}', 'failed', 2, '2026-07-06 09:00:00')
+                ('raw-trace-1', 'TRACE-HTR-K2-T-FG-001到哪了', '{"intent":"tool"}', '{"status":"success"}', 'success', 1, :trace_one_at),
+                ('raw-trace-2', '统计本月每台设备产量', '{"intent":"sql"}', '{"status":"failed"}', 'failed', 2, :trace_two_at)
                 """
-            )
+            ),
+            {
+                "trace_one_at": f"{REPORT_DAY} 08:00:00",
+                "trace_two_at": f"{REPORT_DAY} 09:00:00",
+            },
         )
         connection.execute(
             text(
@@ -163,15 +171,24 @@ def seed_analytics_data(engine):
                     event_type, trace_id, step_id, component, input_json, output_json, latency_ms, timestamp, created_at
                 )
                 VALUES
-                ('LOOP_START', 'raw-trace-1', NULL, 'execution_loop', '{}', '{}', 0, '2026-07-06 08:00:00', '2026-07-06 08:00:00'),
-                ('TOOL_MATCH', 'raw-trace-1', 1, 'heat_current_stage', '{}', '{}', 1, '2026-07-06 08:00:01', '2026-07-06 08:00:01'),
-                ('TOOL_EXECUTE_SUCCESS', 'raw-trace-1', 1, 'heat_current_stage', '{}', '{}', 100, '2026-07-06 08:00:02', '2026-07-06 08:00:02'),
-                ('SQL_GENERATE', 'raw-trace-2', 1, 'text_to_sql', '{}', '{}', 20, '2026-07-06 09:00:00', '2026-07-06 09:00:00'),
-                ('SQL_VALIDATE', 'raw-trace-2', 1, 'text_to_sql', '{}', '{}', 20, '2026-07-06 09:00:01', '2026-07-06 09:00:01'),
-                ('SQL_EXECUTE_FAIL', 'raw-trace-2', 1, 'text_to_sql', '{}', '{}', 300, '2026-07-06 09:00:02', '2026-07-06 09:00:02'),
-                ('REPLAN_TRIGGER', 'raw-trace-2', NULL, 'execution_loop', '{}', '{}', 1, '2026-07-06 09:00:03', '2026-07-06 09:00:03')
+                ('LOOP_START', 'raw-trace-1', NULL, 'execution_loop', '{}', '{}', 0, :event_080000, :event_080000),
+                ('TOOL_MATCH', 'raw-trace-1', 1, 'heat_current_stage', '{}', '{}', 1, :event_080001, :event_080001),
+                ('TOOL_EXECUTE_SUCCESS', 'raw-trace-1', 1, 'heat_current_stage', '{}', '{}', 100, :event_080002, :event_080002),
+                ('SQL_GENERATE', 'raw-trace-2', 1, 'text_to_sql', '{}', '{}', 20, :event_090000, :event_090000),
+                ('SQL_VALIDATE', 'raw-trace-2', 1, 'text_to_sql', '{}', '{}', 20, :event_090001, :event_090001),
+                ('SQL_EXECUTE_FAIL', 'raw-trace-2', 1, 'text_to_sql', '{}', '{}', 300, :event_090002, :event_090002),
+                ('REPLAN_TRIGGER', 'raw-trace-2', NULL, 'execution_loop', '{}', '{}', 1, :event_090003, :event_090003)
                 """
-            )
+            ),
+            {
+                "event_080000": f"{REPORT_DAY} 08:00:00",
+                "event_080001": f"{REPORT_DAY} 08:00:01",
+                "event_080002": f"{REPORT_DAY} 08:00:02",
+                "event_090000": f"{REPORT_DAY} 09:00:00",
+                "event_090001": f"{REPORT_DAY} 09:00:01",
+                "event_090002": f"{REPORT_DAY} 09:00:02",
+                "event_090003": f"{REPORT_DAY} 09:00:03",
+            },
         )
         connection.execute(
             text(
@@ -180,10 +197,14 @@ def seed_analytics_data(engine):
                     trace_id, failure_type, source_layer, error_code, summary, detail_json, created_at
                 )
                 VALUES
-                ('raw-trace-2', 'sql_error', 'sql', 'unknown_column', 'SQL validation failed.', '{}', '2026-07-06 09:00:04'),
-                ('raw-trace-2', 'tool_miss', 'tool', 'tool_miss', 'Tool miss.', '{}', '2026-07-06 09:00:05')
+                ('raw-trace-2', 'sql_error', 'sql', 'unknown_column', 'SQL validation failed.', '{}', :failure_one_at),
+                ('raw-trace-2', 'tool_miss', 'tool', 'tool_miss', 'Tool miss.', '{}', :failure_two_at)
                 """
-            )
+            ),
+            {
+                "failure_one_at": f"{REPORT_DAY} 09:00:04",
+                "failure_two_at": f"{REPORT_DAY} 09:00:05",
+            },
         )
 
 
@@ -197,22 +218,22 @@ def generator_for(engine, tmp_path):
 def test_report_generator_creates_three_markdown_reports_from_sql(tmp_path):
     generator = generator_for(sqlite_engine(), tmp_path)
 
-    artifacts = generator.generate_daily_reports(date(2026, 7, 6))
+    artifacts = generator.generate_daily_reports(REPORT_DATE)
 
     paths = {artifact.path for artifact in artifacts}
-    assert tmp_path / "daily" / "2026-07-06.md" in paths
-    assert tmp_path / "failure" / "2026-07-06.md" in paths
+    assert tmp_path / "daily" / f"{REPORT_DAY}.md" in paths
+    assert tmp_path / "failure" / f"{REPORT_DAY}.md" in paths
     assert tmp_path / "health" / "latest.md" in paths
-    assert "# Agent System Daily Report" in (tmp_path / "daily" / "2026-07-06.md").read_text()
-    assert "# Failure Analysis Report" in (tmp_path / "failure" / "2026-07-06.md").read_text()
+    assert "# Agent System Daily Report" in (tmp_path / "daily" / f"{REPORT_DAY}.md").read_text()
+    assert "# Failure Analysis Report" in (tmp_path / "failure" / f"{REPORT_DAY}.md").read_text()
     assert "# System Health Report" in (tmp_path / "health" / "latest.md").read_text()
 
 
 def test_report_generation_is_idempotent_and_excludes_raw_trace_ids(tmp_path):
     generator = generator_for(sqlite_engine(), tmp_path)
 
-    first = generator.generate("daily", date(2026, 7, 6))
-    second = generator.generate("daily", date(2026, 7, 6))
+    first = generator.generate("daily", REPORT_DATE)
+    second = generator.generate("daily", REPORT_DATE)
 
     assert first.path == second.path
     assert first.content == second.content
@@ -258,8 +279,8 @@ def test_metrics_snapshot_uses_sql_and_writes_snapshot():
     service = MetricsSnapshotService(engine)
 
     snapshot = service.create_snapshot(
-        window_start=datetime(2026, 7, 6, 0, 0, 0),
-        window_end=datetime(2026, 7, 7, 0, 0, 0),
+        window_start=datetime.combine(REPORT_DATE, datetime.min.time()),
+        window_end=datetime.combine(REPORT_DATE, datetime.max.time()),
     )
 
     assert snapshot["tool_hit_rate"] == 1.0

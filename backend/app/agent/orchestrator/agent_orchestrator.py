@@ -94,6 +94,15 @@ class AgentOrchestrator:
             return result
 
         result = _normalize_loop_result(trace_id, loop_result)
+        logger.info(
+            "Agent run completed trace_id=%s planner_intent=%s final_status=%s replan=%s planner_calls=%s execution_loops=%s",
+            trace_id,
+            loop_result.initial_plan.intent,
+            result.final_result.status,
+            loop_result.attempts > 1,
+            loop_result.attempts,
+            loop_result.attempts,
+        )
         self._record_success_trace(request, loop_result, result, elapsed_ms(started_at))
         return result
 
@@ -192,6 +201,7 @@ class PlanExecutionAdapter:
 
     def execute(self, plan: PlannerPlan) -> ExecutionObservation:
         if not plan.steps:
+            logger.info("PlanExecutionAdapter received empty plan intent=%s", plan.intent)
             return ExecutionObservation(
                 status="fail",
                 observation=ObservationFacts(
@@ -203,7 +213,22 @@ class PlanExecutionAdapter:
 
         step_results: list[JsonObject] = []
         for step in plan.steps:
+            logger.info(
+                "PlanExecutionAdapter executing step step_id=%s step_type=%s capability_name=%s argument_keys=%s",
+                step.step_id,
+                step.type,
+                step.name,
+                sorted(step.args.keys()),
+            )
             observation = self._execute_step(plan, step)
+            logger.info(
+                "PlanExecutionAdapter step completed step_id=%s step_type=%s capability_name=%s observation_status=%s missing_fields=%s",
+                step.step_id,
+                step.type,
+                step.name,
+                observation.status,
+                observation.observation.missing_facts,
+            )
             step_results.append(
                 {
                     "step_id": step.step_id,
@@ -267,6 +292,38 @@ class PlanExecutionAdapter:
                     failure_type="missing_param",
                 ),
                 execution_quality=ExecutionQuality(tool_hit=False),
+            )
+        capability = self._registry.get_capability(step.name)
+        if capability is None:
+            return ExecutionObservation(
+                status="fail",
+                data={"error": f"Unknown capability: {step.name}."},
+                observation=ObservationFacts(
+                    missing_facts=[step.name],
+                    decision_signals=["tool_failed"],
+                    failure_type="tool_miss",
+                ),
+                execution_quality=ExecutionQuality(tool_hit=False),
+                trace=ExecutionTrace(tool_name=step.name),
+            )
+        missing_fields = _missing_required_fields(
+            capability.required_argument_groups,
+            step.args,
+        )
+        if missing_fields:
+            return ExecutionObservation(
+                status="partial",
+                data={
+                    "error": "缺少热处理记录标识，请提供 record_no、record_id 或 object_id。",
+                    "missing_fields": missing_fields,
+                },
+                observation=ObservationFacts(
+                    missing_facts=missing_fields,
+                    decision_signals=["tool_missing_required_arguments"],
+                    failure_type="missing_param",
+                ),
+                execution_quality=ExecutionQuality(tool_hit=False),
+                trace=ExecutionTrace(tool_name=step.name),
             )
         try:
             data = self._registry.execute(step.name, step.args)
@@ -439,9 +496,16 @@ def _normalized_error(
         "execution": "execution_error",
         "unknown": "execution_error",
     }
+    if (
+        failure_report.failure_type == "missing_param"
+        and any(_is_record_identifier_missing(fact) for fact in failure_report.missing_facts)
+    ):
+        message = "缺少热处理记录标识，请提供 record_no、record_id 或 object_id。"
+    else:
+        message = failure_report.reason
     return NormalizedError(
         error_type=mapping.get(failure_report.source_layer, "execution_error"),
-        message=failure_report.reason,
+        message=message,
         recoverable=failure_report.failure_type
         in {"tool_miss", "missing_param", "schema_gap"},
     )
@@ -469,6 +533,26 @@ def _sql_missing_facts(error_code: str | None) -> list[str]:
     if error_code == "unbounded_scan":
         return ["query_filter"]
     return []
+
+
+def _missing_required_fields(
+    required_argument_groups: list[list[str]],
+    arguments: JsonObject,
+) -> list[str]:
+    for group in required_argument_groups:
+        if all(arguments.get(field) for field in group):
+            return []
+    if len(required_argument_groups) > 1 and all(len(group) == 1 for group in required_argument_groups):
+        return ["record identifier: record_id or record_no or object_id"]
+    return [field for field in required_argument_groups[0] if not arguments.get(field)]
+
+
+def _is_record_identifier_missing(fact: str) -> bool:
+    return (
+        "record identifier" in fact
+        or fact.endswith(".args")
+        or fact in {"record_id", "record_no", "object_id"}
+    )
 
 
 def _collect_used_tables(step_results: list[JsonObject]) -> list[str]:

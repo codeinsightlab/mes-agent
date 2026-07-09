@@ -13,7 +13,7 @@ def plan_for(message, history=None):
 
 
 def test_planner_single_tool_query_creates_executable_tool_step():
-    plan = plan_for("TRACE-HTR-K2-T-FG-001到哪了")
+    plan = plan_for("TRACE-HTR-K2-T-FG-001现在在哪一步")
 
     assert plan.intent == "tool"
     assert len(plan.steps) == 1
@@ -23,6 +23,33 @@ def test_planner_single_tool_query_creates_executable_tool_step():
     assert step.args == {"record_no": "TRACE-HTR-K2-T-FG-001"}
     assert step.reason
     assert plan.debug_trace.tool_selection_reason
+
+
+def test_planner_equipment_tool_query_creates_equipment_step():
+    plan = plan_for("TRACE-HTR-K2-T-FG-001分配到了哪个炉子")
+
+    assert plan.intent == "tool"
+    step = plan.steps[0]
+    assert step.name == "heat_equipment_assignment"
+    assert step.args == {"record_no": "TRACE-HTR-K2-T-FG-001"}
+
+
+def test_planner_completion_query_with_furnace_word_keeps_current_stage_tool():
+    plan = plan_for("这个炉子处理完了吗 TRACE-HTR-K2-T-FG-001")
+
+    assert plan.intent == "tool"
+    step = plan.steps[0]
+    assert step.name == "heat_current_stage"
+    assert step.args == {"record_no": "TRACE-HTR-K2-T-FG-001"}
+
+
+def test_planner_batch_tool_query_creates_batch_step():
+    plan = plan_for("TRACE-HTR-K2-T-FG-001包含哪些批次")
+
+    assert plan.intent == "tool"
+    step = plan.steps[0]
+    assert step.name == "heat_batch_products"
+    assert step.args == {"record_no": "TRACE-HTR-K2-T-FG-001"}
 
 
 def test_planner_sql_query_creates_single_sql_step():
