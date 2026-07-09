@@ -52,10 +52,13 @@ class AgentMetricsSnapshot(Base):
     __tablename__ = "agent_metrics_snapshot"
 
     id: Mapped[int] = mapped_column(BIGINT(unsigned=True), primary_key=True, autoincrement=True)
+    total_requests: Mapped[int] = mapped_column(INTEGER(unsigned=True), nullable=False, default=0)
+    success_rate: Mapped[float] = mapped_column(nullable=False, default=0)
     tool_hit_rate: Mapped[float] = mapped_column(nullable=False)
     sql_success_rate: Mapped[float] = mapped_column(nullable=False)
     replan_rate: Mapped[float] = mapped_column(nullable=False)
     avg_loop_depth: Mapped[float] = mapped_column(nullable=False)
+    execution_error_rate: Mapped[float] = mapped_column(nullable=False, default=0)
     window_start: Mapped[datetime] = mapped_column(DATETIME(fsp=3), nullable=False)
     window_end: Mapped[datetime] = mapped_column(DATETIME(fsp=3), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DATETIME(fsp=3), nullable=False)

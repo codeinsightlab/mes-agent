@@ -37,10 +37,13 @@ class TraceReplayResponse(BaseModel):
     trace_id: str
     user_query: str
     plan_json: JsonObject
+    execution_trace: list[JsonObject]
     final_result: JsonObject
     status: str
     loop_depth: int
     created_at: str
+    events: list[JsonObject]
+    failures: list[JsonObject]
 
 
 def close_report_generator() -> None:
@@ -107,14 +110,51 @@ def replay_trace(
             status_code=404,
             detail={"error": "trace_not_found", "message": "Trace not found."},
         )
+    events = [
+        {
+            "event_type": event["event_type"],
+            "trace_id": event["trace_id"],
+            "step_id": event["step_id"],
+            "component": event["component"],
+            "input_json": _json_dict(event["input_json"]),
+            "output_json": _json_dict(event["output_json"]),
+            "latency_ms": event["latency_ms"],
+            "timestamp": event["timestamp"].isoformat(),
+        }
+        for event in repository.list_events(trace_id)
+    ]
+    failures = [
+        {
+            "trace_id": failure["trace_id"],
+            "failure_type": failure["failure_type"],
+            "source_layer": failure["source_layer"],
+            "error_code": failure["error_code"],
+            "summary": failure["summary"],
+            "detail_json": _json_dict(failure["detail_json"]),
+            "created_at": failure["created_at"].isoformat(),
+        }
+        for failure in repository.list_failures(trace_id)
+    ]
     return TraceReplayResponse(
         trace_id=trace["trace_id"],
         user_query=trace["user_query"],
         plan_json=_json_dict(trace["plan_json"]),
+        execution_trace=[
+            {
+                "event_type": event["event_type"],
+                "step_id": event["step_id"],
+                "component": event["component"],
+                "result": event["output_json"],
+            }
+            for event in events
+            if event["event_type"].endswith("_SUCCESS") or event["event_type"].endswith("_FAIL")
+        ],
         final_result=_json_dict(trace["final_result"]),
         status=trace["status"],
         loop_depth=int(trace["loop_depth"]),
         created_at=str(trace["created_at"]),
+        events=events,
+        failures=failures,
     )
 
 

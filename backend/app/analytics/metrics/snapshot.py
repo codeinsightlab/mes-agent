@@ -14,10 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 class MetricsSnapshotPayload(TypedDict):
+    total_requests: int
+    success_rate: float
     tool_hit_rate: float
     sql_success_rate: float
     replan_rate: float
     avg_loop_depth: float
+    execution_error_rate: float
     window_start: datetime
     window_end: datetime
     created_at: datetime
@@ -39,6 +42,7 @@ class MetricsSnapshotService:
                     text(
                         """
                         SELECT
+                          COUNT(DISTINCT trace_id) AS traced_requests,
                           COALESCE(1.0 * SUM(CASE WHEN event_type='TOOL_EXECUTE_SUCCESS' THEN 1 ELSE 0 END)
                             / NULLIF(SUM(CASE WHEN event_type IN ('TOOL_EXECUTE_SUCCESS', 'TOOL_EXECUTE_FAIL') THEN 1 ELSE 0 END), 0), 0) AS tool_hit_rate,
                           COALESCE(1.0 * SUM(CASE WHEN event_type='SQL_EXECUTE_SUCCESS' THEN 1 ELSE 0 END)
@@ -52,23 +56,45 @@ class MetricsSnapshotService:
                     ),
                     {"window_start": window_start, "window_end": window_end},
                 ).mappings().one()
-                avg_loop_depth = connection.execute(
+                trace_metrics = connection.execute(
                     text(
                         """
-                        SELECT COALESCE(AVG(loop_depth), 0) AS avg_loop_depth
+                        SELECT
+                          COUNT(*) AS total_requests,
+                          COALESCE(1.0 * SUM(CASE WHEN status='success' THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0), 0) AS success_rate,
+                          COALESCE(AVG(loop_depth), 0) AS avg_loop_depth
                         FROM agent_trace
                         WHERE created_at >= :window_start
                           AND created_at < :window_end
                         """
                     ),
                     {"window_start": window_start, "window_end": window_end},
+                ).mappings().one()
+                execution_failures = connection.execute(
+                    text(
+                        """
+                        SELECT COUNT(*) AS execution_failure_count
+                        FROM agent_failure
+                        WHERE created_at >= :window_start
+                          AND created_at < :window_end
+                          AND (source_layer='execution' OR failure_type='execution_error')
+                        """
+                    ),
+                    {"window_start": window_start, "window_end": window_end},
                 ).scalar_one()
+                total_requests = int(trace_metrics["total_requests"] or 0)
                 now = datetime.now(UTC).replace(tzinfo=None)
                 payload: MetricsSnapshotPayload = {
+                    "total_requests": total_requests,
+                    "success_rate": round(float(trace_metrics["success_rate"] or 0), 4),
                     "tool_hit_rate": round(float(metrics["tool_hit_rate"] or 0), 4),
                     "sql_success_rate": round(float(metrics["sql_success_rate"] or 0), 4),
                     "replan_rate": round(float(metrics["replan_rate"] or 0), 4),
-                    "avg_loop_depth": round(float(avg_loop_depth or 0), 4),
+                    "avg_loop_depth": round(float(trace_metrics["avg_loop_depth"] or 0), 4),
+                    "execution_error_rate": round(
+                        int(execution_failures or 0) / total_requests if total_requests else 0,
+                        4,
+                    ),
                     "window_start": window_start,
                     "window_end": window_end,
                     "created_at": now,
@@ -77,19 +103,25 @@ class MetricsSnapshotService:
                     text(
                         """
                         INSERT INTO agent_metrics_snapshot (
+                            total_requests,
+                            success_rate,
                             tool_hit_rate,
                             sql_success_rate,
                             replan_rate,
                             avg_loop_depth,
+                            execution_error_rate,
                             window_start,
                             window_end,
                             created_at
                         )
                         VALUES (
+                            :total_requests,
+                            :success_rate,
                             :tool_hit_rate,
                             :sql_success_rate,
                             :replan_rate,
                             :avg_loop_depth,
+                            :execution_error_rate,
                             :window_start,
                             :window_end,
                             :created_at

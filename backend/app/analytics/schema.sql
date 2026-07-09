@@ -47,10 +47,13 @@ CREATE TABLE IF NOT EXISTS agent_failure (
 
 CREATE TABLE IF NOT EXISTS agent_metrics_snapshot (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  total_requests INT UNSIGNED NOT NULL DEFAULT 0,
+  success_rate DECIMAL(10,4) NOT NULL DEFAULT 0,
   tool_hit_rate DECIMAL(10,4) NOT NULL,
   sql_success_rate DECIMAL(10,4) NOT NULL,
   replan_rate DECIMAL(10,4) NOT NULL,
   avg_loop_depth DECIMAL(10,4) NOT NULL,
+  execution_error_rate DECIMAL(10,4) NOT NULL DEFAULT 0,
   window_start DATETIME(3) NOT NULL,
   window_end DATETIME(3) NOT NULL,
   created_at DATETIME(3) NOT NULL,

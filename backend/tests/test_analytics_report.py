@@ -133,10 +133,13 @@ def create_analytics_tables(engine):
                 """
                 CREATE TABLE agent_metrics_snapshot (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    total_requests INTEGER NOT NULL DEFAULT 0,
+                    success_rate REAL NOT NULL DEFAULT 0,
                     tool_hit_rate REAL NOT NULL,
                     sql_success_rate REAL NOT NULL,
                     replan_rate REAL NOT NULL,
                     avg_loop_depth REAL NOT NULL,
+                    execution_error_rate REAL NOT NULL DEFAULT 0,
                     window_start DATETIME NOT NULL,
                     window_end DATETIME NOT NULL,
                     created_at DATETIME NOT NULL
@@ -272,6 +275,13 @@ def test_trace_replay_reads_agent_trace_by_trace_id(tmp_path):
     payload = response.json()
     assert payload["trace_id"] == "raw-trace-1"
     assert payload["plan_json"] == {"intent": "tool"}
+    assert payload["execution_trace"][-1]["event_type"] == "TOOL_EXECUTE_SUCCESS"
+    assert [event["event_type"] for event in payload["events"]] == [
+        "LOOP_START",
+        "TOOL_MATCH",
+        "TOOL_EXECUTE_SUCCESS",
+    ]
+    assert payload["failures"] == []
 
 
 def test_metrics_snapshot_uses_sql_and_writes_snapshot():
@@ -283,10 +293,13 @@ def test_metrics_snapshot_uses_sql_and_writes_snapshot():
         window_end=datetime.combine(REPORT_DATE, datetime.max.time()),
     )
 
+    assert snapshot["total_requests"] == 2
+    assert snapshot["success_rate"] == 0.5
     assert snapshot["tool_hit_rate"] == 1.0
     assert snapshot["sql_success_rate"] == 0.0
     assert snapshot["replan_rate"] == 0.5
     assert snapshot["avg_loop_depth"] == 1.5
+    assert snapshot["execution_error_rate"] == 0.0
     with engine.connect() as connection:
         count = connection.execute(text("SELECT COUNT(*) FROM agent_metrics_snapshot")).scalar_one()
     assert count == 1

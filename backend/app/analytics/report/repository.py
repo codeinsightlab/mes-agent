@@ -7,6 +7,8 @@ from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.analytics.report.models import (
+    AnalyticsEventRecord,
+    AnalyticsFailureRecord,
     AnalyticsReportData,
     AnalyticsTraceRecord,
     AnalyticsWindow,
@@ -97,6 +99,73 @@ class SqlAlchemyAnalyticsRepository:
                 }
         except SQLAlchemyError as exc:
             raise PersistenceError("Failed to replay analytics trace.") from exc
+
+    def list_events(self, trace_id: str) -> list[AnalyticsEventRecord]:
+        try:
+            with self._engine.connect() as connection:
+                rows = connection.execute(
+                    text(
+                        """
+                        SELECT event_type, trace_id, step_id, component, input_json, output_json, latency_ms, timestamp
+                        FROM agent_event
+                        WHERE trace_id = :trace_id
+                        ORDER BY timestamp ASC, id ASC
+                        """
+                    ),
+                    {"trace_id": trace_id},
+                ).mappings().all()
+                return [
+                    {
+                        "event_type": str(row["event_type"]),
+                        "trace_id": str(row["trace_id"]),
+                        "step_id": int(row["step_id"]) if row["step_id"] is not None else None,
+                        "component": str(row["component"]),
+                        "input_json": cast(JsonObject | str | None, row["input_json"]),
+                        "output_json": cast(JsonObject | str | None, row["output_json"]),
+                        "latency_ms": (
+                            int(row["latency_ms"]) if row["latency_ms"] is not None else None
+                        ),
+                        "timestamp": _datetime_value(row["timestamp"]),
+                    }
+                    for row in rows
+                ]
+        except SQLAlchemyError as exc:
+            raise PersistenceError("Failed to replay analytics events.") from exc
+
+    def list_failures(self, trace_id: str) -> list[AnalyticsFailureRecord]:
+        try:
+            with self._engine.connect() as connection:
+                rows = connection.execute(
+                    text(
+                        """
+                        SELECT trace_id, failure_type, source_layer, error_code, summary, detail_json, created_at
+                        FROM agent_failure
+                        WHERE trace_id = :trace_id
+                        ORDER BY created_at ASC, id ASC
+                        """
+                    ),
+                    {"trace_id": trace_id},
+                ).mappings().all()
+                return [
+                    {
+                        "trace_id": str(row["trace_id"]),
+                        "failure_type": (
+                            str(row["failure_type"]) if row["failure_type"] is not None else None
+                        ),
+                        "source_layer": (
+                            str(row["source_layer"]) if row["source_layer"] is not None else None
+                        ),
+                        "error_code": (
+                            str(row["error_code"]) if row["error_code"] is not None else None
+                        ),
+                        "summary": str(row["summary"]),
+                        "detail_json": cast(JsonObject | str | None, row["detail_json"]),
+                        "created_at": _datetime_value(row["created_at"]),
+                    }
+                    for row in rows
+                ]
+        except SQLAlchemyError as exc:
+            raise PersistenceError("Failed to replay analytics failures.") from exc
 
 
 def _query_metrics(connection: Connection, start_at: datetime, end_at: datetime) -> ReportMetrics:
@@ -369,3 +438,7 @@ def _normalize_number(value: object) -> MetricValue:
     if isinstance(value, int) or isinstance(value, str) or value is None:
         return value
     return str(value)
+
+
+def _datetime_value(value: object) -> datetime:
+    return value if isinstance(value, datetime) else datetime.fromisoformat(str(value))

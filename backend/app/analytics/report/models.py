@@ -38,6 +38,27 @@ class AnalyticsTraceRecord(TypedDict):
     created_at: datetime
 
 
+class AnalyticsEventRecord(TypedDict):
+    event_type: str
+    trace_id: str
+    step_id: int | None
+    component: str
+    input_json: JsonObject | str | None
+    output_json: JsonObject | str | None
+    latency_ms: int | None
+    timestamp: datetime
+
+
+class AnalyticsFailureRecord(TypedDict):
+    trace_id: str
+    failure_type: str | None
+    source_layer: str | None
+    error_code: str | None
+    summary: str
+    detail_json: JsonObject | str | None
+    created_at: datetime
+
+
 class ReportArtifactMetrics(ReportMetrics, total=False):
     top_failure_types: list[CountGroup]
     top_sql_errors: list[CountGroup]
@@ -82,4 +103,10 @@ class AnalyticsRepository(Protocol):
         ...
 
     def get_trace(self, trace_id: str) -> AnalyticsTraceRecord | None:
+        ...
+
+    def list_events(self, trace_id: str) -> list[AnalyticsEventRecord]:
+        ...
+
+    def list_failures(self, trace_id: str) -> list[AnalyticsFailureRecord]:
         ...
