@@ -32,6 +32,8 @@ class ExecutionTrace(BaseModel):
     tool_name: str | None = None
     sql: str | None = None
     used_tables: list[str] = Field(default_factory=list)
+    sql_executed: bool | None = None
+    error_type: str | None = None
 
 
 class ExecutionObservation(BaseModel):

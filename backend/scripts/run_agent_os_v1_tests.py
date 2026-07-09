@@ -4,6 +4,8 @@ import sys
 from typing import cast
 
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, text
+from sqlalchemy.pool import StaticPool
 
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -19,6 +21,8 @@ from app.agent.text_to_sql.models import (
 from app.agent.text_to_sql.normalizer import ResultNormalizer
 from app.agent.text_to_sql.schema_provider import HeatTreatmentSchemaProvider
 from app.agent.text_to_sql.validator import SqlValidator
+from app.agent.tools.registry import ToolRegistry
+from app.agent.tools.repository.heat_treatment_repository import HeatTreatmentRepository
 from app.api.agent import get_orchestrator
 from app.core.type_defs import JsonObject
 from app.main import app
@@ -215,7 +219,10 @@ def main():
     RESULTS_DIR.mkdir(exist_ok=True)
     orchestrator = AgentOrchestrator(
         planner=DebuggablePlanner(),
-        execution_layer=PlanExecutionAdapter(text_to_sql_node=DeterministicTextToSqlNode()),
+        execution_layer=PlanExecutionAdapter(
+            text_to_sql_node=DeterministicTextToSqlNode(),
+            registry=_build_test_registry(),
+        ),
     )
     app.dependency_overrides[get_orchestrator] = lambda: orchestrator
     client = TestClient(app)
@@ -460,6 +467,37 @@ def _build_failure_report(case_results: list[JsonObject]) -> JsonObject:
         "total_failed": sum(len(items) for items in buckets.values()),
         "categories": buckets,
     }
+
+
+def _build_test_registry() -> ToolRegistry:
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                CREATE TABLE mes_heat_treatment_record (
+                    record_no TEXT PRIMARY KEY,
+                    status TEXT
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO mes_heat_treatment_record (record_no, status)
+                VALUES
+                    ('TRACE-HTR-K2-T-FG-001', 'FINISHED'),
+                    ('HT001', 'FINISHED'),
+                    ('HT20260603-007', 'RUNNING')
+                """
+            )
+        )
+    return ToolRegistry(heat_treatment_repository=HeatTreatmentRepository(engine=engine))
 
 
 if __name__ == "__main__":

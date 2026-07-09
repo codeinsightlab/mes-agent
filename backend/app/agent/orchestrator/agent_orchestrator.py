@@ -259,11 +259,14 @@ class PlanExecutionAdapter:
             ),
             execution_quality=ExecutionQuality(
                 tool_hit=any(item["type"] == "tool" for item in step_results) or None,
-                sql_valid=True if any(item["type"] == "sql" for item in step_results) else None,
-                sql_executed=True if any(item["type"] == "sql" for item in step_results) else None,
+                sql_valid=_collect_sql_valid(step_results),
+                sql_executed=_collect_sql_executed(step_results),
             ),
             trace=ExecutionTrace(
+                sql=_collect_sql(step_results),
                 used_tables=_collect_used_tables(step_results),
+                sql_executed=_collect_sql_executed(step_results),
+                error_type=_collect_error_type(step_results),
             ),
         )
 
@@ -327,6 +330,7 @@ class PlanExecutionAdapter:
             )
         try:
             data = self._registry.execute(step.name, step.args)
+            tool_trace = _registry_last_trace(self._registry)
             return ExecutionObservation(
                 status="success",
                 data={"tool_result": data},
@@ -334,8 +338,18 @@ class PlanExecutionAdapter:
                     facts_found=[step.name],
                     decision_signals=["tool_executed"],
                 ),
-                execution_quality=ExecutionQuality(tool_hit=True),
-                trace=ExecutionTrace(tool_name=step.name),
+                execution_quality=ExecutionQuality(
+                    tool_hit=True,
+                    sql_valid=_trace_bool(tool_trace, "sql_valid"),
+                    sql_executed=_trace_bool(tool_trace, "sql_executed"),
+                ),
+                trace=ExecutionTrace(
+                    tool_name=step.name,
+                    sql=_trace_str(tool_trace, "sql"),
+                    used_tables=_trace_str_list(tool_trace, "used_tables"),
+                    sql_executed=_trace_bool(tool_trace, "sql_executed"),
+                    error_type=_trace_str(tool_trace, "error_type"),
+                ),
             )
         except Exception as exc:
             failure_type = "tool_miss"
@@ -382,6 +396,7 @@ class PlanExecutionAdapter:
                 trace=ExecutionTrace(
                     sql=normalized.validated_sql or normalized.generated_sql,
                     used_tables=normalized.used_tables,
+                    sql_executed=True,
                 ),
             )
 
@@ -403,6 +418,8 @@ class PlanExecutionAdapter:
             trace=ExecutionTrace(
                 sql=normalized.validated_sql or normalized.generated_sql,
                 used_tables=normalized.used_tables,
+                sql_executed=False,
+                error_type=failure_type,
             ),
         )
 
@@ -571,6 +588,93 @@ def _collect_used_tables(step_results: list[JsonObject]) -> list[str]:
             if isinstance(table, str):
                 tables.add(table)
     return sorted(tables)
+
+
+def _collect_sql(step_results: list[JsonObject]) -> str | None:
+    for item in step_results:
+        trace = _step_trace(item)
+        if trace is None:
+            continue
+        sql = trace.get("sql")
+        if isinstance(sql, str) and sql.strip():
+            return sql
+    return None
+
+
+def _collect_sql_executed(step_results: list[JsonObject]) -> bool | None:
+    found = None
+    for item in step_results:
+        trace = _step_trace(item)
+        if trace is not None and isinstance(trace.get("sql_executed"), bool):
+            found = trace["sql_executed"]
+        observation = item.get("observation")
+        if isinstance(observation, dict):
+            quality = observation.get("execution_quality")
+            if isinstance(quality, dict) and isinstance(quality.get("sql_executed"), bool):
+                found = quality["sql_executed"]
+    return found
+
+
+def _collect_sql_valid(step_results: list[JsonObject]) -> bool | None:
+    found = None
+    for item in step_results:
+        observation = item.get("observation")
+        if not isinstance(observation, dict):
+            continue
+        quality = observation.get("execution_quality")
+        if isinstance(quality, dict) and isinstance(quality.get("sql_valid"), bool):
+            found = quality["sql_valid"]
+    return found
+
+
+def _collect_error_type(step_results: list[JsonObject]) -> str | None:
+    for item in step_results:
+        trace = _step_trace(item)
+        if trace is None:
+            continue
+        error_type = trace.get("error_type")
+        if isinstance(error_type, str) and error_type:
+            return error_type
+    return None
+
+
+def _step_trace(step_result: JsonObject) -> JsonObject | None:
+    observation = step_result.get("observation")
+    if not isinstance(observation, dict):
+        return None
+    trace = observation.get("trace")
+    return trace if isinstance(trace, dict) else None
+
+
+def _registry_last_trace(registry: ToolRegistry) -> JsonObject | None:
+    trace_reader = getattr(registry, "last_trace", None)
+    if not callable(trace_reader):
+        return None
+    trace = trace_reader()
+    return trace if isinstance(trace, dict) else None
+
+
+def _trace_bool(trace: JsonObject | None, key: str) -> bool | None:
+    if trace is None:
+        return None
+    value = trace.get(key)
+    return value if isinstance(value, bool) else None
+
+
+def _trace_str(trace: JsonObject | None, key: str) -> str | None:
+    if trace is None:
+        return None
+    value = trace.get(key)
+    return value if isinstance(value, str) and value else None
+
+
+def _trace_str_list(trace: JsonObject | None, key: str) -> list[str]:
+    if trace is None:
+        return []
+    value = trace.get(key)
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, str)]
 
 
 def elapsed_ms(started_at: float) -> int:

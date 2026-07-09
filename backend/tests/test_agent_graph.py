@@ -4,6 +4,7 @@ from app.agent.text_to_sql.models import (
     NormalizedTextToSqlResult,
     TextToSqlGeneration,
 )
+from tests.heat_tool_test_utils import build_heat_treatment_test_registry
 
 
 def fake_matcher_for(message: str) -> ToolMatchDecision:
@@ -57,6 +58,7 @@ def invoke(message: str):
         fake_matcher_for,
         match_threshold=0.75,
         text_to_sql_node=FakeTextToSqlNode(),
+        registry=build_heat_treatment_test_registry(),
     )
     result = graph.invoke(
         {
@@ -75,6 +77,7 @@ def invoke_with_text_to_sql(message: str):
         fake_matcher_for,
         match_threshold=0.75,
         text_to_sql_node=FakeTextToSqlNode(),
+        registry=build_heat_treatment_test_registry(),
     )
     result = graph.invoke(
         {

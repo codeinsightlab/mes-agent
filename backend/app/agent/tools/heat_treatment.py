@@ -4,6 +4,7 @@ from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from app.agent.catalog.heat_treatment import HEAT_STATUS_NAMES
+from app.agent.tools.repository.heat_treatment_repository import HeatTreatmentRepository
 
 
 class HeatToolInput(BaseModel):
@@ -31,6 +32,7 @@ def heat_current_stage(
     object_id: str | None = None,
     item_code: str | None = None,
     lot_code: str | None = None,
+    repository: HeatTreatmentRepository | None = None,
 ) -> dict:
     args = HeatToolInput(
         record_id=record_id,
@@ -40,12 +42,20 @@ def heat_current_stage(
         lot_code=lot_code,
     )
     resolved = args.resolved_record_no()
-    status = "FINISHED" if resolved in {"TRACE-HTR-K2-T-FG-001", "HT001"} else "RUNNING"
+    record, trace = (repository or HeatTreatmentRepository()).get_heat_current_stage(resolved)
     return {
-        "found": True,
-        "record_no": resolved,
-        "status": status,
-        "status_name": HEAT_STATUS_NAMES[status],
+        "found": record.found,
+        "record_no": record.record_no,
+        "status": record.status,
+        "status_name": HEAT_STATUS_NAMES.get(record.status, record.status) if record.status else None,
+        "_trace": {
+            "sql": trace.sql,
+            "used_tables": trace.used_tables,
+            "sql_executed": trace.sql_executed,
+            "sql_valid": trace.sql_valid,
+            "duration_ms": trace.duration_ms,
+            "error_type": trace.error_type,
+        },
     }
 
 
@@ -102,10 +112,28 @@ def heat_batch_products(
     }
 
 
-def build_langchain_tools() -> dict[str, StructuredTool]:
+def build_langchain_tools(
+    heat_treatment_repository: HeatTreatmentRepository | None = None,
+) -> dict[str, StructuredTool]:
+    def current_stage_tool(
+        record_id: str | None = None,
+        record_no: str | None = None,
+        object_id: str | None = None,
+        item_code: str | None = None,
+        lot_code: str | None = None,
+    ) -> dict:
+        return heat_current_stage(
+            record_id=record_id,
+            record_no=record_no,
+            object_id=object_id,
+            item_code=item_code,
+            lot_code=lot_code,
+            repository=heat_treatment_repository,
+        )
+
     return {
         "heat_current_stage": StructuredTool.from_function(
-            func=heat_current_stage,
+            func=current_stage_tool,
             name="heat_current_stage",
             description="查询热处理记录当前所处阶段。",
             args_schema=HeatToolInput,

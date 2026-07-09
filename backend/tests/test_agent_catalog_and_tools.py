@@ -3,6 +3,7 @@ import pytest
 from app.agent.catalog.heat_treatment import CAPABILITY_BY_NAME, HEAT_STATUS_NAMES
 from app.agent.exceptions import ToolExecutionError
 from app.agent.tools.registry import ToolRegistry
+from tests.heat_tool_test_utils import build_heat_treatment_test_registry
 
 
 def test_heat_treatment_catalog_contains_enabled_and_blocked_capabilities():
@@ -14,14 +15,30 @@ def test_heat_treatment_catalog_contains_enabled_and_blocked_capabilities():
 
 
 def test_registry_executes_enabled_tool_and_returns_status_mapping():
-    result = ToolRegistry().execute(
+    result = build_heat_treatment_test_registry().execute(
         "heat_current_stage",
-        {"record_no": "TRACE-HTR-K2-T-FG-001"},
+        {"record_no": "HT20260603-007"},
     )
 
     assert result["found"] is True
-    assert result["status"] == "FINISHED"
-    assert result["status_name"] == "已完成"
+    assert result["record_no"] == "HT20260603-007"
+    assert result["status"] == "RUNNING"
+    assert result["status_name"] == "进行中"
+    assert "_trace" not in result
+
+
+def test_registry_returns_not_found_without_default_status():
+    result = build_heat_treatment_test_registry().execute(
+        "heat_current_stage",
+        {"record_no": "NOT_EXIST_HT001"},
+    )
+
+    assert result == {
+        "found": False,
+        "record_no": "NOT_EXIST_HT001",
+        "status": None,
+        "status_name": None,
+    }
 
 
 def test_registry_rejects_blocked_capability():

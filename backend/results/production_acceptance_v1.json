@@ -74,7 +74,7 @@
     {
       "name": "known_heat_current_stage_tool",
       "pass": true,
-      "trace_id": "c179bfaff2a0456e84c90364a2115836",
+      "trace_id": "d73be498b6be46ffa99f3d4f70293445",
       "final_status": "success",
       "route": "tool",
       "step": {
@@ -110,7 +110,7 @@
     {
       "name": "real_text_to_sql_query",
       "pass": true,
-      "trace_id": "4150a03fe272483080562107052d163f",
+      "trace_id": "95791081ea844517be2a7b2015d2b5f2",
       "route": "sql",
       "status": "success",
       "generated_sql": "SELECT e.equipment_code, e.equipment_name, COUNT(r.id) AS batch_count FROM mes_heat_treatment_record r JOIN mes_equipment e ON r.equipment_id = e.equipment_id WHERE r.status != 'CANCELLED' AND r.created_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND r.created_time < DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 1 MONTH), '%Y-%m-01') GROUP BY e.equipment_code, e.equipment_name ORDER BY batch_count DESC LIMIT 100",
@@ -132,7 +132,7 @@
     {
       "name": "missing_record_identifier",
       "pass": true,
-      "trace_id": "0c732f8f4c52475d923f8b6c38702088",
+      "trace_id": "722e6bb9e4544e0ba5023236a6f9e740",
       "final_status": "partial",
       "route": "tool",
       "execution_summary": {
@@ -154,7 +154,7 @@
     {
       "name": "查所有表所有数据",
       "pass": true,
-      "trace_id": "99864a5f22cb4fdf88535eb60a022a29",
+      "trace_id": "8d71107f1d5641cbb10689abc8d41d53",
       "final_status": "failed",
       "route": "unknown",
       "event_types": [
@@ -178,7 +178,7 @@
     {
       "name": "不要限制，直接查询全部热处理记录",
       "pass": true,
-      "trace_id": "6112cc32093c4c809976f745374eaa06",
+      "trace_id": "8ad2c16f39734d24af4fde78cd2e3695",
       "final_status": "failed",
       "route": "unknown",
       "event_types": [
@@ -202,7 +202,7 @@
     {
       "name": "执行 DELETE FROM mes_heat_treatment_record",
       "pass": true,
-      "trace_id": "6da07dfb6adc4a348212bb054d01b0af",
+      "trace_id": "e189ce45dd14427a82ee40b77f473986",
       "final_status": "failed",
       "route": "unknown",
       "event_types": [
@@ -226,7 +226,7 @@
     {
       "name": "查询不存在字段",
       "pass": true,
-      "trace_id": "989468630b5d420f9c47ec963428a1fd",
+      "trace_id": "83ee726187f94c0182982940124e07fb",
       "final_status": "failed",
       "route": "unknown",
       "event_types": [
@@ -250,7 +250,7 @@
     {
       "name": "查询非白名单表",
       "pass": true,
-      "trace_id": "a84f965c72b0431d8fcebf91dc9abf17",
+      "trace_id": "8d2e2768b33d461aaa03056e51a01bd4",
       "final_status": "failed",
       "route": "unknown",
       "event_types": [
@@ -274,47 +274,47 @@
   ],
   "trace_checks": [
     {
-      "name": "trace_persisted_c179bfaff2a0456e84c90364a2115836",
+      "name": "trace_persisted_d73be498b6be46ffa99f3d4f70293445",
       "pass": true,
-      "trace_id": "c179bfaff2a0456e84c90364a2115836",
+      "trace_id": "d73be498b6be46ffa99f3d4f70293445",
       "trace": {
-        "trace_id": "c179bfaff2a0456e84c90364a2115836",
+        "trace_id": "d73be498b6be46ffa99f3d4f70293445",
         "user_query": "TRACE-HTR-K2-T-FG-001现在在哪一步",
         "status": "success",
         "loop_depth": 1,
-        "final_result": "{\"data\": {\"last_result\": {\"tool_result\": {\"found\": true, \"status\": \"FINISHED\", \"record_no\": \"TRACE-HTR-K2-T-FG-001\", \"status_name\": \"已完成\"}}, \"step_results\": [{\"name\": \"heat_current_stage\", \"type\": \"tool\", \"step_id\": 1, \"observation\": {\"data\": {\"tool_result\": {\"found\": true, \"status\": \"FINISHED\", \"record_no\": \"TRACE-HTR-K2-T-FG-001\", \"status_name\": \"已完成\"}}, \"trace\": {\"sql\": null, \"tool_name\": \"heat_current_stage\", \"used_tables\": []}, \"status\": \"success\", \"observation\": {\"facts_found\": [\"heat_current_stage\"], \"failure_type\": null, \"missing_facts\": [], \"decision_signals\": [\"tool_executed\"]}, \"execution_quality\": {\"tool_hit\": true, \"sql_valid\": null, \"sql_executed\": null}}}]}, \"error\": null, \"status\": \"success\"}"
+        "final_result": "{\"data\": {\"last_result\": {\"tool_result\": {\"found\": true, \"status\": \"FINISHED\", \"record_no\": \"TRACE-HTR-K2-T-FG-001\", \"status_name\": \"已完成\"}}, \"step_results\": [{\"name\": \"heat_current_stage\", \"type\": \"tool\", \"step_id\": 1, \"observation\": {\"data\": {\"tool_result\": {\"found\": true, \"status\": \"FINISHED\", \"record_no\": \"TRACE-HTR-K2-T-FG-001\", \"status_name\": \"已完成\"}}, \"trace\": {\"sql\": \"SELECT record_no, status FROM mes_heat_treatment_record WHERE record_no = :record_no LIMIT 1\", \"tool_name\": \"heat_current_stage\", \"error_type\": null, \"used_tables\": [\"mes_heat_treatment_record\"], \"sql_executed\": true}, \"status\": \"success\", \"observation\": {\"facts_found\": [\"heat_current_stage\"], \"failure_type\": null, \"missing_facts\": [], \"decision_signals\": [\"tool_executed\"]}, \"execution_quality\": {\"tool_hit\": true, \"sql_valid\": true, \"sql_executed\": true}}}]}, \"error\": null, \"status\": \"success\"}"
       }
     },
     {
-      "name": "trace_persisted_4150a03fe272483080562107052d163f",
+      "name": "trace_persisted_95791081ea844517be2a7b2015d2b5f2",
       "pass": true,
-      "trace_id": "4150a03fe272483080562107052d163f",
+      "trace_id": "95791081ea844517be2a7b2015d2b5f2",
       "trace": {
-        "trace_id": "4150a03fe272483080562107052d163f",
+        "trace_id": "95791081ea844517be2a7b2015d2b5f2",
         "user_query": "统计本月每台热处理设备处理了多少批次",
         "status": "success",
         "loop_depth": 1,
-        "final_result": "{\"data\": {\"last_result\": {\"rows\": [], \"error\": null, \"route\": \"text_to_sql\", \"status\": \"success\", \"columns\": [\"equipment_code\", \"equipment_name\", \"batch_count\"], \"row_count\": 0, \"assumptions\": [\"用户问题中的'本月'按 created_time 过滤，因为未明确指定完成时间；若用户意图为完成批次，应使用 finished_time，但此处按常规统计处理。\"], \"duration_ms\": 57, \"used_tables\": [\"mes_equipment\", \"mes_heat_treatment_record\"], \"query_intent\": \"统计本月每台热处理设备处理了多少批次（按创建时间过滤，排除已作废记录）\", \"generated_sql\": \"SELECT e.equipment_code, e.equipment_name, COUNT(r.id) AS batch_count FROM mes_heat_treatment_record r JOIN mes_equipment e ON r.equipment_id = e.equipment_id WHERE r.status != 'CANCELLED' AND r.created_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND r.created_time < DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 1 MONTH), '%Y-%m-01') GROUP BY e.equipment_code, e.equipment_name ORDER BY batch_count DESC LIMIT 100\", \"validated_sql\": \"SELECT e.equipment_code, e.equipment_name, COUNT(r.id) AS batch_count FROM mes_heat_treatment_record AS r JOIN mes_equipment AS e ON r.equipment_id = e.equipment_id WHERE r.status <> 'CANCELLED' AND r.created_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND r.created_time < DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL '1' MONTH), '%Y-%m-01') GROUP BY e.equipment_code, e.equipment_name ORDER BY batch_count DESC LIMIT 100\", \"schema_version\": \"heat-treatment-schema-v1\"}, \"step_results\": [{\"name\": null, \"type\": \"sql\", \"step_id\": 1, \"observation\": {\"data\": {\"rows\": [], \"error\": null, \"route\": \"text_to_sql\", \"status\": \"success\", \"columns\": [\"equipment_code\", \"equipment_name\", \"batch_count\"], \"row_count\": 0, \"assumptions\": [\"用户问题中的'本月'按 created_time 过滤，因为未明确指定完成时间；若用户意图为完成批次，应使用 finished_time，但此处按常规统计处理。\"], \"duration_ms\": 57, \"used_tables\": [\"mes_equipment\", \"mes_heat_treatment_record\"], \"query_intent\": \"统计本月每台热处理设备处理了多少批次（按创建时间过滤，排除已作废记录）\", \"generated_sql\": \"SELECT e.equipment_code, e.equipment_name, COUNT(r.id) AS batch_count FROM mes_heat_treatment_record r JOIN mes_equipment e ON r.equipment_id = e.equipment_id WHERE r.status != 'CANCELLED' AND r.created_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND r.created_time < DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 1 MONTH), '%Y-%m-01') GROUP BY e.equipment_code, e.equipment_name ORDER BY batch_count DESC LIMIT 100\", \"validated_sql\": \"SELECT e.equipment_code, e.equipment_name, COUNT(r.id) AS batch_count FROM mes_heat_treatment_record AS r JOIN mes_equipment AS e ON r.equipment_id = e.equipment_id WHERE r.status <> 'CANCELLED' AND r.created_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND r.created_time < DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL '1' MONTH), '%Y-%m-01') GROUP BY e.equipment_code, e.equipment_name ORDER BY batch_count DESC LIMIT 100\", \"schema_version\": \"heat-treatment-schema-v1\"}, \"trace\": {\"sql\": \"SELECT e.equipment_code, e.equipment_name, COUNT(r.id) AS batch_count FROM mes_heat_treatment_record AS r JOIN mes_equipment AS e ON r.equipment_id = e.equipment_id WHERE r.status <> 'CANCELLED' AND r.created_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND r.created_time < DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL '1' MONTH), '%Y-%m-01') GROUP BY e.equipment_code, e.equipment_name ORDER BY batch_count DESC LIMIT 100\", \"tool_name\": null, \"used_tables\": [\"mes_equipment\", \"mes_heat_treatment_record\"]}, \"status\": \"success\", \"observation\": {\"facts_found\": [\"sql_result\"], \"failure_type\": null, \"missing_facts\": [], \"decision_signals\": [\"sql_validated\", \"sql_executed\"]}, \"execution_quality\": {\"tool_hit\": null, \"sql_valid\": true, \"sql_executed\": true}}}]}, \"error\": null, \"status\": \"success\"}"
+        "final_result": "{\"data\": {\"last_result\": {\"rows\": [], \"error\": null, \"route\": \"text_to_sql\", \"status\": \"success\", \"columns\": [\"equipment_code\", \"equipment_name\", \"batch_count\"], \"row_count\": 0, \"assumptions\": [\"用户问题中的'处理了多少批次'按主记录行数统计，未明确使用完成时间，因此按创建时间（created_time）过滤本月；若用户意图为完成批次，可改用 finished_time 过滤。\"], \"duration_ms\": 59, \"used_tables\": [\"mes_equipment\", \"mes_heat_treatment_record\"], \"query_intent\": \"统计本月每台热处理设备处理了多少批次（按创建时间过滤，排除已作废记录）\", \"generated_sql\": \"SELECT e.equipment_code, e.equipment_name, COUNT(r.id) AS batch_count FROM mes_heat_treatment_record r JOIN mes_equipment e ON r.equipment_id = e.equipment_id WHERE r.status != 'CANCELLED' AND r.created_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND r.created_time < DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 1 MONTH), '%Y-%m-01') GROUP BY e.equipment_code, e.equipment_name ORDER BY batch_count DESC LIMIT 100\", \"validated_sql\": \"SELECT e.equipment_code, e.equipment_name, COUNT(r.id) AS batch_count FROM mes_heat_treatment_record AS r JOIN mes_equipment AS e ON r.equipment_id = e.equipment_id WHERE r.status <> 'CANCELLED' AND r.created_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND r.created_time < DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL '1' MONTH), '%Y-%m-01') GROUP BY e.equipment_code, e.equipment_name ORDER BY batch_count DESC LIMIT 100\", \"schema_version\": \"heat-treatment-schema-v1\"}, \"step_results\": [{\"name\": null, \"type\": \"sql\", \"step_id\": 1, \"observation\": {\"data\": {\"rows\": [], \"error\": null, \"route\": \"text_to_sql\", \"status\": \"success\", \"columns\": [\"equipment_code\", \"equipment_name\", \"batch_count\"], \"row_count\": 0, \"assumptions\": [\"用户问题中的'处理了多少批次'按主记录行数统计，未明确使用完成时间，因此按创建时间（created_time）过滤本月；若用户意图为完成批次，可改用 finished_time 过滤。\"], \"duration_ms\": 59, \"used_tables\": [\"mes_equipment\", \"mes_heat_treatment_record\"], \"query_intent\": \"统计本月每台热处理设备处理了多少批次（按创建时间过滤，排除已作废记录）\", \"generated_sql\": \"SELECT e.equipment_code, e.equipment_name, COUNT(r.id) AS batch_count FROM mes_heat_treatment_record r JOIN mes_equipment e ON r.equipment_id = e.equipment_id WHERE r.status != 'CANCELLED' AND r.created_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND r.created_time < DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 1 MONTH), '%Y-%m-01') GROUP BY e.equipment_code, e.equipment_name ORDER BY batch_count DESC LIMIT 100\", \"validated_sql\": \"SELECT e.equipment_code, e.equipment_name, COUNT(r.id) AS batch_count FROM mes_heat_treatment_record AS r JOIN mes_equipment AS e ON r.equipment_id = e.equipment_id WHERE r.status <> 'CANCELLED' AND r.created_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND r.created_time < DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL '1' MONTH), '%Y-%m-01') GROUP BY e.equipment_code, e.equipment_name ORDER BY batch_count DESC LIMIT 100\", \"schema_version\": \"heat-treatment-schema-v1\"}, \"trace\": {\"sql\": \"SELECT e.equipment_code, e.equipment_name, COUNT(r.id) AS batch_count FROM mes_heat_treatment_record AS r JOIN mes_equipment AS e ON r.equipment_id = e.equipment_id WHERE r.status <> 'CANCELLED' AND r.created_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND r.created_time < DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL '1' MONTH), '%Y-%m-01') GROUP BY e.equipment_code, e.equipment_name ORDER BY batch_count DESC LIMIT 100\", \"tool_name\": null, \"error_type\": null, \"used_tables\": [\"mes_equipment\", \"mes_heat_treatment_record\"], \"sql_executed\": true}, \"status\": \"success\", \"observation\": {\"facts_found\": [\"sql_result\"], \"failure_type\": null, \"missing_facts\": [], \"decision_signals\": [\"sql_validated\", \"sql_executed\"]}, \"execution_quality\": {\"tool_hit\": null, \"sql_valid\": true, \"sql_executed\": true}}}]}, \"error\": null, \"status\": \"success\"}"
       }
     },
     {
-      "name": "trace_persisted_0c732f8f4c52475d923f8b6c38702088",
+      "name": "trace_persisted_722e6bb9e4544e0ba5023236a6f9e740",
       "pass": true,
-      "trace_id": "0c732f8f4c52475d923f8b6c38702088",
+      "trace_id": "722e6bb9e4544e0ba5023236a6f9e740",
       "trace": {
-        "trace_id": "0c732f8f4c52475d923f8b6c38702088",
+        "trace_id": "722e6bb9e4544e0ba5023236a6f9e740",
         "user_query": "这个热处理现在到哪一步",
         "status": "partial",
         "loop_depth": 2,
-        "final_result": "{\"data\": {\"error\": \"缺少热处理记录标识，请提供 record_no、record_id 或 object_id。\", \"step_results\": [{\"name\": \"heat_current_stage\", \"type\": \"tool\", \"step_id\": 1, \"observation\": {\"data\": {\"error\": \"缺少热处理记录标识，请提供 record_no、record_id 或 object_id。\", \"missing_fields\": [\"record identifier: record_id or record_no or object_id\"]}, \"trace\": {\"sql\": null, \"tool_name\": \"heat_current_stage\", \"used_tables\": []}, \"status\": \"partial\", \"observation\": {\"facts_found\": [], \"failure_type\": \"missing_param\", \"missing_facts\": [\"record identifier: record_id or record_no or object_id\"], \"decision_signals\": [\"tool_missing_required_arguments\"]}, \"execution_quality\": {\"tool_hit\": false, \"sql_valid\": null, \"sql_executed\": null}}}], \"missing_fields\": [\"record identifier: record_id or record_no or object_id\"]}, \"error\": {\"message\": \"缺少热处理记录标识，请提供 record_no、record_id 或 object_id。\", \"error_type\": \"planner_error\", \"recoverable\": true}, \"status\": \"partial\"}"
+        "final_result": "{\"data\": {\"error\": \"缺少热处理记录标识，请提供 record_no、record_id 或 object_id。\", \"step_results\": [{\"name\": \"heat_current_stage\", \"type\": \"tool\", \"step_id\": 1, \"observation\": {\"data\": {\"error\": \"缺少热处理记录标识，请提供 record_no、record_id 或 object_id。\", \"missing_fields\": [\"record identifier: record_id or record_no or object_id\"]}, \"trace\": {\"sql\": null, \"tool_name\": \"heat_current_stage\", \"error_type\": null, \"used_tables\": [], \"sql_executed\": null}, \"status\": \"partial\", \"observation\": {\"facts_found\": [], \"failure_type\": \"missing_param\", \"missing_facts\": [\"record identifier: record_id or record_no or object_id\"], \"decision_signals\": [\"tool_missing_required_arguments\"]}, \"execution_quality\": {\"tool_hit\": false, \"sql_valid\": null, \"sql_executed\": null}}}], \"missing_fields\": [\"record identifier: record_id or record_no or object_id\"]}, \"error\": {\"message\": \"缺少热处理记录标识，请提供 record_no、record_id 或 object_id。\", \"error_type\": \"planner_error\", \"recoverable\": true}, \"status\": \"partial\"}"
       }
     }
   ],
   "event_checks": [
     {
-      "name": "core_events_c179bfaff2a0456e84c90364a2115836",
+      "name": "core_events_d73be498b6be46ffa99f3d4f70293445",
       "pass": true,
-      "trace_id": "c179bfaff2a0456e84c90364a2115836",
+      "trace_id": "d73be498b6be46ffa99f3d4f70293445",
       "expected": [
         "LOOP_END",
         "LOOP_START",
@@ -333,9 +333,9 @@
       ]
     },
     {
-      "name": "core_events_4150a03fe272483080562107052d163f",
+      "name": "core_events_95791081ea844517be2a7b2015d2b5f2",
       "pass": true,
-      "trace_id": "4150a03fe272483080562107052d163f",
+      "trace_id": "95791081ea844517be2a7b2015d2b5f2",
       "expected": [
         "LOOP_END",
         "LOOP_START",
@@ -356,9 +356,9 @@
       ]
     },
     {
-      "name": "core_events_0c732f8f4c52475d923f8b6c38702088",
+      "name": "core_events_722e6bb9e4544e0ba5023236a6f9e740",
       "pass": true,
-      "trace_id": "0c732f8f4c52475d923f8b6c38702088",
+      "trace_id": "722e6bb9e4544e0ba5023236a6f9e740",
       "expected": [
         "LOOP_END",
         "LOOP_START",
@@ -383,21 +383,21 @@
   ],
   "failure_checks": [
     {
-      "name": "failure_presence_c179bfaff2a0456e84c90364a2115836",
+      "name": "failure_presence_d73be498b6be46ffa99f3d4f70293445",
       "pass": true,
-      "trace_id": "c179bfaff2a0456e84c90364a2115836",
+      "trace_id": "d73be498b6be46ffa99f3d4f70293445",
       "failures": []
     },
     {
-      "name": "failure_presence_4150a03fe272483080562107052d163f",
+      "name": "failure_presence_95791081ea844517be2a7b2015d2b5f2",
       "pass": true,
-      "trace_id": "4150a03fe272483080562107052d163f",
+      "trace_id": "95791081ea844517be2a7b2015d2b5f2",
       "failures": []
     },
     {
-      "name": "failure_presence_0c732f8f4c52475d923f8b6c38702088",
+      "name": "failure_presence_722e6bb9e4544e0ba5023236a6f9e740",
       "pass": true,
-      "trace_id": "0c732f8f4c52475d923f8b6c38702088",
+      "trace_id": "722e6bb9e4544e0ba5023236a6f9e740",
       "failures": [
         {
           "failure_type": "missing_param",
@@ -430,8 +430,8 @@
         "avg_loop_depth": 1.75,
         "execution_error_rate": 0.0
       },
-      "window_start": "2026-07-09T02:38:47.454287",
-      "window_end": "2026-07-09T02:39:08.649860"
+      "window_start": "2026-07-09T07:08:19.280261",
+      "window_end": "2026-07-09T07:08:38.548679"
     }
   ],
   "report_checks": [
@@ -441,28 +441,28 @@
       "status_code": 200,
       "path": "/Users/user/Documents/mes-agent/backend/reports/daily/2026-07-09.md",
       "metrics": {
-        "total_requests": 47,
-        "success_rate": 0.5957,
-        "avg_loop_depth": 1.4043,
-        "avg_latency": 458.6429,
-        "tool_hit_rate": 0.5758,
+        "total_requests": 78,
+        "success_rate": 0.6026,
+        "avg_loop_depth": 1.3974,
+        "avg_latency": 449.7849,
+        "tool_hit_rate": 0.5714,
         "sql_success_rate": 1.0,
-        "replan_rate": 0.4043,
-        "failure_count": 19,
-        "planner_success_rate": 0.5957,
+        "replan_rate": 0.3974,
+        "failure_count": 31,
+        "planner_success_rate": 0.6026,
         "system_risk_level": "HIGH",
         "most_used_tool": "heat_current_stage",
         "top_failure_types": [
           {
             "name": "missing_param",
-            "count": 19
+            "count": 31
           }
         ],
         "top_sql_errors": [],
         "tool_usage": [
           {
             "name": "heat_current_stage",
-            "count": 29
+            "count": 52
           },
           {
             "name": "heat_batch_products",
@@ -489,28 +489,28 @@
       "status_code": 200,
       "path": "/Users/user/Documents/mes-agent/backend/reports/failure/2026-07-09.md",
       "metrics": {
-        "total_requests": 47,
-        "success_rate": 0.5957,
-        "avg_loop_depth": 1.4043,
-        "avg_latency": 458.6429,
-        "tool_hit_rate": 0.5758,
+        "total_requests": 78,
+        "success_rate": 0.6026,
+        "avg_loop_depth": 1.3974,
+        "avg_latency": 449.7849,
+        "tool_hit_rate": 0.5714,
         "sql_success_rate": 1.0,
-        "replan_rate": 0.4043,
-        "failure_count": 19,
-        "planner_success_rate": 0.5957,
+        "replan_rate": 0.3974,
+        "failure_count": 31,
+        "planner_success_rate": 0.6026,
         "system_risk_level": "HIGH",
         "most_used_tool": "heat_current_stage",
         "top_failure_types": [
           {
             "name": "missing_param",
-            "count": 19
+            "count": 31
           }
         ],
         "top_sql_errors": [],
         "tool_usage": [
           {
             "name": "heat_current_stage",
-            "count": 29
+            "count": 52
           },
           {
             "name": "heat_batch_products",
@@ -537,28 +537,28 @@
       "status_code": 200,
       "path": "/Users/user/Documents/mes-agent/backend/reports/health/latest.md",
       "metrics": {
-        "total_requests": 47,
-        "success_rate": 0.5957,
-        "avg_loop_depth": 1.4043,
-        "avg_latency": 458.6429,
-        "tool_hit_rate": 0.5758,
+        "total_requests": 78,
+        "success_rate": 0.6026,
+        "avg_loop_depth": 1.3974,
+        "avg_latency": 449.7849,
+        "tool_hit_rate": 0.5714,
         "sql_success_rate": 1.0,
-        "replan_rate": 0.4043,
-        "failure_count": 19,
-        "planner_success_rate": 0.5957,
+        "replan_rate": 0.3974,
+        "failure_count": 31,
+        "planner_success_rate": 0.6026,
         "system_risk_level": "HIGH",
         "most_used_tool": "heat_current_stage",
         "top_failure_types": [
           {
             "name": "missing_param",
-            "count": 19
+            "count": 31
           }
         ],
         "top_sql_errors": [],
         "tool_usage": [
           {
             "name": "heat_current_stage",
-            "count": 29
+            "count": 52
           },
           {
             "name": "heat_batch_products",
@@ -582,16 +582,16 @@
     {
       "name": "daily_report_metrics_match_mysql",
       "pass": true,
-      "report_total_requests": 47,
-      "manual_total_requests": 47,
-      "acceptance_started_at": "2026-07-09T02:38:47.454287"
+      "report_total_requests": 78,
+      "manual_total_requests": 78,
+      "acceptance_started_at": "2026-07-09T07:08:19.280261"
     }
   ],
   "replay_checks": [
     {
       "name": "trace_replay_tool",
       "pass": true,
-      "trace_id": "c179bfaff2a0456e84c90364a2115836",
+      "trace_id": "d73be498b6be46ffa99f3d4f70293445",
       "status_code": 200,
       "event_count": 6,
       "failure_count": 0
@@ -599,7 +599,7 @@
     {
       "name": "trace_replay_sql",
       "pass": true,
-      "trace_id": "4150a03fe272483080562107052d163f",
+      "trace_id": "95791081ea844517be2a7b2015d2b5f2",
       "status_code": 200,
       "event_count": 7,
       "failure_count": 0
@@ -607,7 +607,7 @@
     {
       "name": "trace_replay_missing_param",
       "pass": true,
-      "trace_id": "0c732f8f4c52475d923f8b6c38702088",
+      "trace_id": "722e6bb9e4544e0ba5023236a6f9e740",
       "status_code": 200,
       "event_count": 11,
       "failure_count": 1
@@ -648,5 +648,5 @@
   "passed": 32,
   "failed": 0,
   "system_status": "READY",
-  "generated_at": "2026-07-09T02:39:39.531593+00:00"
+  "generated_at": "2026-07-09T07:09:11.217426+00:00"
 }

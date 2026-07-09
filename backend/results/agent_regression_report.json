@@ -241,7 +241,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "562798e6dac24bc6a07538d63f2f38d7",
+        "trace_id": "e6fbae7ae7e542fcbd3096d22b0558de",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -266,12 +266,14 @@
         "planner_calls": 1,
         "execution_loops": 1,
         "replanned": false,
-        "sql": null,
-        "sql_status": null,
+        "sql": "SELECT record_no, status FROM mes_heat_treatment_record WHERE record_no = :record_no LIMIT 1",
+        "sql_status": "success",
         "sql_error_code": null,
-        "sql_executed": false,
-        "sql_validated": false,
-        "used_tables": [],
+        "sql_executed": true,
+        "sql_validated": true,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
         "columns": [],
         "rows": [],
         "row_count": null,
@@ -280,7 +282,10 @@
       "events": [
         "PLANNER_END",
         "TOOL_MATCH",
-        "TOOL_EXECUTE_SUCCESS"
+        "TOOL_EXECUTE_SUCCESS",
+        "SQL_GENERATE_SUCCESS",
+        "SQL_VALIDATE_SUCCESS",
+        "SQL_EXECUTE_SUCCESS"
       ],
       "passed": true,
       "failures": []
@@ -310,7 +315,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "5f3ff906db7f4744b64d31d025506e7d",
+        "trace_id": "cf69e69ce7b348b6a1677ccfb60bf7ef",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -335,12 +340,14 @@
         "planner_calls": 1,
         "execution_loops": 1,
         "replanned": false,
-        "sql": null,
-        "sql_status": null,
+        "sql": "SELECT record_no, status FROM mes_heat_treatment_record WHERE record_no = :record_no LIMIT 1",
+        "sql_status": "success",
         "sql_error_code": null,
-        "sql_executed": false,
-        "sql_validated": false,
-        "used_tables": [],
+        "sql_executed": true,
+        "sql_validated": true,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
         "columns": [],
         "rows": [],
         "row_count": null,
@@ -349,7 +356,10 @@
       "events": [
         "PLANNER_END",
         "TOOL_MATCH",
-        "TOOL_EXECUTE_SUCCESS"
+        "TOOL_EXECUTE_SUCCESS",
+        "SQL_GENERATE_SUCCESS",
+        "SQL_VALIDATE_SUCCESS",
+        "SQL_EXECUTE_SUCCESS"
       ],
       "passed": true,
       "failures": []
@@ -379,7 +389,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "ba43564c2aaa439bb97e5d8dc7c271f2",
+        "trace_id": "debb99d9cf2b415395276760238bfb34",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -404,12 +414,14 @@
         "planner_calls": 1,
         "execution_loops": 1,
         "replanned": false,
-        "sql": null,
-        "sql_status": null,
+        "sql": "SELECT record_no, status FROM mes_heat_treatment_record WHERE record_no = :record_no LIMIT 1",
+        "sql_status": "success",
         "sql_error_code": null,
-        "sql_executed": false,
-        "sql_validated": false,
-        "used_tables": [],
+        "sql_executed": true,
+        "sql_validated": true,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
         "columns": [],
         "rows": [],
         "row_count": null,
@@ -418,7 +430,10 @@
       "events": [
         "PLANNER_END",
         "TOOL_MATCH",
-        "TOOL_EXECUTE_SUCCESS"
+        "TOOL_EXECUTE_SUCCESS",
+        "SQL_GENERATE_SUCCESS",
+        "SQL_VALIDATE_SUCCESS",
+        "SQL_EXECUTE_SUCCESS"
       ],
       "passed": true,
       "failures": []
@@ -448,7 +463,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "cf86d3d17e4b4e88bd81f961c84016be",
+        "trace_id": "22ce7807d700406fb36ddeaa3e84b980",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -473,12 +488,14 @@
         "planner_calls": 1,
         "execution_loops": 1,
         "replanned": false,
-        "sql": null,
-        "sql_status": null,
+        "sql": "SELECT record_no, status FROM mes_heat_treatment_record WHERE record_no = :record_no LIMIT 1",
+        "sql_status": "success",
         "sql_error_code": null,
-        "sql_executed": false,
-        "sql_validated": false,
-        "used_tables": [],
+        "sql_executed": true,
+        "sql_validated": true,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
         "columns": [],
         "rows": [],
         "row_count": null,
@@ -487,7 +504,10 @@
       "events": [
         "PLANNER_END",
         "TOOL_MATCH",
-        "TOOL_EXECUTE_SUCCESS"
+        "TOOL_EXECUTE_SUCCESS",
+        "SQL_GENERATE_SUCCESS",
+        "SQL_VALIDATE_SUCCESS",
+        "SQL_EXECUTE_SUCCESS"
       ],
       "passed": true,
       "failures": []
@@ -517,7 +537,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "cfc3fb94c25e48979cf037c1b4e77802",
+        "trace_id": "92c6fa3b29774d4a8fbfc1bf1d74ea8f",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -542,12 +562,14 @@
         "planner_calls": 1,
         "execution_loops": 1,
         "replanned": false,
-        "sql": null,
-        "sql_status": null,
+        "sql": "SELECT record_no, status FROM mes_heat_treatment_record WHERE record_no = :record_no LIMIT 1",
+        "sql_status": "success",
         "sql_error_code": null,
-        "sql_executed": false,
-        "sql_validated": false,
-        "used_tables": [],
+        "sql_executed": true,
+        "sql_validated": true,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
         "columns": [],
         "rows": [],
         "row_count": null,
@@ -556,7 +578,10 @@
       "events": [
         "PLANNER_END",
         "TOOL_MATCH",
-        "TOOL_EXECUTE_SUCCESS"
+        "TOOL_EXECUTE_SUCCESS",
+        "SQL_GENERATE_SUCCESS",
+        "SQL_VALIDATE_SUCCESS",
+        "SQL_EXECUTE_SUCCESS"
       ],
       "passed": true,
       "failures": []
@@ -586,7 +611,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "ab13ef8dcb88478e8375971c0eeb4587",
+        "trace_id": "37c049a90a6541bfa729b22093bff50b",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -657,7 +682,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "add9c73983214d65a85ec168c426fbb2",
+        "trace_id": "65c95d3a43414fe19a0607bf8ce82fc1",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -728,7 +753,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "d8d36254289c402d8e65b8b9aa0a2383",
+        "trace_id": "a723cd2b90ba444dadede113dc0cbc03",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -803,7 +828,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "1e507db786c142dd80d9aef49f3c7446",
+        "trace_id": "047fde5079db41cd9566f80d39418387",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -891,7 +916,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "66a2d6e2286d456fa1c21955be733266",
+        "trace_id": "509a9e18c0bf4913a0abc4d2e9cb8f13",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",
@@ -975,7 +1000,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "82a44767038a48ca8bce898686793b5d",
+        "trace_id": "700fffe19116478da0194bfe2b5dda08",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",
@@ -1071,7 +1096,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "95a01109aaf7494fb60687bb79d92eeb",
+        "trace_id": "b3d8b09c78cc40ac9606f8c0efcb974e",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",
@@ -1155,7 +1180,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "b6c35664233d4b23a701a7a499f56e3a",
+        "trace_id": "7f92c4f5308440a7953f9c53b45fa933",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",
@@ -1243,7 +1268,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "0445cedd6ede4c298e73551d273c4320",
+        "trace_id": "1263b4c5a75140e18f044f082708a490",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",
@@ -1314,7 +1339,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "697c729d080749be89967b4517a6de05",
+        "trace_id": "4e5fccda63ca41ea9e98e086db8bdb28",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -1339,12 +1364,14 @@
         "planner_calls": 1,
         "execution_loops": 1,
         "replanned": false,
-        "sql": null,
-        "sql_status": null,
+        "sql": "SELECT record_no, status FROM mes_heat_treatment_record WHERE record_no = :record_no LIMIT 1",
+        "sql_status": "success",
         "sql_error_code": null,
-        "sql_executed": false,
-        "sql_validated": false,
-        "used_tables": [],
+        "sql_executed": true,
+        "sql_validated": true,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
         "columns": [],
         "rows": [],
         "row_count": null,
@@ -1353,7 +1380,10 @@
       "events": [
         "PLANNER_END",
         "TOOL_MATCH",
-        "TOOL_EXECUTE_SUCCESS"
+        "TOOL_EXECUTE_SUCCESS",
+        "SQL_GENERATE_SUCCESS",
+        "SQL_VALIDATE_SUCCESS",
+        "SQL_EXECUTE_SUCCESS"
       ],
       "passed": true,
       "failures": []
@@ -1380,7 +1410,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "4aba84874fe044dcb9d290744eb494b7",
+        "trace_id": "8af11ce31ce24e4dbe361bd16b97860a",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",
@@ -1451,7 +1481,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "1c5fde164f3248f9ba40c1389593efc9",
+        "trace_id": "fbcc64bc4ee34a0b89c69694312a60da",
         "route": "unknown",
         "intent": "unknown",
         "initial_intent": "unknown",
@@ -1509,7 +1539,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "0a763a78365b4bbd9159817eca9c2e66",
+        "trace_id": "795f1ade11ae4607b3af17a03cd421fc",
         "route": "unknown",
         "intent": "unknown",
         "initial_intent": "unknown",
@@ -1564,7 +1594,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "626f8a54b60c4e8fa7feda9c9b5b4556",
+        "trace_id": "afd6307556394026814c58dfabc9f4b1",
         "route": "unknown",
         "intent": "unknown",
         "initial_intent": "unknown",
@@ -1620,7 +1650,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "5b9848fc956e43eea60a388a87af2819",
+        "trace_id": "237f4a7a6ead4893af9713f7189df1b4",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",
@@ -1682,7 +1712,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "b5d2e523fa9a4701a15e422a65695fab",
+        "trace_id": "53e4a6158a624790aca92c683668904d",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",
@@ -1745,7 +1775,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "f04c555892e040039b1c6791cea532d1",
+        "trace_id": "11ea0c194f8b4635b5b26fac3be14a75",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "mixed",
@@ -1805,7 +1835,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "be98e53ae6964842a51d9170acae65a2",
+        "trace_id": "66e15bd3f2884b5789fd8f1269116bce",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",

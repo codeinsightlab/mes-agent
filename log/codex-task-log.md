@@ -2941,6 +2941,91 @@ Result: passed.
 
 ```text
 SYSTEM STATUS: READY
+
+## 2026-07-09 - Agent OS Architecture Consolidation V1
+
+### Task Goal
+
+Review the current Agent OS architecture before `Capability Catalog V1`.
+
+This task was review-only:
+
+- No new Capability.
+- No new Tool.
+- No Planner behavior change.
+- No business SQL change.
+- No database change.
+- No frontend change.
+- No new framework.
+
+### Files Changed
+
+- `docs/agent-architecture-consolidation-v1.md`
+- `log/codex-task-log.md`
+
+### Key Findings
+
+- Public Agent entry is already consolidated to `POST /api/agent/run`.
+- `/api/agent/query` and `/api/agent/plan` are not public entrypoints; tests assert 404.
+- `DebuggablePlanner` is functional but owns legacy responsibilities: keyword route classification, record number extraction, capability selection, SQL keyword detection, and mixed diagnostic planning.
+- `heat_current_stage` is real and repository-backed.
+- `heat_equipment_assignment` and `heat_batch_products` remain enabled mock Tools with fixed business results.
+- Capability definitions are duplicated across Catalog, Planner labels, matcher prompt, fixtures, golden cases, and SQL schema semantics.
+- LangGraph-style `build_agent_graph()` and `LangChainToolMatcher` are not the `/api/agent/run` production entry; they are currently evaluation/test path candidates.
+
+### Documentation
+
+Created:
+
+- `docs/agent-architecture-consolidation-v1.md`
+
+New sections include:
+
+- Current architecture.
+- Target architecture.
+- Difference analysis.
+- Agent entry review.
+- Planner status.
+- Tool layer status.
+- Capability Catalog consolidation.
+- Text-to-SQL positioning.
+- Candidate removal/deprecation list.
+- Next phase recommendation.
+
+### Candidate Cleanup Items
+
+- Mark Planner keyword router logic as legacy.
+- Convert graph/matcher path to explicit eval-only or retire it after Catalog Router parity.
+- Merge `tests/fixtures/heat_treatment_tool_match_cases.json` into golden cases or label it matcher-eval-only.
+- Replace or block enabled mock Tools before calling the Tool layer fully real.
+- Remove generated `__pycache__` artifacts from review scope/working tree in a cleanup-only phase.
+
+### Status
+
+```text
+SYSTEM STATUS: ARCHITECTURE_REVIEW_COMPLETE
+NEXT_PHASE: Capability Catalog V1
+```
+
+### Verification
+
+```text
+cd backend && .venv/bin/python -m compileall app scripts
+```
+
+Result: passed.
+
+```text
+cd backend && .venv/bin/pytest
+```
+
+Result: `121 passed, 159 warnings`.
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_os_v1_tests.py
+```
+
+Result: `15 passed`, `0 failed`, `system_status=PASS`.
 ```
 
 ### Remaining Risks
@@ -3101,3 +3186,131 @@ CURRENT STATUS: MOCK
 ```text
 Real Tool Executor接入
 ```
+
+## 2026-07-09 15:22 CST - Real Heat Current Stage Tool Executor V1
+
+### Task Goal
+
+Only upgrade `heat_current_stage` from mock status generation to a real MES read-only Tool.
+
+Explicitly out of scope:
+
+- Planner strategy.
+- Tool Catalog.
+- Text-to-SQL.
+- SQL Validator.
+- Execution Loop behavior.
+- Frontend.
+- Database schema.
+- New business capabilities.
+
+### Modified Files
+
+- `backend/app/agent/tools/heat_treatment.py`
+- `backend/app/agent/tools/registry.py`
+- `backend/app/agent/tools/repository/__init__.py`
+- `backend/app/agent/tools/repository/heat_treatment_repository.py`
+- `backend/app/agent/execution_observation.py`
+- `backend/app/agent/orchestrator/agent_orchestrator.py`
+- `backend/tests/__init__.py`
+- `backend/tests/heat_tool_test_utils.py`
+- `backend/tests/test_agent_catalog_and_tools.py`
+- `backend/tests/test_agent_graph.py`
+- `backend/tests/test_agent_orchestrator.py`
+- `backend/scripts/run_agent_os_v1_tests.py`
+- `backend/scripts/run_agent_regression.py`
+- `backend/results/agent_os_v1_test_report.json`
+- `backend/results/agent_regression_report.json`
+- `backend/results/production_acceptance_v1.json`
+- `docs/agent-tool-text-to-sql-routing-v1.md`
+- `log/codex-task-log.md`
+
+### Key Decisions
+
+- Added `HeatTreatmentRepository.get_heat_current_stage(record_no)` for fixed, parameter-bound readonly SQL against `mes_heat_treatment_record`.
+- Removed mock fallback that returned `RUNNING` for unknown record numbers.
+- Preserved public Tool result shape and stripped internal `_trace` before returning Tool data.
+- Propagated Tool repository trace into `ExecutionObservation.trace` and `ExecutionQuality`.
+- Kept Planner and Tool Catalog behavior unchanged.
+- Used real repository class with in-memory SQL tables in tests to avoid fake repository behavior while keeping tests deterministic.
+
+### Real Execution Flow
+
+```text
+heat_current_stage Tool
+-> HeatTreatmentRepository
+-> AGENT_MES_DB_* readonly database
+-> SELECT record_no, status FROM mes_heat_treatment_record WHERE record_no = :record_no LIMIT 1
+-> Tool result
+-> ExecutionObservation trace
+```
+
+### Verification Commands
+
+```text
+cd backend && .venv/bin/python -m compileall app scripts
+```
+
+Result: passed.
+
+```text
+cd backend && .venv/bin/pytest
+```
+
+Result: `121 passed, 159 warnings`.
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_os_v1_tests.py
+```
+
+Result: `15 passed`, `0 failed`, `SYSTEM STATUS = PASS`.
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_regression.py
+```
+
+Result: `23 passed`, `0 failed`, `SYSTEM STATUS = READY`.
+
+```text
+cd backend && .venv/bin/python scripts/run_production_acceptance_v1.py
+```
+
+Result: `32 passed`, `0 failed`, `SYSTEM STATUS = READY`.
+
+### Real API Verification
+
+Request:
+
+```text
+POST /api/agent/run
+message=HT20260603-007热处理的状态
+```
+
+Observed:
+
+```text
+route=tool
+tool_name=heat_current_stage
+record_no=HT20260603-007
+found=true
+status=ENDED
+status_name=已结束
+sql=SELECT record_no, status FROM mes_heat_treatment_record WHERE record_no = :record_no LIMIT 1
+used_tables=["mes_heat_treatment_record"]
+sql_executed=true
+sql_valid=true
+```
+
+### Risks Or Issues
+
+- Only `heat_current_stage` is real in this task; other heat-treatment Tools were intentionally not expanded.
+- The exact phrase `NOT_EXIST_HT001热处理状态` is still parsed by the existing Planner as `HT001`; API-level not-found test uses `HT99999999热处理状态` because Planner changes were forbidden.
+- Production analytics reports still show accumulated high risk from historic `missing_param` traces, unrelated to this Tool executor change.
+
+### Documentation
+
+Appended implementation and validation section to:
+
+- `docs/agent-tool-text-to-sql-routing-v1.md`
+
+SYSTEM STATUS: READY

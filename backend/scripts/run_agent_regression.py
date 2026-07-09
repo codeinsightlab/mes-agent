@@ -5,6 +5,8 @@ import sys
 from typing import Any, cast
 
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, text
+from sqlalchemy.pool import StaticPool
 
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -17,6 +19,8 @@ from app.agent.text_to_sql.models import SqlExecutionResult, TextToSqlGeneration
 from app.agent.text_to_sql.normalizer import ResultNormalizer
 from app.agent.text_to_sql.schema_provider import HeatTreatmentSchemaProvider
 from app.agent.text_to_sql.validator import SqlValidator
+from app.agent.tools.registry import ToolRegistry
+from app.agent.tools.repository.heat_treatment_repository import HeatTreatmentRepository
 from app.api.agent import get_orchestrator
 from app.core.config import get_settings
 from app.core.type_defs import JsonObject
@@ -79,7 +83,10 @@ def main() -> None:
     settings = get_settings()
     orchestrator = AgentOrchestrator(
         planner=DebuggablePlanner(),
-        execution_layer=PlanExecutionAdapter(text_to_sql_node=DeterministicTextToSqlNode()),
+        execution_layer=PlanExecutionAdapter(
+            text_to_sql_node=DeterministicTextToSqlNode(),
+            registry=_build_test_registry(),
+        ),
     )
     app.dependency_overrides[get_orchestrator] = lambda: orchestrator
     client = TestClient(app)
@@ -217,6 +224,20 @@ def _find_sql_result(payload: JsonObject) -> JsonObject:
     }
     for trace in payload.get("execution_trace") or []:
         for step_result in trace.get("result", {}).get("data", {}).get("step_results", []):
+            tool_observation = step_result.get("observation", {})
+            tool_trace = tool_observation.get("trace", {})
+            if step_result.get("type") == "tool" and isinstance(tool_trace, dict) and tool_trace.get("sql"):
+                return {
+                    "sql": tool_trace.get("sql"),
+                    "status": "success" if tool_observation.get("status") == "success" else None,
+                    "error_code": tool_trace.get("error_type"),
+                    "executed": tool_trace.get("sql_executed") is True,
+                    "validated": tool_observation.get("execution_quality", {}).get("sql_valid") is True,
+                    "used_tables": tool_trace.get("used_tables") or [],
+                    "columns": [],
+                    "rows": [],
+                    "row_count": None,
+                }
             if step_result.get("type") != "sql":
                 continue
             observation = step_result.get("observation", {})
@@ -632,6 +653,37 @@ def _rows_for(query: str) -> list[JsonObject]:
         {"equipment_name": "一号热处理炉", "batch_count": 12},
         {"equipment_name": "二号热处理炉", "batch_count": 6},
     ]
+
+
+def _build_test_registry() -> ToolRegistry:
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                CREATE TABLE mes_heat_treatment_record (
+                    record_no TEXT PRIMARY KEY,
+                    status TEXT
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO mes_heat_treatment_record (record_no, status)
+                VALUES
+                    ('TRACE-HTR-K2-T-FG-001', 'FINISHED'),
+                    ('HT001', 'FINISHED'),
+                    ('HT20260603-007', 'RUNNING')
+                """
+            )
+        )
+    return ToolRegistry(heat_treatment_repository=HeatTreatmentRepository(engine=engine))
 
 
 if __name__ == "__main__":

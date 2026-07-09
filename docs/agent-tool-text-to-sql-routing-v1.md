@@ -1161,3 +1161,159 @@ Results:
 - Planner still uses deterministic phrase matching for the current limited Tool Catalog. It is intentionally not a general Tool Matcher replacement.
 - Missing identifier requests still replan once because ExecutionFeedbackLoop V1 replans all partial observations; the final result remains bounded to two loops and does not enter SQL.
 - Existing mixed diagnosis capability gaps remain unchanged because expanding Tool Catalog was out of scope.
+
+## 2026-07-09 - Real Heat Current Stage Tool Executor V1
+
+### Task Goal
+
+Upgrade only `heat_current_stage` from a mock Tool implementation to a real MES read-only query Tool.
+
+Scope boundary:
+
+- No Planner change.
+- No Tool Catalog change.
+- No Text-to-SQL change.
+- No SQL Validator change.
+- No Execution Loop behavior change.
+- No frontend or database schema change.
+- No new heat-treatment business capability.
+
+### Implementation Summary
+
+`heat_current_stage` now uses:
+
+```text
+heat_current_stage Tool
+-> HeatTreatmentRepository.get_heat_current_stage(record_no)
+-> AGENT_MES_DB_* readonly MySQL configuration
+-> SELECT record_no, status FROM mes_heat_treatment_record WHERE record_no = :record_no LIMIT 1
+-> structured Tool result
+-> ExecutionObservation trace
+```
+
+The previous mock fallback was removed:
+
+```text
+TRACE-HTR-K2-T-FG-001 or HT001 -> FINISHED
+all other record numbers -> RUNNING
+```
+
+Unknown records now return `found=false`, `status=null`, and `status_name=null`; they no longer default to `RUNNING` or `FINISHED`.
+
+### Repository Contract
+
+Repository file:
+
+- `backend/app/agent/tools/repository/heat_treatment_repository.py`
+
+SQL contract:
+
+```sql
+SELECT record_no, status
+FROM mes_heat_treatment_record
+WHERE record_no = :record_no
+LIMIT 1
+```
+
+Properties:
+
+- Fixed read-only SQL.
+- Parameter binding.
+- No `SELECT *`.
+- Single-row lookup.
+- Uses `AGENT_MES_DB_HOST`, `AGENT_MES_DB_PORT`, `AGENT_MES_DB_NAME`, `AGENT_MES_DB_USER`, and `AGENT_MES_DB_PASSWORD`.
+
+### Trace Contract
+
+Tool execution now records:
+
+```json
+{
+  "tool_name": "heat_current_stage",
+  "sql": "SELECT record_no, status FROM mes_heat_treatment_record WHERE record_no = :record_no LIMIT 1",
+  "used_tables": ["mes_heat_treatment_record"],
+  "sql_executed": true,
+  "error_type": null
+}
+```
+
+The corresponding execution quality records:
+
+```json
+{
+  "tool_hit": true,
+  "sql_valid": true,
+  "sql_executed": true
+}
+```
+
+### Real API Verification
+
+Local TestClient call:
+
+```text
+POST /api/agent/run
+message = HT20260603-007热处理的状态
+```
+
+Observed result:
+
+```text
+http_status=200
+route=tool
+tool_name=heat_current_stage
+record_no=HT20260603-007
+found=true
+status=ENDED
+status_name=已结束
+sql=SELECT record_no, status FROM mes_heat_treatment_record WHERE record_no = :record_no LIMIT 1
+used_tables=["mes_heat_treatment_record"]
+sql_executed=true
+sql_valid=true
+```
+
+This differs from the earlier mock result (`RUNNING`) and confirms the value now comes from MES read-only data.
+
+### Validation Commands
+
+```text
+cd backend && .venv/bin/python -m compileall app scripts
+```
+
+Result: passed.
+
+```text
+cd backend && .venv/bin/pytest
+```
+
+Result: `121 passed, 159 warnings`.
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_os_v1_tests.py
+```
+
+Result: `15 passed`, `0 failed`, `SYSTEM STATUS = PASS`.
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_regression.py
+```
+
+Result: `23 passed`, `0 failed`, `SYSTEM STATUS = READY`.
+
+```text
+cd backend && .venv/bin/python scripts/run_production_acceptance_v1.py
+```
+
+Result: `32 passed`, `0 failed`, `SYSTEM STATUS = READY`.
+
+### Current Status
+
+```text
+CURRENT STATUS: REAL
+```
+
+### Remaining Risks
+
+- Only `heat_current_stage` was upgraded. Other heat-treatment Tools remain unchanged by design.
+- The exact natural input `NOT_EXIST_HT001热处理状态` is still parsed by the current Planner as `HT001`; API-level not-found verification used `HT99999999热处理状态` to avoid changing Planner behavior.
+- Production report metrics currently show a high system risk level because accumulated analytics contain many historic `missing_param` cases; this is not introduced by the real Tool executor change.

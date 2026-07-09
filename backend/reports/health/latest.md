@@ -4,14 +4,14 @@ Report date: 2026-07-09
 
 ## Stability Metrics
 
-- total_requests: 47
-- success_rate: 0.5957
-- avg_loop_depth: 1.4043
-- tool_hit_rate: 0.5758
+- total_requests: 78
+- success_rate: 0.6026
+- avg_loop_depth: 1.3974
+- tool_hit_rate: 0.5714
 - sql_success_rate: 1.0
-- planner_success_rate: 0.5957
-- replan_rate: 0.4043
-- failure_count: 19
+- planner_success_rate: 0.6026
+- replan_rate: 0.3974
+- failure_count: 31
 
 ## System Risk Level
 

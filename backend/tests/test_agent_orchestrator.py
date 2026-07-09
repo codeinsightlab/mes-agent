@@ -12,6 +12,7 @@ from app.agent.orchestrator.agent_orchestrator import (
 from app.agent.tools.registry import DEFAULT_TOOL_REGISTRY
 from app.agent.planner.models import PlannerPlan, PlanStep, ExecutionPlanPolicy, DebugTrace
 from app.agent.planner.planner import DebuggablePlanner
+from tests.heat_tool_test_utils import build_heat_treatment_test_registry
 
 
 class SequenceExecutionLayer:
@@ -90,7 +91,10 @@ def test_orchestrator_normalizes_tool_error():
 
 
 def test_plan_execution_adapter_runs_tool_step_with_registry():
-    adapter = PlanExecutionAdapter(text_to_sql_node=FakeTextToSqlNode())
+    adapter = PlanExecutionAdapter(
+        text_to_sql_node=FakeTextToSqlNode(),
+        registry=build_heat_treatment_test_registry(),
+    )
     plan = PlannerPlan(
         intent="tool",
         goal="查询热处理状态",
@@ -121,6 +125,12 @@ def test_plan_execution_adapter_runs_tool_step_with_registry():
     assert observation.status == "success"
     tool_result = observation.data["last_result"]["tool_result"]
     assert tool_result["status"] == "FINISHED"
+    assert observation.execution_quality.tool_hit is True
+    assert observation.execution_quality.sql_valid is True
+    assert observation.execution_quality.sql_executed is True
+    assert observation.trace.sql is not None
+    assert observation.trace.used_tables == ["mes_heat_treatment_record"]
+    assert observation.trace.sql_executed is True
 
 
 def test_plan_execution_adapter_runs_sql_step_with_text_to_sql_node():
@@ -177,6 +187,58 @@ def test_agent_run_executes_known_tool_with_record_no_once_without_replan():
         ("heat_current_stage", {"record_no": "TRACE-HTR-K2-T-FG-001"})
     ]
     assert result.final_result.error is None
+    trace = result.execution_trace[-1]["result"]["trace"]
+    assert trace["sql_executed"] is True
+    assert trace["used_tables"] == ["mes_heat_treatment_record"]
+
+
+def test_agent_run_executes_real_heat_current_stage_repository_trace():
+    registry = SpyRegistry()
+    orchestrator = AgentOrchestrator(
+        DebuggablePlanner(),
+        PlanExecutionAdapter(text_to_sql_node=FakeTextToSqlNode(), registry=registry),
+    )
+
+    result = orchestrator.run(AgentRunInput(message="HT20260603-007热处理的状态"))
+
+    step = result.plan_trace["initial_plan"]["steps"][0]
+    trace = result.execution_trace[-1]["result"]["trace"]
+    tool_result = result.final_result.data["last_result"]["tool_result"]
+    assert result.final_result.status == "success"
+    assert result.debug["route"] == "tool"
+    assert step["name"] == "heat_current_stage"
+    assert step["args"]["record_no"] == "HT20260603-007"
+    assert tool_result == {
+        "found": True,
+        "record_no": "HT20260603-007",
+        "status": "RUNNING",
+        "status_name": "进行中",
+    }
+    assert trace["sql_executed"] is True
+    assert trace["used_tables"] == ["mes_heat_treatment_record"]
+    assert trace["sql"].startswith("SELECT record_no, status")
+
+
+def test_agent_run_returns_not_found_without_mock_fallback():
+    registry = SpyRegistry()
+    orchestrator = AgentOrchestrator(
+        DebuggablePlanner(),
+        PlanExecutionAdapter(text_to_sql_node=FakeTextToSqlNode(), registry=registry),
+    )
+
+    result = orchestrator.run(AgentRunInput(message="HT99999999热处理状态"))
+
+    tool_result = result.final_result.data["last_result"]["tool_result"]
+    trace = result.execution_trace[-1]["result"]["trace"]
+    assert result.final_result.status == "success"
+    assert tool_result == {
+        "found": False,
+        "record_no": "HT99999999",
+        "status": None,
+        "status_name": None,
+    }
+    assert trace["sql_executed"] is True
+    assert trace["error_type"] == "not_found"
 
 
 def test_agent_run_missing_tool_parameter_does_not_execute_tool_or_enter_sql():
@@ -265,10 +327,14 @@ class FakeTextToSqlNode:
 class SpyRegistry:
     def __init__(self):
         self.calls = []
+        self._registry = build_heat_treatment_test_registry()
 
     def get_capability(self, name):
         return DEFAULT_TOOL_REGISTRY.get_capability(name)
 
     def execute(self, name, arguments):
         self.calls.append((name, arguments))
-        return DEFAULT_TOOL_REGISTRY.execute(name, arguments)
+        return self._registry.execute(name, arguments)
+
+    def last_trace(self):
+        return self._registry.last_trace()
