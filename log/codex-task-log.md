@@ -2949,3 +2949,155 @@ SYSTEM STATUS: READY
 - The Text-to-SQL path returned real columns and executed successfully, but the current test data window produced `row_count=0`.
 - Dangerous SQL prompts are currently blocked before SQL generation because Planner classifies them as unknown; validator-level malicious SQL testing remains covered by unit tests, not by this production acceptance script.
 - Health report risk level is HIGH because the acceptance suite intentionally injects missing-parameter and dangerous-input failures.
+## 2026-07-09 - Agent Golden Test + Regression System V1
+
+### Task Goal
+
+Build an Agent Golden Test and Regression Test system for MES Agent OS V1 so future Prompt, Model, Tool Catalog, Planner, or SQL Schema changes can detect behavior regression.
+
+Scope boundary:
+
+- No Planner core logic change.
+- No Tool Catalog change.
+- No Text-to-SQL capability expansion.
+- No Execution Loop or Orchestrator flow change.
+- No frontend change.
+
+### Modified Files
+
+- `backend/tests/golden/tool_cases.json`
+- `backend/tests/golden/sql_cases.json`
+- `backend/tests/golden/planner_cases.json`
+- `backend/tests/golden/failure_cases.json`
+- `backend/tests/golden/mixed_cases.json`
+- `backend/scripts/run_agent_regression.py`
+- `backend/results/agent_regression_report.json`
+- `docs/agent-golden-regression-v1.md`
+- `log/codex-task-log.md`
+
+### Key Decisions
+
+- Used `/api/agent/run` as the regression entrypoint through FastAPI `TestClient`.
+- Overrode only Text-to-SQL execution in the runner with deterministic SQL and deterministic non-empty rows, keeping Planner and execution loop behavior intact.
+- Recorded version information: `agent_version`, `planner_version`, `prompt_version`, `sql_prompt_version`, `tool_version`, `schema_version`, `model_name`, and `model_temperature`.
+- Added five manual SQL semantic checks with manual SQL, manual result, Agent SQL, Agent result, and consistency flags.
+- Kept current Planner behavior as golden baseline where the requested target behavior would require Planner changes.
+
+### Verification Commands
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_regression.py
+```
+
+Result:
+
+```text
+SYSTEM STATUS: READY
+total: 23
+passed: 23
+failed: 0
+agent_quality_score: 0.9714
+```
+
+Full validation:
+
+```text
+cd backend && .venv/bin/python -m compileall app scripts
+```
+
+Result: passed.
+
+```text
+cd backend && .venv/bin/pytest
+```
+
+Result: `118 passed, 159 warnings`.
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_os_v1_tests.py
+```
+
+Result: `15 passed`, `0 failed`, `system_status=PASS`.
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_regression.py
+```
+
+Result: `23 passed`, `0 failed`, `system_status=READY`.
+
+### Risks Or Issues
+
+- `这个热处理做完了吗` currently fails explainably as Planner `missing_param` instead of Tool partial.
+- `查询热处理工艺路线` currently maps to Planner `missing_param`; future target may classify this as `tool_miss`.
+- Some natural equipment and weekly-detail phrasings are not covered by current Planner keywords unless Planner routing is intentionally changed in a later task.
+- The regression runner uses deterministic SQL rows and should be complemented by a real read-only MES database acceptance run when live schema/data validation is required.
+
+## 2026-07-09 - Agent Tool Execution Trace RCA
+
+### Task Goal
+
+Investigate why `HT20260603-007热处理的状态` routes to `heat_current_stage` and returns a Tool result, while trace fields show `sql=null`, `used_tables=[]`, and `sql_executed=null`.
+
+Scope boundary:
+
+- Investigation only.
+- No Planner change.
+- No Orchestrator change.
+- No Text-to-SQL change.
+- No Tool Catalog or Tool implementation change.
+- No database or frontend change.
+
+### Evidence Reviewed
+
+- `backend/app/api/agent.py`
+- `backend/app/agent/planner/planner.py`
+- `backend/app/agent/orchestrator/agent_orchestrator.py`
+- `backend/app/agent/tools/registry.py`
+- `backend/app/agent/tools/heat_treatment.py`
+- `backend/app/agent/execution_observation.py`
+- `backend/app/agent/text_to_sql/executor.py`
+- `backend/app/analytics/event/collector.py`
+
+### Key Finding
+
+`heat_current_stage` is currently a mock implementation. It returns `FINISHED` only for `TRACE-HTR-K2-T-FG-001` or `HT001`; all other record identifiers return `RUNNING`.
+
+The Tool path does not call `ReadonlySqlExecutor`, a repository, or a MES API. SQL trace fields are null because no SQL is executed by the Tool.
+
+### Verification
+
+Ran a local TestClient call to `/api/agent/run` with:
+
+```text
+HT20260603-007热处理的状态
+```
+
+Observed:
+
+```text
+route=tool
+tool_name=heat_current_stage
+record_no=HT20260603-007
+status=RUNNING
+sql=null
+used_tables=[]
+sql_executed=null
+```
+
+### Documentation
+
+Appended RCA section to:
+
+- `docs/agent-tool-text-to-sql-routing-v1.md`
+
+### Current Status
+
+```text
+CURRENT STATUS: MOCK
+```
+
+### Next Action
+
+```text
+Real Tool Executor接入
+```

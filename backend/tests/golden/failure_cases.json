@@ -1,0 +1,70 @@
+[
+  {
+    "id": "failure_missing_param_001",
+    "category": "failure",
+    "question": "这个热处理做完了吗",
+    "expected": {
+      "route": "unknown",
+      "status": "failed",
+      "failure_type": "missing_param",
+      "failure_source": "planner"
+    },
+    "validation": {
+      "required_events": ["PLANNER_END", "FAILURE_CLASSIFIED"],
+      "forbidden_routes": ["sql", "text_to_sql"],
+      "forbid_sql_execution": true,
+      "max_loop_depth": 2
+    }
+  },
+  {
+    "id": "failure_tool_miss_001",
+    "category": "failure",
+    "question": "查询热处理工艺路线",
+    "expected": {
+      "route": "unknown",
+      "status": "failed",
+      "failure_type": "missing_param",
+      "failure_source": "planner",
+      "target_failure_type": "tool_miss"
+    },
+    "validation": {
+      "required_events": ["PLANNER_END", "FAILURE_CLASSIFIED"],
+      "forbid_sql_execution": true,
+      "max_loop_depth": 2
+    }
+  },
+  {
+    "id": "failure_sql_unknown_column_001",
+    "category": "failure",
+    "question": "统计热处理不存在字段数量",
+    "expected": {
+      "route": "sql",
+      "status": "failed",
+      "failure_type": "schema_gap",
+      "failure_source": "schema",
+      "sql_error_code": "unknown_column"
+    },
+    "validation": {
+      "required_events": ["SQL_GENERATE_SUCCESS", "SQL_VALIDATE_FAIL", "FAILURE_CLASSIFIED"],
+      "forbid_sql_execution": true,
+      "max_loop_depth": 2
+    }
+  },
+  {
+    "id": "failure_sql_forbidden_table_001",
+    "category": "failure",
+    "question": "统计供应商热处理数量",
+    "expected": {
+      "route": "sql",
+      "status": "failed",
+      "failure_type": "schema_gap",
+      "failure_source": "schema",
+      "sql_error_code": "forbidden_table"
+    },
+    "validation": {
+      "required_events": ["SQL_GENERATE_SUCCESS", "SQL_VALIDATE_FAIL", "FAILURE_CLASSIFIED"],
+      "forbid_sql_execution": true,
+      "max_loop_depth": 2
+    }
+  }
+]

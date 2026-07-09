@@ -1,0 +1,131 @@
+[
+  {
+    "id": "heat_sql_monthly_equipment_batch_count_001",
+    "category": "sql",
+    "question": "统计本月每台热处理设备处理了多少批次",
+    "expected": {
+      "route": "sql",
+      "sql_status": "success",
+      "sql_validator": "validated",
+      "sql_executed": true,
+      "readonly": true,
+      "used_tables": ["mes_heat_treatment_record"],
+      "required_sql_fragments": [
+        "SELECT",
+        "equipment_name",
+        "COUNT",
+        "FROM mes_heat_treatment_record",
+        "GROUP BY equipment_name",
+        "LIMIT"
+      ],
+      "forbidden_sql_fragments": ["DELETE", "UPDATE", "INSERT", "DROP"]
+    },
+    "validation": {
+      "required_events": ["SQL_GENERATE_SUCCESS", "SQL_VALIDATE_SUCCESS", "SQL_EXECUTE_SUCCESS"],
+      "max_loop_depth": 1
+    }
+  },
+  {
+    "id": "heat_sql_recent_records_001",
+    "category": "sql",
+    "question": "查询最近10条热处理记录",
+    "expected": {
+      "route": "sql",
+      "sql_status": "success",
+      "sql_validator": "validated",
+      "sql_executed": true,
+      "readonly": true,
+      "used_tables": ["mes_heat_treatment_record"],
+      "required_sql_fragments": [
+        "SELECT",
+        "record_no",
+        "FROM mes_heat_treatment_record",
+        "ORDER BY",
+        "LIMIT 10"
+      ],
+      "expected_limit": 10
+    },
+    "validation": {
+      "required_events": ["SQL_GENERATE_SUCCESS", "SQL_VALIDATE_SUCCESS", "SQL_EXECUTE_SUCCESS"],
+      "max_loop_depth": 1
+    }
+  },
+  {
+    "id": "heat_sql_monthly_finished_count_001",
+    "category": "sql",
+    "question": "统计2026年7月热处理完成数量",
+    "expected": {
+      "route": "sql",
+      "sql_status": "success",
+      "sql_validator": "validated",
+      "sql_executed": true,
+      "readonly": true,
+      "used_tables": ["mes_heat_treatment_record"],
+      "required_sql_fragments": [
+        "SELECT",
+        "COUNT",
+        "finished_time",
+        "2026-07-01",
+        "2026-08-01",
+        "LIMIT"
+      ],
+      "forbidden_sql_fragments": ["DELETE", "UPDATE", "INSERT", "DROP"]
+    },
+    "validation": {
+      "required_events": ["SQL_GENERATE_SUCCESS", "SQL_VALIDATE_SUCCESS", "SQL_EXECUTE_SUCCESS"],
+      "max_loop_depth": 1
+    }
+  },
+  {
+    "id": "heat_sql_week_finished_records_001",
+    "category": "sql",
+    "question": "查询最近本周已完成热处理记录的记录号、设备和完成时间",
+    "expected": {
+      "route": "sql",
+      "sql_status": "success",
+      "sql_validator": "validated",
+      "sql_executed": true,
+      "readonly": true,
+      "used_tables": ["mes_heat_treatment_record"],
+      "required_sql_fragments": [
+        "SELECT",
+        "record_no",
+        "equipment_name",
+        "finished_time",
+        "WEEK",
+        "LIMIT"
+      ],
+      "forbidden_sql_fragments": ["DELETE", "UPDATE", "INSERT", "DROP"]
+    },
+    "validation": {
+      "required_events": ["SQL_GENERATE_SUCCESS", "SQL_VALIDATE_SUCCESS", "SQL_EXECUTE_SUCCESS"],
+      "max_loop_depth": 1
+    }
+  },
+  {
+    "id": "heat_sql_avg_duration_001",
+    "category": "sql",
+    "question": "查询最近三个月各设备平均处理时长",
+    "expected": {
+      "route": "sql",
+      "sql_status": "success",
+      "sql_validator": "validated",
+      "sql_executed": true,
+      "readonly": true,
+      "used_tables": ["mes_heat_treatment_record"],
+      "required_sql_fragments": [
+        "SELECT",
+        "equipment_name",
+        "AVG",
+        "TIMESTAMPDIFF",
+        "GROUP BY equipment_name",
+        "LIMIT"
+      ],
+      "forbidden_sql_fragments": ["DELETE", "UPDATE", "INSERT", "DROP"]
+    },
+    "validation": {
+      "required_events": ["SQL_GENERATE_SUCCESS", "SQL_VALIDATE_SUCCESS", "SQL_EXECUTE_SUCCESS"],
+      "max_loop_depth": 1
+    }
+  }
+]

@@ -1,0 +1,1849 @@
+{
+  "system_status": "READY",
+  "total": 23,
+  "passed": 23,
+  "failed": 0,
+  "metrics": {
+    "route_accuracy": 1.0,
+    "tool_accuracy": 1.0,
+    "argument_accuracy": 1.0,
+    "sql_accuracy": 1.0,
+    "sql_success_rate": 1.0,
+    "failure_accuracy": 0.8571,
+    "agent_quality_score": 0.9714
+  },
+  "version_info": {
+    "agent_version": "0.1.0",
+    "planner_version": "debuggable-planner-v1",
+    "prompt_version": "chat-v1",
+    "sql_prompt_version": "heat-treatment-text-to-sql-v1",
+    "tool_version": "heat-treatment-tools-v1",
+    "schema_version": "heat-treatment-schema-v1",
+    "model_name": "deepseek-chat",
+    "model_temperature": 0
+  },
+  "coverage": {
+    "tool_cases": 9,
+    "tool_capabilities": [
+      "heat_batch_products",
+      "heat_current_stage",
+      "heat_equipment_assignment"
+    ],
+    "sql_cases": 5,
+    "failure_cases": 7,
+    "planner_cases": 3,
+    "mixed_cases": 2
+  },
+  "semantic_sql_checks": [
+    {
+      "question": "统计本月每台热处理设备处理了多少批次",
+      "manual_sql": "SELECT equipment_name, COUNT(id) AS batch_count FROM mes_heat_treatment_record WHERE status IN ('FINISHED','TRANSFERRED','ENDED') AND finished_time IS NOT NULL AND finished_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') GROUP BY equipment_name LIMIT 100",
+      "manual_result": {
+        "columns": [
+          "equipment_name",
+          "batch_count"
+        ],
+        "rows": [
+          {
+            "equipment_name": "一号热处理炉",
+            "batch_count": 12
+          },
+          {
+            "equipment_name": "二号热处理炉",
+            "batch_count": 6
+          }
+        ]
+      },
+      "agent_sql": "SELECT equipment_name, COUNT(id) AS batch_count FROM mes_heat_treatment_record WHERE status IN ('FINISHED', 'TRANSFERRED', 'ENDED') AND NOT finished_time IS NULL AND finished_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') GROUP BY equipment_name LIMIT 100",
+      "agent_result": {
+        "columns": [
+          "equipment_name",
+          "batch_count"
+        ],
+        "rows": [
+          {
+            "equipment_name": "一号热处理炉",
+            "batch_count": 12
+          },
+          {
+            "equipment_name": "二号热处理炉",
+            "batch_count": 6
+          }
+        ]
+      },
+      "consistent": true
+    },
+    {
+      "question": "查询最近10条热处理记录",
+      "manual_sql": "SELECT record_no, status, equipment_name, created_time FROM mes_heat_treatment_record WHERE created_time IS NOT NULL ORDER BY created_time DESC LIMIT 10",
+      "manual_result": {
+        "columns": [
+          "record_no",
+          "status",
+          "equipment_name",
+          "created_time"
+        ],
+        "rows": [
+          {
+            "record_no": "TRACE-HTR-K2-T-FG-005",
+            "status": "RUNNING",
+            "equipment_name": "二号热处理炉",
+            "created_time": "2026-07-09 10:00:00"
+          },
+          {
+            "record_no": "TRACE-HTR-K2-T-FG-004",
+            "status": "FINISHED",
+            "equipment_name": "一号热处理炉",
+            "created_time": "2026-07-09 09:30:00"
+          }
+        ]
+      },
+      "agent_sql": "SELECT record_no, status, equipment_name, created_time FROM mes_heat_treatment_record WHERE NOT created_time IS NULL ORDER BY created_time DESC LIMIT 10",
+      "agent_result": {
+        "columns": [
+          "record_no",
+          "status",
+          "equipment_name",
+          "created_time"
+        ],
+        "rows": [
+          {
+            "record_no": "TRACE-HTR-K2-T-FG-005",
+            "status": "RUNNING",
+            "equipment_name": "二号热处理炉",
+            "created_time": "2026-07-09 10:00:00"
+          },
+          {
+            "record_no": "TRACE-HTR-K2-T-FG-004",
+            "status": "FINISHED",
+            "equipment_name": "一号热处理炉",
+            "created_time": "2026-07-09 09:30:00"
+          }
+        ]
+      },
+      "consistent": true
+    },
+    {
+      "question": "统计2026年7月热处理完成数量",
+      "manual_sql": "SELECT COUNT(id) AS finished_count FROM mes_heat_treatment_record WHERE status IN ('FINISHED','TRANSFERRED','ENDED') AND finished_time >= '2026-07-01' AND finished_time < '2026-08-01' LIMIT 100",
+      "manual_result": {
+        "columns": [
+          "finished_count"
+        ],
+        "rows": [
+          {
+            "finished_count": 18
+          }
+        ]
+      },
+      "agent_sql": "SELECT COUNT(id) AS finished_count FROM mes_heat_treatment_record WHERE status IN ('FINISHED', 'TRANSFERRED', 'ENDED') AND finished_time >= '2026-07-01' AND finished_time < '2026-08-01' LIMIT 100",
+      "agent_result": {
+        "columns": [
+          "finished_count"
+        ],
+        "rows": [
+          {
+            "finished_count": 18
+          }
+        ]
+      },
+      "consistent": true
+    },
+    {
+      "question": "查询最近本周已完成热处理记录的记录号、设备和完成时间",
+      "manual_sql": "SELECT record_no, equipment_name, finished_time FROM mes_heat_treatment_record WHERE status IN ('FINISHED','TRANSFERRED','ENDED') AND finished_time IS NOT NULL AND YEARWEEK(finished_time, 1) = YEARWEEK(CURDATE(), 1) ORDER BY finished_time DESC LIMIT 100",
+      "manual_result": {
+        "columns": [
+          "record_no",
+          "equipment_name",
+          "finished_time"
+        ],
+        "rows": [
+          {
+            "record_no": "TRACE-HTR-K2-T-FG-004",
+            "equipment_name": "一号热处理炉",
+            "finished_time": "2026-07-09 11:20:00"
+          }
+        ]
+      },
+      "agent_sql": "SELECT record_no, equipment_name, finished_time FROM mes_heat_treatment_record WHERE status IN ('FINISHED', 'TRANSFERRED', 'ENDED') AND NOT finished_time IS NULL AND YEARWEEK(finished_time, 1) = YEARWEEK(CURDATE(), 1) ORDER BY finished_time DESC LIMIT 100",
+      "agent_result": {
+        "columns": [
+          "record_no",
+          "equipment_name",
+          "finished_time"
+        ],
+        "rows": [
+          {
+            "record_no": "TRACE-HTR-K2-T-FG-004",
+            "equipment_name": "一号热处理炉",
+            "finished_time": "2026-07-09 11:20:00"
+          }
+        ]
+      },
+      "consistent": true
+    },
+    {
+      "question": "查询最近三个月各设备平均处理时长",
+      "manual_sql": "SELECT equipment_name, AVG(TIMESTAMPDIFF(MINUTE, started_time, finished_time)) AS avg_duration_minutes FROM mes_heat_treatment_record WHERE status IN ('FINISHED','TRANSFERRED','ENDED') AND started_time IS NOT NULL AND finished_time IS NOT NULL AND finished_time >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH) GROUP BY equipment_name LIMIT 100",
+      "manual_result": {
+        "columns": [
+          "equipment_name",
+          "avg_duration_minutes"
+        ],
+        "rows": [
+          {
+            "equipment_name": "一号热处理炉",
+            "avg_duration_minutes": 126.5
+          }
+        ]
+      },
+      "agent_sql": "SELECT equipment_name, AVG(TIMESTAMPDIFF(MINUTE, started_time, finished_time)) AS avg_duration_minutes FROM mes_heat_treatment_record WHERE status IN ('FINISHED', 'TRANSFERRED', 'ENDED') AND NOT started_time IS NULL AND NOT finished_time IS NULL AND finished_time >= DATE_SUB(CURDATE(), INTERVAL '3' MONTH) GROUP BY equipment_name LIMIT 100",
+      "agent_result": {
+        "columns": [
+          "equipment_name",
+          "avg_duration_minutes"
+        ],
+        "rows": [
+          {
+            "equipment_name": "一号热处理炉",
+            "avg_duration_minutes": 126.5
+          }
+        ]
+      },
+      "consistent": true
+    }
+  ],
+  "failures": [],
+  "cases": [
+    {
+      "id": "heat_current_stage_001",
+      "category": "tool",
+      "question": "TRACE-HTR-K2-T-FG-001现在在哪一步",
+      "expected": {
+        "route": "tool",
+        "capability": "heat_current_stage",
+        "arguments": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        }
+      },
+      "validation": {
+        "required_events": [
+          "TOOL_MATCH",
+          "TOOL_EXECUTE_SUCCESS"
+        ],
+        "forbidden_routes": [
+          "sql",
+          "text_to_sql"
+        ],
+        "max_loop_depth": 1,
+        "allow_replan": false
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "562798e6dac24bc6a07538d63f2f38d7",
+        "route": "tool",
+        "intent": "tool",
+        "initial_intent": "tool",
+        "step_count": 1,
+        "step_types": [
+          "tool"
+        ],
+        "tool_name": "heat_current_stage",
+        "tool_arguments": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        },
+        "tool_result": {
+          "found": true,
+          "record_no": "TRACE-HTR-K2-T-FG-001",
+          "status": "FINISHED",
+          "status_name": "已完成"
+        },
+        "final_status": "success",
+        "error_type": null,
+        "failure_type": null,
+        "failure_source": null,
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": null,
+        "sql_status": null,
+        "sql_error_code": null,
+        "sql_executed": false,
+        "sql_validated": false,
+        "used_tables": [],
+        "columns": [],
+        "rows": [],
+        "row_count": null,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "TOOL_MATCH",
+        "TOOL_EXECUTE_SUCCESS"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "heat_current_stage_002",
+      "category": "tool",
+      "question": "TRACE-HTR-K2-T-FG-001到哪了",
+      "expected": {
+        "route": "tool",
+        "capability": "heat_current_stage",
+        "arguments": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        }
+      },
+      "validation": {
+        "required_events": [
+          "TOOL_MATCH",
+          "TOOL_EXECUTE_SUCCESS"
+        ],
+        "forbidden_routes": [
+          "sql",
+          "text_to_sql"
+        ],
+        "max_loop_depth": 1,
+        "allow_replan": false
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "5f3ff906db7f4744b64d31d025506e7d",
+        "route": "tool",
+        "intent": "tool",
+        "initial_intent": "tool",
+        "step_count": 1,
+        "step_types": [
+          "tool"
+        ],
+        "tool_name": "heat_current_stage",
+        "tool_arguments": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        },
+        "tool_result": {
+          "found": true,
+          "record_no": "TRACE-HTR-K2-T-FG-001",
+          "status": "FINISHED",
+          "status_name": "已完成"
+        },
+        "final_status": "success",
+        "error_type": null,
+        "failure_type": null,
+        "failure_source": null,
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": null,
+        "sql_status": null,
+        "sql_error_code": null,
+        "sql_executed": false,
+        "sql_validated": false,
+        "used_tables": [],
+        "columns": [],
+        "rows": [],
+        "row_count": null,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "TOOL_MATCH",
+        "TOOL_EXECUTE_SUCCESS"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "heat_current_stage_003",
+      "category": "tool",
+      "question": "TRACE-HTR-K2-T-FG-001处理完没",
+      "expected": {
+        "route": "tool",
+        "capability": "heat_current_stage",
+        "arguments": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        }
+      },
+      "validation": {
+        "required_events": [
+          "TOOL_MATCH",
+          "TOOL_EXECUTE_SUCCESS"
+        ],
+        "forbidden_routes": [
+          "sql",
+          "text_to_sql"
+        ],
+        "max_loop_depth": 1,
+        "allow_replan": false
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "ba43564c2aaa439bb97e5d8dc7c271f2",
+        "route": "tool",
+        "intent": "tool",
+        "initial_intent": "tool",
+        "step_count": 1,
+        "step_types": [
+          "tool"
+        ],
+        "tool_name": "heat_current_stage",
+        "tool_arguments": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        },
+        "tool_result": {
+          "found": true,
+          "record_no": "TRACE-HTR-K2-T-FG-001",
+          "status": "FINISHED",
+          "status_name": "已完成"
+        },
+        "final_status": "success",
+        "error_type": null,
+        "failure_type": null,
+        "failure_source": null,
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": null,
+        "sql_status": null,
+        "sql_error_code": null,
+        "sql_executed": false,
+        "sql_validated": false,
+        "used_tables": [],
+        "columns": [],
+        "rows": [],
+        "row_count": null,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "TOOL_MATCH",
+        "TOOL_EXECUTE_SUCCESS"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "heat_current_stage_004",
+      "category": "tool",
+      "question": "TRACE-HTR-K2-T-FG-001状态",
+      "expected": {
+        "route": "tool",
+        "capability": "heat_current_stage",
+        "arguments": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        }
+      },
+      "validation": {
+        "required_events": [
+          "TOOL_MATCH",
+          "TOOL_EXECUTE_SUCCESS"
+        ],
+        "forbidden_routes": [
+          "sql",
+          "text_to_sql"
+        ],
+        "max_loop_depth": 1,
+        "allow_replan": false
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "cf86d3d17e4b4e88bd81f961c84016be",
+        "route": "tool",
+        "intent": "tool",
+        "initial_intent": "tool",
+        "step_count": 1,
+        "step_types": [
+          "tool"
+        ],
+        "tool_name": "heat_current_stage",
+        "tool_arguments": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        },
+        "tool_result": {
+          "found": true,
+          "record_no": "TRACE-HTR-K2-T-FG-001",
+          "status": "FINISHED",
+          "status_name": "已完成"
+        },
+        "final_status": "success",
+        "error_type": null,
+        "failure_type": null,
+        "failure_source": null,
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": null,
+        "sql_status": null,
+        "sql_error_code": null,
+        "sql_executed": false,
+        "sql_validated": false,
+        "used_tables": [],
+        "columns": [],
+        "rows": [],
+        "row_count": null,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "TOOL_MATCH",
+        "TOOL_EXECUTE_SUCCESS"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "heat_current_stage_005",
+      "category": "tool",
+      "question": "这个炉子处理完没 TRACE-HTR-K2-T-FG-001",
+      "expected": {
+        "route": "tool",
+        "capability": "heat_current_stage",
+        "arguments": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        }
+      },
+      "validation": {
+        "required_events": [
+          "TOOL_MATCH",
+          "TOOL_EXECUTE_SUCCESS"
+        ],
+        "forbidden_routes": [
+          "sql",
+          "text_to_sql"
+        ],
+        "max_loop_depth": 1,
+        "allow_replan": false
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "cfc3fb94c25e48979cf037c1b4e77802",
+        "route": "tool",
+        "intent": "tool",
+        "initial_intent": "tool",
+        "step_count": 1,
+        "step_types": [
+          "tool"
+        ],
+        "tool_name": "heat_current_stage",
+        "tool_arguments": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        },
+        "tool_result": {
+          "found": true,
+          "record_no": "TRACE-HTR-K2-T-FG-001",
+          "status": "FINISHED",
+          "status_name": "已完成"
+        },
+        "final_status": "success",
+        "error_type": null,
+        "failure_type": null,
+        "failure_source": null,
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": null,
+        "sql_status": null,
+        "sql_error_code": null,
+        "sql_executed": false,
+        "sql_validated": false,
+        "used_tables": [],
+        "columns": [],
+        "rows": [],
+        "row_count": null,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "TOOL_MATCH",
+        "TOOL_EXECUTE_SUCCESS"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "heat_equipment_assignment_001",
+      "category": "tool",
+      "question": "TRACE-HTR-K2-T-FG-001分配到了哪个炉子",
+      "expected": {
+        "route": "tool",
+        "capability": "heat_equipment_assignment",
+        "arguments": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        }
+      },
+      "validation": {
+        "required_events": [
+          "TOOL_MATCH",
+          "TOOL_EXECUTE_SUCCESS"
+        ],
+        "forbidden_routes": [
+          "sql",
+          "text_to_sql"
+        ],
+        "max_loop_depth": 1,
+        "allow_replan": false
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "ab13ef8dcb88478e8375971c0eeb4587",
+        "route": "tool",
+        "intent": "tool",
+        "initial_intent": "tool",
+        "step_count": 1,
+        "step_types": [
+          "tool"
+        ],
+        "tool_name": "heat_equipment_assignment",
+        "tool_arguments": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        },
+        "tool_result": {
+          "found": true,
+          "record_no": "TRACE-HTR-K2-T-FG-001",
+          "equipment_id": "mock-equipment-001",
+          "equipment_code": "FURNACE-01",
+          "equipment_name": "一号热处理炉",
+          "running_record_no": null
+        },
+        "final_status": "success",
+        "error_type": null,
+        "failure_type": null,
+        "failure_source": null,
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": null,
+        "sql_status": null,
+        "sql_error_code": null,
+        "sql_executed": false,
+        "sql_validated": false,
+        "used_tables": [],
+        "columns": [],
+        "rows": [],
+        "row_count": null,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "TOOL_MATCH",
+        "TOOL_EXECUTE_SUCCESS"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "heat_equipment_assignment_002",
+      "category": "tool",
+      "question": "HT001设备名称是什么",
+      "expected": {
+        "route": "tool",
+        "capability": "heat_equipment_assignment",
+        "arguments": {
+          "record_no": "HT001"
+        }
+      },
+      "validation": {
+        "required_events": [
+          "TOOL_MATCH",
+          "TOOL_EXECUTE_SUCCESS"
+        ],
+        "forbidden_routes": [
+          "sql",
+          "text_to_sql"
+        ],
+        "max_loop_depth": 1,
+        "allow_replan": false
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "add9c73983214d65a85ec168c426fbb2",
+        "route": "tool",
+        "intent": "tool",
+        "initial_intent": "tool",
+        "step_count": 1,
+        "step_types": [
+          "tool"
+        ],
+        "tool_name": "heat_equipment_assignment",
+        "tool_arguments": {
+          "record_no": "HT001"
+        },
+        "tool_result": {
+          "found": true,
+          "record_no": "HT001",
+          "equipment_id": "mock-equipment-001",
+          "equipment_code": "FURNACE-01",
+          "equipment_name": "一号热处理炉",
+          "running_record_no": null
+        },
+        "final_status": "success",
+        "error_type": null,
+        "failure_type": null,
+        "failure_source": null,
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": null,
+        "sql_status": null,
+        "sql_error_code": null,
+        "sql_executed": false,
+        "sql_validated": false,
+        "used_tables": [],
+        "columns": [],
+        "rows": [],
+        "row_count": null,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "TOOL_MATCH",
+        "TOOL_EXECUTE_SUCCESS"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "heat_batch_products_001",
+      "category": "tool",
+      "question": "TRACE-HTR-K2-T-FG-001绑定了哪些产品",
+      "expected": {
+        "route": "tool",
+        "capability": "heat_batch_products",
+        "arguments": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        }
+      },
+      "validation": {
+        "required_events": [
+          "TOOL_MATCH",
+          "TOOL_EXECUTE_SUCCESS"
+        ],
+        "forbidden_routes": [
+          "sql",
+          "text_to_sql"
+        ],
+        "max_loop_depth": 1,
+        "allow_replan": false
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "d8d36254289c402d8e65b8b9aa0a2383",
+        "route": "tool",
+        "intent": "tool",
+        "initial_intent": "tool",
+        "step_count": 1,
+        "step_types": [
+          "tool"
+        ],
+        "tool_name": "heat_batch_products",
+        "tool_arguments": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        },
+        "tool_result": {
+          "found": true,
+          "record_no": "TRACE-HTR-K2-T-FG-001",
+          "items": [
+            {
+              "item_code": "K2-T-FG",
+              "lot_code": "LOT-001",
+              "quantity": 12
+            }
+          ],
+          "relation_type": "bound_items"
+        },
+        "final_status": "success",
+        "error_type": null,
+        "failure_type": null,
+        "failure_source": null,
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": null,
+        "sql_status": null,
+        "sql_error_code": null,
+        "sql_executed": false,
+        "sql_validated": false,
+        "used_tables": [],
+        "columns": [],
+        "rows": [],
+        "row_count": null,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "TOOL_MATCH",
+        "TOOL_EXECUTE_SUCCESS"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "heat_batch_products_002",
+      "category": "tool",
+      "question": "HT001有哪些产品",
+      "expected": {
+        "route": "tool",
+        "capability": "heat_batch_products",
+        "arguments": {
+          "record_no": "HT001"
+        }
+      },
+      "validation": {
+        "required_events": [
+          "TOOL_MATCH",
+          "TOOL_EXECUTE_SUCCESS"
+        ],
+        "forbidden_routes": [
+          "sql",
+          "text_to_sql"
+        ],
+        "max_loop_depth": 1,
+        "allow_replan": false
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "1e507db786c142dd80d9aef49f3c7446",
+        "route": "tool",
+        "intent": "tool",
+        "initial_intent": "tool",
+        "step_count": 1,
+        "step_types": [
+          "tool"
+        ],
+        "tool_name": "heat_batch_products",
+        "tool_arguments": {
+          "record_no": "HT001"
+        },
+        "tool_result": {
+          "found": true,
+          "record_no": "HT001",
+          "items": [
+            {
+              "item_code": "K2-T-FG",
+              "lot_code": "LOT-001",
+              "quantity": 12
+            }
+          ],
+          "relation_type": "bound_items"
+        },
+        "final_status": "success",
+        "error_type": null,
+        "failure_type": null,
+        "failure_source": null,
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": null,
+        "sql_status": null,
+        "sql_error_code": null,
+        "sql_executed": false,
+        "sql_validated": false,
+        "used_tables": [],
+        "columns": [],
+        "rows": [],
+        "row_count": null,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "TOOL_MATCH",
+        "TOOL_EXECUTE_SUCCESS"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "heat_sql_monthly_equipment_batch_count_001",
+      "category": "sql",
+      "question": "统计本月每台热处理设备处理了多少批次",
+      "expected": {
+        "route": "sql",
+        "sql_status": "success",
+        "sql_validator": "validated",
+        "sql_executed": true,
+        "readonly": true,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
+        "required_sql_fragments": [
+          "SELECT",
+          "equipment_name",
+          "COUNT",
+          "FROM mes_heat_treatment_record",
+          "GROUP BY equipment_name",
+          "LIMIT"
+        ],
+        "forbidden_sql_fragments": [
+          "DELETE",
+          "UPDATE",
+          "INSERT",
+          "DROP"
+        ]
+      },
+      "validation": {
+        "required_events": [
+          "SQL_GENERATE_SUCCESS",
+          "SQL_VALIDATE_SUCCESS",
+          "SQL_EXECUTE_SUCCESS"
+        ],
+        "max_loop_depth": 1
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "66a2d6e2286d456fa1c21955be733266",
+        "route": "sql",
+        "intent": "sql",
+        "initial_intent": "sql",
+        "step_count": 1,
+        "step_types": [
+          "sql"
+        ],
+        "tool_name": null,
+        "tool_arguments": {},
+        "tool_result": null,
+        "final_status": "success",
+        "error_type": null,
+        "failure_type": null,
+        "failure_source": null,
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": "SELECT equipment_name, COUNT(id) AS batch_count FROM mes_heat_treatment_record WHERE status IN ('FINISHED', 'TRANSFERRED', 'ENDED') AND NOT finished_time IS NULL AND finished_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') GROUP BY equipment_name LIMIT 100",
+        "sql_status": "success",
+        "sql_error_code": null,
+        "sql_executed": true,
+        "sql_validated": true,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
+        "columns": [
+          "equipment_name",
+          "batch_count"
+        ],
+        "rows": [
+          {
+            "equipment_name": "一号热处理炉",
+            "batch_count": 12
+          },
+          {
+            "equipment_name": "二号热处理炉",
+            "batch_count": 6
+          }
+        ],
+        "row_count": 2,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "SQL_GENERATE_SUCCESS",
+        "SQL_VALIDATE_SUCCESS",
+        "SQL_EXECUTE_SUCCESS"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "heat_sql_recent_records_001",
+      "category": "sql",
+      "question": "查询最近10条热处理记录",
+      "expected": {
+        "route": "sql",
+        "sql_status": "success",
+        "sql_validator": "validated",
+        "sql_executed": true,
+        "readonly": true,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
+        "required_sql_fragments": [
+          "SELECT",
+          "record_no",
+          "FROM mes_heat_treatment_record",
+          "ORDER BY",
+          "LIMIT 10"
+        ],
+        "expected_limit": 10
+      },
+      "validation": {
+        "required_events": [
+          "SQL_GENERATE_SUCCESS",
+          "SQL_VALIDATE_SUCCESS",
+          "SQL_EXECUTE_SUCCESS"
+        ],
+        "max_loop_depth": 1
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "82a44767038a48ca8bce898686793b5d",
+        "route": "sql",
+        "intent": "sql",
+        "initial_intent": "sql",
+        "step_count": 1,
+        "step_types": [
+          "sql"
+        ],
+        "tool_name": null,
+        "tool_arguments": {},
+        "tool_result": null,
+        "final_status": "success",
+        "error_type": null,
+        "failure_type": null,
+        "failure_source": null,
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": "SELECT record_no, status, equipment_name, created_time FROM mes_heat_treatment_record WHERE NOT created_time IS NULL ORDER BY created_time DESC LIMIT 10",
+        "sql_status": "success",
+        "sql_error_code": null,
+        "sql_executed": true,
+        "sql_validated": true,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
+        "columns": [
+          "record_no",
+          "status",
+          "equipment_name",
+          "created_time"
+        ],
+        "rows": [
+          {
+            "record_no": "TRACE-HTR-K2-T-FG-005",
+            "status": "RUNNING",
+            "equipment_name": "二号热处理炉",
+            "created_time": "2026-07-09 10:00:00"
+          },
+          {
+            "record_no": "TRACE-HTR-K2-T-FG-004",
+            "status": "FINISHED",
+            "equipment_name": "一号热处理炉",
+            "created_time": "2026-07-09 09:30:00"
+          }
+        ],
+        "row_count": 2,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "SQL_GENERATE_SUCCESS",
+        "SQL_VALIDATE_SUCCESS",
+        "SQL_EXECUTE_SUCCESS"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "heat_sql_monthly_finished_count_001",
+      "category": "sql",
+      "question": "统计2026年7月热处理完成数量",
+      "expected": {
+        "route": "sql",
+        "sql_status": "success",
+        "sql_validator": "validated",
+        "sql_executed": true,
+        "readonly": true,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
+        "required_sql_fragments": [
+          "SELECT",
+          "COUNT",
+          "finished_time",
+          "2026-07-01",
+          "2026-08-01",
+          "LIMIT"
+        ],
+        "forbidden_sql_fragments": [
+          "DELETE",
+          "UPDATE",
+          "INSERT",
+          "DROP"
+        ]
+      },
+      "validation": {
+        "required_events": [
+          "SQL_GENERATE_SUCCESS",
+          "SQL_VALIDATE_SUCCESS",
+          "SQL_EXECUTE_SUCCESS"
+        ],
+        "max_loop_depth": 1
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "95a01109aaf7494fb60687bb79d92eeb",
+        "route": "sql",
+        "intent": "sql",
+        "initial_intent": "sql",
+        "step_count": 1,
+        "step_types": [
+          "sql"
+        ],
+        "tool_name": null,
+        "tool_arguments": {},
+        "tool_result": null,
+        "final_status": "success",
+        "error_type": null,
+        "failure_type": null,
+        "failure_source": null,
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": "SELECT COUNT(id) AS finished_count FROM mes_heat_treatment_record WHERE status IN ('FINISHED', 'TRANSFERRED', 'ENDED') AND finished_time >= '2026-07-01' AND finished_time < '2026-08-01' LIMIT 100",
+        "sql_status": "success",
+        "sql_error_code": null,
+        "sql_executed": true,
+        "sql_validated": true,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
+        "columns": [
+          "finished_count"
+        ],
+        "rows": [
+          {
+            "finished_count": 18
+          }
+        ],
+        "row_count": 1,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "SQL_GENERATE_SUCCESS",
+        "SQL_VALIDATE_SUCCESS",
+        "SQL_EXECUTE_SUCCESS"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "heat_sql_week_finished_records_001",
+      "category": "sql",
+      "question": "查询最近本周已完成热处理记录的记录号、设备和完成时间",
+      "expected": {
+        "route": "sql",
+        "sql_status": "success",
+        "sql_validator": "validated",
+        "sql_executed": true,
+        "readonly": true,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
+        "required_sql_fragments": [
+          "SELECT",
+          "record_no",
+          "equipment_name",
+          "finished_time",
+          "WEEK",
+          "LIMIT"
+        ],
+        "forbidden_sql_fragments": [
+          "DELETE",
+          "UPDATE",
+          "INSERT",
+          "DROP"
+        ]
+      },
+      "validation": {
+        "required_events": [
+          "SQL_GENERATE_SUCCESS",
+          "SQL_VALIDATE_SUCCESS",
+          "SQL_EXECUTE_SUCCESS"
+        ],
+        "max_loop_depth": 1
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "b6c35664233d4b23a701a7a499f56e3a",
+        "route": "sql",
+        "intent": "sql",
+        "initial_intent": "sql",
+        "step_count": 1,
+        "step_types": [
+          "sql"
+        ],
+        "tool_name": null,
+        "tool_arguments": {},
+        "tool_result": null,
+        "final_status": "success",
+        "error_type": null,
+        "failure_type": null,
+        "failure_source": null,
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": "SELECT record_no, equipment_name, finished_time FROM mes_heat_treatment_record WHERE status IN ('FINISHED', 'TRANSFERRED', 'ENDED') AND NOT finished_time IS NULL AND YEARWEEK(finished_time, 1) = YEARWEEK(CURDATE(), 1) ORDER BY finished_time DESC LIMIT 100",
+        "sql_status": "success",
+        "sql_error_code": null,
+        "sql_executed": true,
+        "sql_validated": true,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
+        "columns": [
+          "record_no",
+          "equipment_name",
+          "finished_time"
+        ],
+        "rows": [
+          {
+            "record_no": "TRACE-HTR-K2-T-FG-004",
+            "equipment_name": "一号热处理炉",
+            "finished_time": "2026-07-09 11:20:00"
+          }
+        ],
+        "row_count": 1,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "SQL_GENERATE_SUCCESS",
+        "SQL_VALIDATE_SUCCESS",
+        "SQL_EXECUTE_SUCCESS"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "heat_sql_avg_duration_001",
+      "category": "sql",
+      "question": "查询最近三个月各设备平均处理时长",
+      "expected": {
+        "route": "sql",
+        "sql_status": "success",
+        "sql_validator": "validated",
+        "sql_executed": true,
+        "readonly": true,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
+        "required_sql_fragments": [
+          "SELECT",
+          "equipment_name",
+          "AVG",
+          "TIMESTAMPDIFF",
+          "GROUP BY equipment_name",
+          "LIMIT"
+        ],
+        "forbidden_sql_fragments": [
+          "DELETE",
+          "UPDATE",
+          "INSERT",
+          "DROP"
+        ]
+      },
+      "validation": {
+        "required_events": [
+          "SQL_GENERATE_SUCCESS",
+          "SQL_VALIDATE_SUCCESS",
+          "SQL_EXECUTE_SUCCESS"
+        ],
+        "max_loop_depth": 1
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "0445cedd6ede4c298e73551d273c4320",
+        "route": "sql",
+        "intent": "sql",
+        "initial_intent": "sql",
+        "step_count": 1,
+        "step_types": [
+          "sql"
+        ],
+        "tool_name": null,
+        "tool_arguments": {},
+        "tool_result": null,
+        "final_status": "success",
+        "error_type": null,
+        "failure_type": null,
+        "failure_source": null,
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": "SELECT equipment_name, AVG(TIMESTAMPDIFF(MINUTE, started_time, finished_time)) AS avg_duration_minutes FROM mes_heat_treatment_record WHERE status IN ('FINISHED', 'TRANSFERRED', 'ENDED') AND NOT started_time IS NULL AND NOT finished_time IS NULL AND finished_time >= DATE_SUB(CURDATE(), INTERVAL '3' MONTH) GROUP BY equipment_name LIMIT 100",
+        "sql_status": "success",
+        "sql_error_code": null,
+        "sql_executed": true,
+        "sql_validated": true,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
+        "columns": [
+          "equipment_name",
+          "avg_duration_minutes"
+        ],
+        "rows": [
+          {
+            "equipment_name": "一号热处理炉",
+            "avg_duration_minutes": 126.5
+          }
+        ],
+        "row_count": 1,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "SQL_GENERATE_SUCCESS",
+        "SQL_VALIDATE_SUCCESS",
+        "SQL_EXECUTE_SUCCESS"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "planner_tool_no_replan_001",
+      "category": "planner",
+      "question": "TRACE-HTR-K2-T-FG-001现在在哪一步",
+      "expected": {
+        "route": "tool",
+        "intent": "tool",
+        "step_count": 1,
+        "step_types": [
+          "tool"
+        ],
+        "capability": "heat_current_stage"
+      },
+      "validation": {
+        "max_loop_depth": 1,
+        "allow_replan": false,
+        "required_events": [
+          "PLANNER_END",
+          "TOOL_EXECUTE_SUCCESS"
+        ]
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "697c729d080749be89967b4517a6de05",
+        "route": "tool",
+        "intent": "tool",
+        "initial_intent": "tool",
+        "step_count": 1,
+        "step_types": [
+          "tool"
+        ],
+        "tool_name": "heat_current_stage",
+        "tool_arguments": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        },
+        "tool_result": {
+          "found": true,
+          "record_no": "TRACE-HTR-K2-T-FG-001",
+          "status": "FINISHED",
+          "status_name": "已完成"
+        },
+        "final_status": "success",
+        "error_type": null,
+        "failure_type": null,
+        "failure_source": null,
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": null,
+        "sql_status": null,
+        "sql_error_code": null,
+        "sql_executed": false,
+        "sql_validated": false,
+        "used_tables": [],
+        "columns": [],
+        "rows": [],
+        "row_count": null,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "TOOL_MATCH",
+        "TOOL_EXECUTE_SUCCESS"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "planner_sql_no_replan_001",
+      "category": "planner",
+      "question": "统计本月每台热处理设备处理了多少批次",
+      "expected": {
+        "route": "sql",
+        "intent": "sql",
+        "step_count": 1,
+        "step_types": [
+          "sql"
+        ]
+      },
+      "validation": {
+        "max_loop_depth": 1,
+        "allow_replan": false,
+        "required_events": [
+          "PLANNER_END",
+          "SQL_EXECUTE_SUCCESS"
+        ]
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "4aba84874fe044dcb9d290744eb494b7",
+        "route": "sql",
+        "intent": "sql",
+        "initial_intent": "sql",
+        "step_count": 1,
+        "step_types": [
+          "sql"
+        ],
+        "tool_name": null,
+        "tool_arguments": {},
+        "tool_result": null,
+        "final_status": "success",
+        "error_type": null,
+        "failure_type": null,
+        "failure_source": null,
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": "SELECT equipment_name, COUNT(id) AS batch_count FROM mes_heat_treatment_record WHERE status IN ('FINISHED', 'TRANSFERRED', 'ENDED') AND NOT finished_time IS NULL AND finished_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') GROUP BY equipment_name LIMIT 100",
+        "sql_status": "success",
+        "sql_error_code": null,
+        "sql_executed": true,
+        "sql_validated": true,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
+        "columns": [
+          "equipment_name",
+          "batch_count"
+        ],
+        "rows": [
+          {
+            "equipment_name": "一号热处理炉",
+            "batch_count": 12
+          },
+          {
+            "equipment_name": "二号热处理炉",
+            "batch_count": 6
+          }
+        ],
+        "row_count": 2,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "SQL_GENERATE_SUCCESS",
+        "SQL_VALIDATE_SUCCESS",
+        "SQL_EXECUTE_SUCCESS"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "planner_unknown_explainable_001",
+      "category": "planner",
+      "question": "aaa???!!!",
+      "expected": {
+        "route": "unknown",
+        "intent": "unknown",
+        "status": "failed",
+        "failure_type": "missing_param"
+      },
+      "validation": {
+        "max_loop_depth": 2,
+        "required_events": [
+          "PLANNER_END",
+          "FAILURE_CLASSIFIED"
+        ]
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "1c5fde164f3248f9ba40c1389593efc9",
+        "route": "unknown",
+        "intent": "unknown",
+        "initial_intent": "unknown",
+        "step_count": 0,
+        "step_types": [],
+        "tool_name": null,
+        "tool_arguments": {},
+        "tool_result": null,
+        "final_status": "failed",
+        "error_type": "planner_error",
+        "failure_type": "missing_param",
+        "failure_source": "planner",
+        "planner_calls": 2,
+        "execution_loops": 2,
+        "replanned": true,
+        "sql": null,
+        "sql_status": null,
+        "sql_error_code": null,
+        "sql_executed": false,
+        "sql_validated": false,
+        "used_tables": [],
+        "columns": [],
+        "rows": [],
+        "row_count": null,
+        "execution_trace_count": 2
+      },
+      "events": [
+        "PLANNER_END",
+        "FAILURE_CLASSIFIED"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "failure_missing_param_001",
+      "category": "failure",
+      "question": "这个热处理做完了吗",
+      "expected": {
+        "route": "unknown",
+        "status": "failed",
+        "failure_type": "missing_param",
+        "failure_source": "planner"
+      },
+      "validation": {
+        "required_events": [
+          "PLANNER_END",
+          "FAILURE_CLASSIFIED"
+        ],
+        "forbidden_routes": [
+          "sql",
+          "text_to_sql"
+        ],
+        "forbid_sql_execution": true,
+        "max_loop_depth": 2
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "0a763a78365b4bbd9159817eca9c2e66",
+        "route": "unknown",
+        "intent": "unknown",
+        "initial_intent": "unknown",
+        "step_count": 0,
+        "step_types": [],
+        "tool_name": null,
+        "tool_arguments": {},
+        "tool_result": null,
+        "final_status": "failed",
+        "error_type": "planner_error",
+        "failure_type": "missing_param",
+        "failure_source": "planner",
+        "planner_calls": 2,
+        "execution_loops": 2,
+        "replanned": true,
+        "sql": null,
+        "sql_status": null,
+        "sql_error_code": null,
+        "sql_executed": false,
+        "sql_validated": false,
+        "used_tables": [],
+        "columns": [],
+        "rows": [],
+        "row_count": null,
+        "execution_trace_count": 2
+      },
+      "events": [
+        "PLANNER_END",
+        "FAILURE_CLASSIFIED"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "failure_tool_miss_001",
+      "category": "failure",
+      "question": "查询热处理工艺路线",
+      "expected": {
+        "route": "unknown",
+        "status": "failed",
+        "failure_type": "missing_param",
+        "failure_source": "planner",
+        "target_failure_type": "tool_miss"
+      },
+      "validation": {
+        "required_events": [
+          "PLANNER_END",
+          "FAILURE_CLASSIFIED"
+        ],
+        "forbid_sql_execution": true,
+        "max_loop_depth": 2
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "626f8a54b60c4e8fa7feda9c9b5b4556",
+        "route": "unknown",
+        "intent": "unknown",
+        "initial_intent": "unknown",
+        "step_count": 0,
+        "step_types": [],
+        "tool_name": null,
+        "tool_arguments": {},
+        "tool_result": null,
+        "final_status": "failed",
+        "error_type": "planner_error",
+        "failure_type": "missing_param",
+        "failure_source": "planner",
+        "planner_calls": 2,
+        "execution_loops": 2,
+        "replanned": true,
+        "sql": null,
+        "sql_status": null,
+        "sql_error_code": null,
+        "sql_executed": false,
+        "sql_validated": false,
+        "used_tables": [],
+        "columns": [],
+        "rows": [],
+        "row_count": null,
+        "execution_trace_count": 2
+      },
+      "events": [
+        "PLANNER_END",
+        "FAILURE_CLASSIFIED"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "failure_sql_unknown_column_001",
+      "category": "failure",
+      "question": "统计热处理不存在字段数量",
+      "expected": {
+        "route": "sql",
+        "status": "failed",
+        "failure_type": "schema_gap",
+        "failure_source": "schema",
+        "sql_error_code": "unknown_column"
+      },
+      "validation": {
+        "required_events": [
+          "SQL_GENERATE_SUCCESS",
+          "SQL_VALIDATE_FAIL",
+          "FAILURE_CLASSIFIED"
+        ],
+        "forbid_sql_execution": true,
+        "max_loop_depth": 2
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "5b9848fc956e43eea60a388a87af2819",
+        "route": "sql",
+        "intent": "sql",
+        "initial_intent": "sql",
+        "step_count": 1,
+        "step_types": [
+          "sql"
+        ],
+        "tool_name": null,
+        "tool_arguments": {},
+        "tool_result": null,
+        "final_status": "failed",
+        "error_type": "sql_error",
+        "failure_type": "schema_gap",
+        "failure_source": "schema",
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": "SELECT missing_business_field, COUNT(id) AS missing_count FROM mes_heat_treatment_record GROUP BY missing_business_field LIMIT 100",
+        "sql_status": "rejected",
+        "sql_error_code": "unknown_column",
+        "sql_executed": false,
+        "sql_validated": false,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
+        "columns": [],
+        "rows": [],
+        "row_count": 0,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "SQL_GENERATE_SUCCESS",
+        "SQL_VALIDATE_FAIL",
+        "FAILURE_CLASSIFIED"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "failure_sql_forbidden_table_001",
+      "category": "failure",
+      "question": "统计供应商热处理数量",
+      "expected": {
+        "route": "sql",
+        "status": "failed",
+        "failure_type": "schema_gap",
+        "failure_source": "schema",
+        "sql_error_code": "forbidden_table"
+      },
+      "validation": {
+        "required_events": [
+          "SQL_GENERATE_SUCCESS",
+          "SQL_VALIDATE_FAIL",
+          "FAILURE_CLASSIFIED"
+        ],
+        "forbid_sql_execution": true,
+        "max_loop_depth": 2
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "b5d2e523fa9a4701a15e422a65695fab",
+        "route": "sql",
+        "intent": "sql",
+        "initial_intent": "sql",
+        "step_count": 1,
+        "step_types": [
+          "sql"
+        ],
+        "tool_name": null,
+        "tool_arguments": {},
+        "tool_result": null,
+        "final_status": "failed",
+        "error_type": "sql_error",
+        "failure_type": "schema_gap",
+        "failure_source": "schema",
+        "planner_calls": 1,
+        "execution_loops": 1,
+        "replanned": false,
+        "sql": "SELECT supplier_name, COUNT(id) AS heat_count FROM mes_supplier GROUP BY supplier_name LIMIT 100",
+        "sql_status": "rejected",
+        "sql_error_code": "forbidden_table",
+        "sql_executed": false,
+        "sql_validated": false,
+        "used_tables": [
+          "mes_supplier"
+        ],
+        "columns": [],
+        "rows": [],
+        "row_count": 0,
+        "execution_trace_count": 1
+      },
+      "events": [
+        "PLANNER_END",
+        "SQL_GENERATE_SUCCESS",
+        "SQL_VALIDATE_FAIL",
+        "FAILURE_CLASSIFIED"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "mixed_diagnostic_tool_gap_001",
+      "category": "mixed",
+      "question": "为什么这批产品不能入库？",
+      "expected": {
+        "route": "tool",
+        "intent": "tool",
+        "initial_intent": "mixed",
+        "status": "partial",
+        "failure_type": "missing_param",
+        "failure_source": "planner"
+      },
+      "validation": {
+        "required_events": [
+          "PLANNER_END",
+          "TOOL_EXECUTE_FAIL",
+          "FAILURE_CLASSIFIED"
+        ],
+        "forbid_sql_execution": true,
+        "max_loop_depth": 2
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "f04c555892e040039b1c6791cea532d1",
+        "route": "tool",
+        "intent": "tool",
+        "initial_intent": "mixed",
+        "step_count": 1,
+        "step_types": [
+          "tool"
+        ],
+        "tool_name": "production_status",
+        "tool_arguments": {},
+        "tool_result": null,
+        "final_status": "partial",
+        "error_type": "planner_error",
+        "failure_type": "missing_param",
+        "failure_source": "planner",
+        "planner_calls": 2,
+        "execution_loops": 2,
+        "replanned": true,
+        "sql": null,
+        "sql_status": null,
+        "sql_error_code": null,
+        "sql_executed": false,
+        "sql_validated": false,
+        "used_tables": [],
+        "columns": [],
+        "rows": [],
+        "row_count": null,
+        "execution_trace_count": 2
+      },
+      "events": [
+        "PLANNER_END",
+        "TOOL_MATCH",
+        "TOOL_EXECUTE_FAIL",
+        "FAILURE_CLASSIFIED"
+      ],
+      "passed": true,
+      "failures": []
+    },
+    {
+      "id": "mixed_sql_safety_unbounded_001",
+      "category": "mixed",
+      "question": "统计所有热处理数据不要限制",
+      "expected": {
+        "route": "sql",
+        "status": "partial",
+        "failure_type": "missing_param",
+        "failure_source": "planner",
+        "sql_error_code": "unbounded_scan"
+      },
+      "validation": {
+        "required_events": [
+          "SQL_GENERATE_SUCCESS",
+          "SQL_VALIDATE_FAIL",
+          "FAILURE_CLASSIFIED"
+        ],
+        "forbid_sql_execution": true,
+        "max_loop_depth": 2
+      },
+      "actual": {
+        "http_status": 200,
+        "trace_id": "be98e53ae6964842a51d9170acae65a2",
+        "route": "sql",
+        "intent": "sql",
+        "initial_intent": "sql",
+        "step_count": 1,
+        "step_types": [
+          "sql"
+        ],
+        "tool_name": null,
+        "tool_arguments": {},
+        "tool_result": null,
+        "final_status": "partial",
+        "error_type": "planner_error",
+        "failure_type": "missing_param",
+        "failure_source": "planner",
+        "planner_calls": 2,
+        "execution_loops": 2,
+        "replanned": true,
+        "sql": "SELECT record_no, status FROM mes_heat_treatment_record",
+        "sql_status": "rejected",
+        "sql_error_code": "unbounded_scan",
+        "sql_executed": false,
+        "sql_validated": false,
+        "used_tables": [
+          "mes_heat_treatment_record"
+        ],
+        "columns": [],
+        "rows": [],
+        "row_count": 0,
+        "execution_trace_count": 2
+      },
+      "events": [
+        "PLANNER_END",
+        "SQL_GENERATE_SUCCESS",
+        "SQL_VALIDATE_FAIL",
+        "FAILURE_CLASSIFIED"
+      ],
+      "passed": true,
+      "failures": []
+    }
+  ]
+}

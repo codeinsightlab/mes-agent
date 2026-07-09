@@ -1,0 +1,164 @@
+[
+  {
+    "id": "heat_current_stage_001",
+    "category": "tool",
+    "question": "TRACE-HTR-K2-T-FG-001现在在哪一步",
+    "expected": {
+      "route": "tool",
+      "capability": "heat_current_stage",
+      "arguments": {
+        "record_no": "TRACE-HTR-K2-T-FG-001"
+      }
+    },
+    "validation": {
+      "required_events": ["TOOL_MATCH", "TOOL_EXECUTE_SUCCESS"],
+      "forbidden_routes": ["sql", "text_to_sql"],
+      "max_loop_depth": 1,
+      "allow_replan": false
+    }
+  },
+  {
+    "id": "heat_current_stage_002",
+    "category": "tool",
+    "question": "TRACE-HTR-K2-T-FG-001到哪了",
+    "expected": {
+      "route": "tool",
+      "capability": "heat_current_stage",
+      "arguments": {
+        "record_no": "TRACE-HTR-K2-T-FG-001"
+      }
+    },
+    "validation": {
+      "required_events": ["TOOL_MATCH", "TOOL_EXECUTE_SUCCESS"],
+      "forbidden_routes": ["sql", "text_to_sql"],
+      "max_loop_depth": 1,
+      "allow_replan": false
+    }
+  },
+  {
+    "id": "heat_current_stage_003",
+    "category": "tool",
+    "question": "TRACE-HTR-K2-T-FG-001处理完没",
+    "expected": {
+      "route": "tool",
+      "capability": "heat_current_stage",
+      "arguments": {
+        "record_no": "TRACE-HTR-K2-T-FG-001"
+      }
+    },
+    "validation": {
+      "required_events": ["TOOL_MATCH", "TOOL_EXECUTE_SUCCESS"],
+      "forbidden_routes": ["sql", "text_to_sql"],
+      "max_loop_depth": 1,
+      "allow_replan": false
+    }
+  },
+  {
+    "id": "heat_current_stage_004",
+    "category": "tool",
+    "question": "TRACE-HTR-K2-T-FG-001状态",
+    "expected": {
+      "route": "tool",
+      "capability": "heat_current_stage",
+      "arguments": {
+        "record_no": "TRACE-HTR-K2-T-FG-001"
+      }
+    },
+    "validation": {
+      "required_events": ["TOOL_MATCH", "TOOL_EXECUTE_SUCCESS"],
+      "forbidden_routes": ["sql", "text_to_sql"],
+      "max_loop_depth": 1,
+      "allow_replan": false
+    }
+  },
+  {
+    "id": "heat_current_stage_005",
+    "category": "tool",
+    "question": "这个炉子处理完没 TRACE-HTR-K2-T-FG-001",
+    "expected": {
+      "route": "tool",
+      "capability": "heat_current_stage",
+      "arguments": {
+        "record_no": "TRACE-HTR-K2-T-FG-001"
+      }
+    },
+    "validation": {
+      "required_events": ["TOOL_MATCH", "TOOL_EXECUTE_SUCCESS"],
+      "forbidden_routes": ["sql", "text_to_sql"],
+      "max_loop_depth": 1,
+      "allow_replan": false
+    }
+  },
+  {
+    "id": "heat_equipment_assignment_001",
+    "category": "tool",
+    "question": "TRACE-HTR-K2-T-FG-001分配到了哪个炉子",
+    "expected": {
+      "route": "tool",
+      "capability": "heat_equipment_assignment",
+      "arguments": {
+        "record_no": "TRACE-HTR-K2-T-FG-001"
+      }
+    },
+    "validation": {
+      "required_events": ["TOOL_MATCH", "TOOL_EXECUTE_SUCCESS"],
+      "forbidden_routes": ["sql", "text_to_sql"],
+      "max_loop_depth": 1,
+      "allow_replan": false
+    }
+  },
+  {
+    "id": "heat_equipment_assignment_002",
+    "category": "tool",
+    "question": "HT001设备名称是什么",
+    "expected": {
+      "route": "tool",
+      "capability": "heat_equipment_assignment",
+      "arguments": {
+        "record_no": "HT001"
+      }
+    },
+    "validation": {
+      "required_events": ["TOOL_MATCH", "TOOL_EXECUTE_SUCCESS"],
+      "forbidden_routes": ["sql", "text_to_sql"],
+      "max_loop_depth": 1,
+      "allow_replan": false
+    }
+  },
+  {
+    "id": "heat_batch_products_001",
+    "category": "tool",
+    "question": "TRACE-HTR-K2-T-FG-001绑定了哪些产品",
+    "expected": {
+      "route": "tool",
+      "capability": "heat_batch_products",
+      "arguments": {
+        "record_no": "TRACE-HTR-K2-T-FG-001"
+      }
+    },
+    "validation": {
+      "required_events": ["TOOL_MATCH", "TOOL_EXECUTE_SUCCESS"],
+      "forbidden_routes": ["sql", "text_to_sql"],
+      "max_loop_depth": 1,
+      "allow_replan": false
+    }
+  },
+  {
+    "id": "heat_batch_products_002",
+    "category": "tool",
+    "question": "HT001有哪些产品",
+    "expected": {
+      "route": "tool",
+      "capability": "heat_batch_products",
+      "arguments": {
+        "record_no": "HT001"
+      }
+    },
+    "validation": {
+      "required_events": ["TOOL_MATCH", "TOOL_EXECUTE_SUCCESS"],
+      "forbidden_routes": ["sql", "text_to_sql"],
+      "max_loop_depth": 1,
+      "allow_replan": false
+    }
+  }
+]

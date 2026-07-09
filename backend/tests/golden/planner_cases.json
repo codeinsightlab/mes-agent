@@ -1,0 +1,50 @@
+[
+  {
+    "id": "planner_tool_no_replan_001",
+    "category": "planner",
+    "question": "TRACE-HTR-K2-T-FG-001现在在哪一步",
+    "expected": {
+      "route": "tool",
+      "intent": "tool",
+      "step_count": 1,
+      "step_types": ["tool"],
+      "capability": "heat_current_stage"
+    },
+    "validation": {
+      "max_loop_depth": 1,
+      "allow_replan": false,
+      "required_events": ["PLANNER_END", "TOOL_EXECUTE_SUCCESS"]
+    }
+  },
+  {
+    "id": "planner_sql_no_replan_001",
+    "category": "planner",
+    "question": "统计本月每台热处理设备处理了多少批次",
+    "expected": {
+      "route": "sql",
+      "intent": "sql",
+      "step_count": 1,
+      "step_types": ["sql"]
+    },
+    "validation": {
+      "max_loop_depth": 1,
+      "allow_replan": false,
+      "required_events": ["PLANNER_END", "SQL_EXECUTE_SUCCESS"]
+    }
+  },
+  {
+    "id": "planner_unknown_explainable_001",
+    "category": "planner",
+    "question": "aaa???!!!",
+    "expected": {
+      "route": "unknown",
+      "intent": "unknown",
+      "status": "failed",
+      "failure_type": "missing_param"
+    },
+    "validation": {
+      "max_loop_depth": 2,
+      "required_events": ["PLANNER_END", "FAILURE_CLASSIFIED"]
+    }
+  }
+]

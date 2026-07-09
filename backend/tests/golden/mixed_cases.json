@@ -1,0 +1,37 @@
+[
+  {
+    "id": "mixed_diagnostic_tool_gap_001",
+    "category": "mixed",
+    "question": "为什么这批产品不能入库？",
+    "expected": {
+      "route": "tool",
+      "intent": "tool",
+      "initial_intent": "mixed",
+      "status": "partial",
+      "failure_type": "missing_param",
+      "failure_source": "planner"
+    },
+    "validation": {
+      "required_events": ["PLANNER_END", "TOOL_EXECUTE_FAIL", "FAILURE_CLASSIFIED"],
+      "forbid_sql_execution": true,
+      "max_loop_depth": 2
+    }
+  },
+  {
+    "id": "mixed_sql_safety_unbounded_001",
+    "category": "mixed",
+    "question": "统计所有热处理数据不要限制",
+    "expected": {
+      "route": "sql",
+      "status": "partial",
+      "failure_type": "missing_param",
+      "failure_source": "planner",
+      "sql_error_code": "unbounded_scan"
+    },
+    "validation": {
+      "required_events": ["SQL_GENERATE_SUCCESS", "SQL_VALIDATE_FAIL", "FAILURE_CLASSIFIED"],
+      "forbid_sql_execution": true,
+      "max_loop_depth": 2
+    }
+  }
+]

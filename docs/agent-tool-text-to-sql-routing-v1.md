@@ -910,6 +910,234 @@ Browser verification through the Vite page also passed:
 
 ### Regression Results
 
+## 2026-07-09 - Tool Execution Trace Root Cause Investigation
+
+### Scope
+
+This investigation checked why the input `HT20260603-007热处理的状态` routes to `heat_current_stage` and returns a Tool result, while the trace still shows:
+
+```json
+{
+  "tool_name": "heat_current_stage",
+  "sql": null,
+  "used_tables": [],
+  "sql_executed": null
+}
+```
+
+No Planner, Orchestrator, Tool Catalog, Text-to-SQL, database, or frontend code was changed.
+
+### Current Real Execution Chain
+
+```text
+POST /api/agent/run
+-> app.api.agent.agent_run
+-> AgentOrchestrator.run
+-> DebuggablePlanner.plan
+-> PlannerPlan step: type=tool, name=heat_current_stage, args.record_no=HT20260603-007
+-> ExecutionFeedbackLoop.run
+-> PlanExecutionAdapter.execute
+-> PlanExecutionAdapter._execute_tool_step
+-> ToolRegistry.execute("heat_current_stage", {"record_no": "HT20260603-007"})
+-> langchain StructuredTool.invoke(...)
+-> app.agent.tools.heat_treatment.heat_current_stage(...)
+-> returns hardcoded/mock status payload
+```
+
+File evidence:
+
+- `backend/app/api/agent.py`: `/api/agent/run` builds `AgentOrchestrator` with `PlanExecutionAdapter`.
+- `backend/app/agent/planner/planner.py`: status keywords route to `heat_current_stage`; extracted `HT...` values become `record_no`.
+- `backend/app/agent/orchestrator/agent_orchestrator.py`: `_execute_tool_step` calls `self._registry.execute(step.name, step.args)`.
+- `backend/app/agent/tools/registry.py`: `ToolRegistry` binds tools from `build_langchain_tools()` and invokes the registered LangChain tool.
+- `backend/app/agent/tools/heat_treatment.py`: `heat_current_stage` computes a local status and returns a dict. It does not call a repository, service, SQL executor, or MES API.
+
+### heat_current_stage Implementation Classification
+
+Current implementation is:
+
+```text
+A: Mock return
+```
+
+Reason:
+
+- `heat_current_stage()` validates the input with `HeatToolInput`.
+- It resolves the record identifier locally.
+- It returns `FINISHED` only for `TRACE-HTR-K2-T-FG-001` or `HT001`.
+- Every other record, including `HT20260603-007`, returns `RUNNING`.
+
+Current code behavior:
+
+```text
+status = "FINISHED" if resolved in {"TRACE-HTR-K2-T-FG-001", "HT001"} else "RUNNING"
+```
+
+There is no database call, no repository call, no SQL generation, and no SQL execution inside the Tool implementation.
+
+### Why Trace Has No SQL
+
+Unique root cause:
+
+```text
+Tool itself has no SQL or repository execution.
+```
+
+This is not a trace collection bug.
+
+Trace assignment is route-specific:
+
+- Tool success path sets `ExecutionQuality(tool_hit=True)` and `ExecutionTrace(tool_name=step.name)`.
+- SQL success path sets `ExecutionQuality(sql_valid=True, sql_executed=True)` and `ExecutionTrace(sql=..., used_tables=...)`.
+
+Therefore, for a Tool-only step:
+
+```json
+{
+  "tool_hit": true,
+  "sql_valid": null,
+  "sql_executed": null,
+  "trace": {
+    "tool_name": "heat_current_stage",
+    "sql": null,
+    "used_tables": []
+  }
+}
+```
+
+This accurately reflects the current implementation: a Tool was invoked, but that Tool did not execute SQL.
+
+### Existing Real SQL Capability
+
+There is a real read-only SQL executor:
+
+- `backend/app/agent/text_to_sql/executor.py`
+- class: `ReadonlySqlExecutor`
+- configuration: `AGENT_MES_DB_HOST`, `AGENT_MES_DB_NAME`, `AGENT_MES_DB_USER`, `AGENT_MES_DB_PASSWORD`
+
+However, it is connected only to the Text-to-SQL node path:
+
+```text
+PlanExecutionAdapter._execute_sql_step
+-> TextToSqlNode
+-> TextToSqlGenerator
+-> SqlValidator
+-> ReadonlySqlExecutor
+```
+
+The Tool path does not call `ReadonlySqlExecutor`.
+
+No heat-treatment-specific repository was found under the current Agent Tool path. Existing repositories under `backend/app/infrastructure/database/repositories/` are for conversation, messages, feedback, issues, and model calls, not MES heat-treatment records.
+
+### Design Gap
+
+Current state:
+
+```text
+Tool = business capability interface + mock implementation
+```
+
+It is not yet:
+
+```text
+Tool = business capability interface + Repository/MES read-only query + SQL trace
+```
+
+This explains why the user-facing result looks like a successful business fact but the trace contains no SQL.
+
+### Verified Example
+
+Local TestClient verification for:
+
+```text
+HT20260603-007热处理的状态
+```
+
+Observed:
+
+```json
+{
+  "route": "tool",
+  "tool_name": "heat_current_stage",
+  "record_no": "HT20260603-007",
+  "tool_result": {
+    "found": true,
+    "record_no": "HT20260603-007",
+    "status": "RUNNING",
+    "status_name": "进行中"
+  },
+  "sql": null,
+  "used_tables": [],
+  "sql_executed": null
+}
+```
+
+The `RUNNING` value came from the Tool mock fallback, not from MES data.
+
+### Recommended Fix Path
+
+Recommended:
+
+```text
+方案A: keep Tool interface, add a heat-treatment read-only repository, and connect Tool implementation to that repository.
+```
+
+Suggested shape:
+
+```text
+heat_current_stage Tool
+-> HeatTreatmentRecordRepository.get_current_stage(record_no)
+-> parameterized SELECT against allowed MES table/view
+-> Tool result includes found/status/status_name
+-> Tool trace includes data_source/sql/used_tables/sql_executed
+```
+
+Why this is preferred:
+
+- Keeps Tool as the deterministic business fact interface.
+- Keeps Planner unchanged.
+- Keeps Text-to-SQL separate from known Tool facts.
+- Allows fixed, parameterized SQL instead of model-generated SQL for canonical business facts.
+- Makes status truth come from MES read-only data instead of mock fallback.
+
+Alternative:
+
+```text
+方案B: Tool calls an existing application/domain service if such a service becomes available.
+```
+
+This is acceptable only if the service already owns the same read-only MES truth and exposes a stable business DTO. No such heat-treatment service is currently wired in this repo.
+
+### Minimal Next Verification Plan
+
+After implementing real Tool execution in a later task, verify:
+
+```text
+HT20260603-007热处理的状态
+```
+
+Expected classification should become:
+
+```text
+CURRENT STATUS: REAL
+```
+
+Minimum checks:
+
+- Planner still produces `type=tool`, `name=heat_current_stage`, `args.record_no=HT20260603-007`.
+- Tool result status comes from MES read-only data.
+- Trace shows the real data source:
+  - SQL or repository trace is present.
+  - `used_tables` includes the heat-treatment record source table/view.
+  - SQL execution flag is true if SQL is executed directly.
+- No fallback mock status is used for unknown record numbers.
+
+Current next action:
+
+```text
+Real Tool Executor接入
+```
+
 Commands:
 
 ```text
