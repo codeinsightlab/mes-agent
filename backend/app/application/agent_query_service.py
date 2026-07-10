@@ -2,7 +2,7 @@ import logging
 import time
 import uuid
 
-from app.agent.models import AgentResult
+from app.agent.execution.tools.models import AgentResult
 
 
 logger = logging.getLogger(__name__)

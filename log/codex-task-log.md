@@ -4275,3 +4275,94 @@ Keep Capability Reasoning as a parallel experiment until real LLM runs on produc
 Added:
 
 - `docs/capabilities/capability-reasoning-experiment-v1.md`
+## 2026-07-10 - MES Agent V2 Architecture Isolation
+
+### Task Goal
+
+Refactor the experimental Agent chain into a V2 platform foundation containing `MesAgent`, a fixed `AgentRouter`, `HeatTreatmentAgent`, and injected shared Runtime/Execution boundaries without adding business capabilities.
+
+### Modified Files
+
+- Added `backend/app/agent/core/`, `agents/heat_treatment/`, `reasoning/`, `runtime/`, and `execution/`.
+- Added `backend/app/infrastructure/agent/audit_runtime.py`.
+- Updated `backend/app/api/agent.py` to use only the V2 chain.
+- Moved deprecated Router/Planner/Orchestrator/Graph/Execution Loop code to `backend/app/agent/v1_legacy/`.
+- Moved historical tests and fixtures to `backend/tests/v1_legacy/`.
+- Added `backend/tests/v2/` and limited default pytest discovery to V2.
+- Added `docs/agent-architecture-v2.md`.
+
+### Key Decisions
+
+- Router returns `heat_treatment_agent` deterministically; no intelligent routing was added.
+- Domain Agent receives all shared components by injection and does not access repositories or construct runtimes.
+- `heat_device_trace` remains planned and is blocked at validation; no device result is fabricated.
+- Existing Tool, read-only SQL, Repository, MES API, and analytics collector logic was not changed.
+- Audit persistence is adapted through the existing `AgentEventCollector`.
+
+### Verification Commands
+
+```text
+cd backend && .venv/bin/pytest -q
+cd backend && .venv/bin/python -m compileall -q app
+cd backend && rg -n "v1_legacy|semantic_router|LegacyFallback|DebuggablePlanner|AgentOrchestrator" app/api app/agent/core app/agent/agents app/agent/runtime app/agent/reasoning app/agent/execution
+cd backend && git diff --check
+npx --yes pyright backend/app backend/tests/v2
+```
+
+### Verification Results
+
+- V2 pytest: `6 passed`.
+- compileall: passed.
+- V2 production dependency scan: no V1/legacy imports.
+- diff check: passed.
+- Pyright: repository baseline remains non-zero in legacy/shared files; V2-specific call-shape findings were fixed. No unrelated typing cleanup was performed.
+
+### Unfinished Items / Risks
+
+- `heat_device_trace` is still a planned contract and has no real executor.
+- WorkOrderAgent and InspectionAgent are extension points only.
+- Historical V1 tests are excluded from current CI and were not used as a V2 acceptance gate.
+- The archived V1 public-API contract test is module-skipped; other V1 tests remain explicitly discoverable under `tests/v1_legacy`.
+- The public `/api/agent/run` response contract is now V2 (`request_id`, `agent`, `status`, `capability`, `data`, `clarification`, `trace`); downstream clients expecting the V1 trace shape must migrate separately.
+## 2026-07-10 - V2 Agent Directory Convergence
+
+### Task Goal
+
+Converge `backend/app/agent` so every non-historical top-level package represents the current V2 architecture, while retaining all historical code under one fixed package.
+
+### Directory Changes
+
+- Current entry: `core/mes_agent.py`, `core/agent_router.py`.
+- Current context: `context/models.py`, `context/state.py`.
+- Shared Runtime: `runtime/llm/`, `runtime/trace/`, `runtime/audit/`, `runtime/capability/`.
+- Current Reasoning: `reasoning/capability_reasoning/`.
+- Capability model and Catalog: `capability/models/`, `capability/catalog/`.
+- Execution boundary: `execution/engine/`, `execution/tools/`.
+- Replaced V1 architecture: `agent/archive/v1/`.
+- One-off evaluation and acceptance runners: `agent/archive/experiments/scripts/`.
+- Retired package remnants: `agent/archive/deprecated/`.
+- Historical tests: `tests/archive/v1/`; current tests remain `tests/v2/`.
+
+### Key Decisions
+
+- No business logic, Catalog status, Capability, Reasoning score, MES API, or Repository behavior was changed.
+- V1 package internals use relative imports and no production package imports historical code.
+- Graph nodes and matcher prompts moved with the V1 Graph instead of remaining in the current tree.
+- Existing historical documentation was not rewritten; this dated entry and the V2 architecture document record the new physical paths.
+
+### Verification
+
+```text
+cd backend && .venv/bin/pytest -q
+cd backend && .venv/bin/pytest --collect-only -q tests/archive/v1
+grep -R "archive" backend/app/agent
+cd backend && .venv/bin/python -m compileall -q app
+git diff --check
+```
+
+Results:
+
+- Current V2 tests: `6 passed`.
+- Historical suite: `156 tests collected`; V1 public API contract remains intentionally module-skipped.
+- Agent package historical-reference grep: no matches.
+- No historical imports in the production API or current V2 packages.
