@@ -6,10 +6,10 @@ from app.agent.tools.registry import ToolRegistry
 from tests.heat_tool_test_utils import build_heat_treatment_test_registry
 
 
-def test_heat_treatment_catalog_contains_enabled_and_blocked_capabilities():
+def test_heat_treatment_catalog_contains_enabled_planned_and_blocked_capabilities():
     assert CAPABILITY_BY_NAME["heat_current_stage"].status == "enabled"
-    assert CAPABILITY_BY_NAME["heat_equipment_assignment"].status == "enabled"
-    assert CAPABILITY_BY_NAME["heat_batch_products"].status == "enabled"
+    assert CAPABILITY_BY_NAME["heat_equipment_assignment"].status == "planned"
+    assert CAPABILITY_BY_NAME["heat_batch_products"].status == "planned"
     assert CAPABILITY_BY_NAME["heat_param_submitted"].status == "blocked"
     assert HEAT_STATUS_NAMES["FINISHED"] == "已完成"
 
@@ -45,6 +45,14 @@ def test_registry_rejects_blocked_capability():
     with pytest.raises(ToolExecutionError):
         ToolRegistry().execute(
             "heat_param_submitted",
+            {"record_no": "TRACE-HTR-K2-T-FG-001"},
+        )
+
+
+def test_registry_rejects_planned_mock_capability():
+    with pytest.raises(ToolExecutionError):
+        ToolRegistry().execute(
+            "heat_equipment_assignment",
             {"record_no": "TRACE-HTR-K2-T-FG-001"},
         )
 

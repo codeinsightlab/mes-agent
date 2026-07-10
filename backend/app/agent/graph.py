@@ -1,3 +1,10 @@
+"""DEPRECATED: eval-only LangGraph route path.
+
+Production Agent execution uses /api/agent/run with AgentOrchestrator.
+Capability Catalog V1 should replace this experimental matcher graph or keep it
+only as a router evaluation harness.
+"""
+
 from collections.abc import Callable
 from typing import cast
 

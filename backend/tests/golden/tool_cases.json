@@ -95,16 +95,19 @@
     "question": "TRACE-HTR-K2-T-FG-001分配到了哪个炉子",
     "expected": {
       "route": "tool",
+      "status": "failed",
       "capability": "heat_equipment_assignment",
+      "failure_type": "tool_miss",
+      "failure_source": "tool",
       "arguments": {
         "record_no": "TRACE-HTR-K2-T-FG-001"
       }
     },
     "validation": {
-      "required_events": ["TOOL_MATCH", "TOOL_EXECUTE_SUCCESS"],
+      "required_events": ["TOOL_MATCH", "TOOL_EXECUTE_FAIL", "FAILURE_CLASSIFIED"],
       "forbidden_routes": ["sql", "text_to_sql"],
-      "max_loop_depth": 1,
-      "allow_replan": false
+      "max_loop_depth": 2,
+      "forbid_sql_execution": true
     }
   },
   {
@@ -113,16 +116,19 @@
     "question": "HT001设备名称是什么",
     "expected": {
       "route": "tool",
+      "status": "failed",
       "capability": "heat_equipment_assignment",
+      "failure_type": "tool_miss",
+      "failure_source": "tool",
       "arguments": {
         "record_no": "HT001"
       }
     },
     "validation": {
-      "required_events": ["TOOL_MATCH", "TOOL_EXECUTE_SUCCESS"],
+      "required_events": ["TOOL_MATCH", "TOOL_EXECUTE_FAIL", "FAILURE_CLASSIFIED"],
       "forbidden_routes": ["sql", "text_to_sql"],
-      "max_loop_depth": 1,
-      "allow_replan": false
+      "max_loop_depth": 2,
+      "forbid_sql_execution": true
     }
   },
   {
@@ -131,16 +137,19 @@
     "question": "TRACE-HTR-K2-T-FG-001绑定了哪些产品",
     "expected": {
       "route": "tool",
+      "status": "failed",
       "capability": "heat_batch_products",
+      "failure_type": "tool_miss",
+      "failure_source": "tool",
       "arguments": {
         "record_no": "TRACE-HTR-K2-T-FG-001"
       }
     },
     "validation": {
-      "required_events": ["TOOL_MATCH", "TOOL_EXECUTE_SUCCESS"],
+      "required_events": ["TOOL_MATCH", "TOOL_EXECUTE_FAIL", "FAILURE_CLASSIFIED"],
       "forbidden_routes": ["sql", "text_to_sql"],
-      "max_loop_depth": 1,
-      "allow_replan": false
+      "max_loop_depth": 2,
+      "forbid_sql_execution": true
     }
   },
   {
@@ -149,16 +158,19 @@
     "question": "HT001有哪些产品",
     "expected": {
       "route": "tool",
+      "status": "failed",
       "capability": "heat_batch_products",
+      "failure_type": "tool_miss",
+      "failure_source": "tool",
       "arguments": {
         "record_no": "HT001"
       }
     },
     "validation": {
-      "required_events": ["TOOL_MATCH", "TOOL_EXECUTE_SUCCESS"],
+      "required_events": ["TOOL_MATCH", "TOOL_EXECUTE_FAIL", "FAILURE_CLASSIFIED"],
       "forbidden_routes": ["sql", "text_to_sql"],
-      "max_loop_depth": 1,
-      "allow_replan": false
+      "max_loop_depth": 2,
+      "forbid_sql_execution": true
     }
   }
 ]

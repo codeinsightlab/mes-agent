@@ -1,0 +1,67 @@
+capabilities:
+  - name: heat_current_stage
+    domain: heat_treatment
+    description: 查询热处理记录当前阶段、状态、是否完成或结束。
+    intent:
+      - 热处理当前阶段
+      - 热处理做到哪一步
+      - 热处理是否完成或结束
+      - 热处理编号对应记录状态
+    status: enabled
+    execution_type: tool
+    executor: heat_current_stage
+    input_schema:
+      required:
+        - record_no
+      optional:
+        - record_id
+        - object_id
+      properties:
+        record_no:
+          type: string
+          description: 热处理记录编号
+        record_id:
+          type: string
+          description: 热处理记录内部标识
+        object_id:
+          type: string
+          description: 用户提供的对象标识
+    output_schema:
+      required:
+        - found
+        - record_no
+        - status
+        - status_name
+      properties:
+        found:
+          type: boolean
+        record_no:
+          type: string
+        status:
+          type: string
+          enum:
+            - CREATED
+            - RUNNING
+            - FINISHED
+            - TRANSFERRED
+            - ENDED
+            - CANCELLED
+        status_name:
+          type: string
+    data_sources:
+      - type: table
+        name: mes_heat_treatment_record
+        fields:
+          - record_no
+          - status
+        description: 热处理记录当前状态唯一来源
+    examples:
+      - HT20260603-007热处理的状态
+      - HT20260603-007现在做到哪一步
+      - 这个热处理完成了吗 HT20260603-007
+    boundaries:
+      - 不负责转序单状态
+      - 不负责检验状态
+      - 不负责仓库状态
+      - 不推断 PLC 设备状态
+    legacy_source: old python constant

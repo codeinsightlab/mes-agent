@@ -199,6 +199,73 @@ Conclusion:
 Capability source status: multiple definitions exist
 ```
 
+## 9. Capability Runtime V1
+
+Capability Runtime V1 adds a machine-readable runtime source beside the existing legacy Python catalog.
+
+Runtime chain:
+
+```text
+backend/app/agent/capability/definitions/*.yaml
+-> CapabilityLoader
+-> CapabilityValidator
+-> CapabilityRuntimeRegistry
+```
+
+New files:
+
+- `backend/app/agent/capability/models.py`
+- `backend/app/agent/capability/loader.py`
+- `backend/app/agent/capability/validator.py`
+- `backend/app/agent/capability/registry.py`
+- `backend/app/agent/capability/definitions/heat-treatment.yaml`
+
+Schema fields:
+
+| Field | Purpose |
+| --- | --- |
+| `name` | Stable capability name, for example `heat_current_stage`. |
+| `domain` | Business domain, for example `heat_treatment`. |
+| `description` | Human-readable business description. |
+| `intent` | User intent phrases used later by router migration. |
+| `status` | Lifecycle state: `enabled`, `planned`, `experimental`, `blocked`, `disabled`. |
+| `execution_type` | Runtime execution strategy: `tool`, `readonly_sql`, `action`, or `reference`. |
+| `executor` | Registered executor name. For V1, `heat_current_stage` maps to the existing Tool executor. |
+| `input_schema` | Required/optional input fields and machine-readable properties. |
+| `output_schema` | Required output fields and properties. |
+| `data_sources` | Tables or external sources used by the capability. |
+| `examples` | Example user questions. |
+| `boundaries` | Explicit non-responsibilities. |
+| `legacy_source` | Migration marker, currently `old python constant` for migrated legacy capability. |
+
+Validation behavior:
+
+- Invalid YAML fails startup/loading with `CapabilityCatalogLoadError`.
+- Missing required schema fields fail loading through Pydantic validation.
+- Duplicate capability names fail validation.
+- Unknown tool executor names fail validation.
+- `planned`, `blocked`, `disabled`, and `experimental` capabilities may be loaded, but `CapabilityRuntimeRegistry.require_executable()` rejects them unless status is `enabled`.
+
+Migration status:
+
+| Capability | Runtime source | Executor | Legacy source |
+| --- | --- | --- | --- |
+| `heat_current_stage` | `definitions/heat-treatment.yaml` | `heat_current_stage` | `old python constant` |
+
+The old Python catalog still exists:
+
+- `backend/app/agent/catalog/heat_treatment.py`
+
+It remains the production source for current Planner / ToolRegistry behavior until `Capability Router Migration`.
+
+Next migration step:
+
+```text
+Capability Runtime Registry
+-> Capability Router
+-> Planner / ToolRegistry adapter
+```
+
 Catalog V1 should make `CapabilitySpec` the only source of capability identity, status, argument requirements, examples, execution strategy, and route constraints.
 
 ## 9. Text-to-SQL Positioning

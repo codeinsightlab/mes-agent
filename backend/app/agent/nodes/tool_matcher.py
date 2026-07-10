@@ -1,3 +1,10 @@
+"""DEPRECATED: eval-only LLM Tool matcher node.
+
+Production routing currently flows through DebuggablePlanner. Capability
+Catalog V1 should replace this prompt-driven matcher with a catalog-owned
+Semantic Understanding / Capability Router boundary.
+"""
+
 from collections.abc import Callable
 import json
 import re
@@ -94,7 +101,7 @@ def make_tool_matcher_node(
                 capability.required_argument_groups,
                 _decision_arguments(decision),
             )
-            if status == "blocked":
+            if status in {"blocked", "planned", "experimental"}:
                 route = "blocked"
             elif status != "enabled":
                 route = "error"

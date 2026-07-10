@@ -7,9 +7,9 @@
       "route": "tool",
       "intent": "tool",
       "initial_intent": "mixed",
-      "status": "partial",
-      "failure_type": "missing_param",
-      "failure_source": "planner"
+      "status": "failed",
+      "failure_type": "tool_miss",
+      "failure_source": "tool"
     },
     "validation": {
       "required_events": ["PLANNER_END", "TOOL_EXECUTE_FAIL", "FAILURE_CLASSIFIED"],

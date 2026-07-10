@@ -9,8 +9,8 @@
     "argument_accuracy": 1.0,
     "sql_accuracy": 1.0,
     "sql_success_rate": 1.0,
-    "failure_accuracy": 0.8571,
-    "agent_quality_score": 0.9714
+    "failure_accuracy": 0.9091,
+    "agent_quality_score": 0.9818
   },
   "version_info": {
     "agent_version": "0.1.0",
@@ -30,7 +30,7 @@
       "heat_equipment_assignment"
     ],
     "sql_cases": 5,
-    "failure_cases": 7,
+    "failure_cases": 11,
     "planner_cases": 3,
     "mixed_cases": 2
   },
@@ -241,7 +241,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "e6fbae7ae7e542fcbd3096d22b0558de",
+        "trace_id": "40d7ec3a19934d3ead681eee8fedb2cd",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -315,7 +315,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "cf69e69ce7b348b6a1677ccfb60bf7ef",
+        "trace_id": "accbbf7c7fe443f287cab46a87f79f70",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -389,7 +389,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "debb99d9cf2b415395276760238bfb34",
+        "trace_id": "9940893892f24a41bea1fa12be96038f",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -463,7 +463,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "22ce7807d700406fb36ddeaa3e84b980",
+        "trace_id": "310898b44fdb40ba92829dbc2f80894c",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -537,7 +537,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "92c6fa3b29774d4a8fbfc1bf1d74ea8f",
+        "trace_id": "6003f1c89f6e40aa8e6d6354371d5b1b",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -592,7 +592,10 @@
       "question": "TRACE-HTR-K2-T-FG-001分配到了哪个炉子",
       "expected": {
         "route": "tool",
+        "status": "failed",
         "capability": "heat_equipment_assignment",
+        "failure_type": "tool_miss",
+        "failure_source": "tool",
         "arguments": {
           "record_no": "TRACE-HTR-K2-T-FG-001"
         }
@@ -600,18 +603,19 @@
       "validation": {
         "required_events": [
           "TOOL_MATCH",
-          "TOOL_EXECUTE_SUCCESS"
+          "TOOL_EXECUTE_FAIL",
+          "FAILURE_CLASSIFIED"
         ],
         "forbidden_routes": [
           "sql",
           "text_to_sql"
         ],
-        "max_loop_depth": 1,
-        "allow_replan": false
+        "max_loop_depth": 2,
+        "forbid_sql_execution": true
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "37c049a90a6541bfa729b22093bff50b",
+        "trace_id": "eef5b1c493eb4618afae8240a45861de",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -623,21 +627,14 @@
         "tool_arguments": {
           "record_no": "TRACE-HTR-K2-T-FG-001"
         },
-        "tool_result": {
-          "found": true,
-          "record_no": "TRACE-HTR-K2-T-FG-001",
-          "equipment_id": "mock-equipment-001",
-          "equipment_code": "FURNACE-01",
-          "equipment_name": "一号热处理炉",
-          "running_record_no": null
-        },
-        "final_status": "success",
-        "error_type": null,
-        "failure_type": null,
-        "failure_source": null,
-        "planner_calls": 1,
-        "execution_loops": 1,
-        "replanned": false,
+        "tool_result": null,
+        "final_status": "failed",
+        "error_type": "tool_error",
+        "failure_type": "tool_miss",
+        "failure_source": "tool",
+        "planner_calls": 2,
+        "execution_loops": 2,
+        "replanned": true,
         "sql": null,
         "sql_status": null,
         "sql_error_code": null,
@@ -647,12 +644,13 @@
         "columns": [],
         "rows": [],
         "row_count": null,
-        "execution_trace_count": 1
+        "execution_trace_count": 2
       },
       "events": [
         "PLANNER_END",
         "TOOL_MATCH",
-        "TOOL_EXECUTE_SUCCESS"
+        "TOOL_EXECUTE_FAIL",
+        "FAILURE_CLASSIFIED"
       ],
       "passed": true,
       "failures": []
@@ -663,7 +661,10 @@
       "question": "HT001设备名称是什么",
       "expected": {
         "route": "tool",
+        "status": "failed",
         "capability": "heat_equipment_assignment",
+        "failure_type": "tool_miss",
+        "failure_source": "tool",
         "arguments": {
           "record_no": "HT001"
         }
@@ -671,18 +672,19 @@
       "validation": {
         "required_events": [
           "TOOL_MATCH",
-          "TOOL_EXECUTE_SUCCESS"
+          "TOOL_EXECUTE_FAIL",
+          "FAILURE_CLASSIFIED"
         ],
         "forbidden_routes": [
           "sql",
           "text_to_sql"
         ],
-        "max_loop_depth": 1,
-        "allow_replan": false
+        "max_loop_depth": 2,
+        "forbid_sql_execution": true
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "65c95d3a43414fe19a0607bf8ce82fc1",
+        "trace_id": "5758bf28cf7146fd82db530a1b20403c",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -694,21 +696,14 @@
         "tool_arguments": {
           "record_no": "HT001"
         },
-        "tool_result": {
-          "found": true,
-          "record_no": "HT001",
-          "equipment_id": "mock-equipment-001",
-          "equipment_code": "FURNACE-01",
-          "equipment_name": "一号热处理炉",
-          "running_record_no": null
-        },
-        "final_status": "success",
-        "error_type": null,
-        "failure_type": null,
-        "failure_source": null,
-        "planner_calls": 1,
-        "execution_loops": 1,
-        "replanned": false,
+        "tool_result": null,
+        "final_status": "failed",
+        "error_type": "tool_error",
+        "failure_type": "tool_miss",
+        "failure_source": "tool",
+        "planner_calls": 2,
+        "execution_loops": 2,
+        "replanned": true,
         "sql": null,
         "sql_status": null,
         "sql_error_code": null,
@@ -718,12 +713,13 @@
         "columns": [],
         "rows": [],
         "row_count": null,
-        "execution_trace_count": 1
+        "execution_trace_count": 2
       },
       "events": [
         "PLANNER_END",
         "TOOL_MATCH",
-        "TOOL_EXECUTE_SUCCESS"
+        "TOOL_EXECUTE_FAIL",
+        "FAILURE_CLASSIFIED"
       ],
       "passed": true,
       "failures": []
@@ -734,7 +730,10 @@
       "question": "TRACE-HTR-K2-T-FG-001绑定了哪些产品",
       "expected": {
         "route": "tool",
+        "status": "failed",
         "capability": "heat_batch_products",
+        "failure_type": "tool_miss",
+        "failure_source": "tool",
         "arguments": {
           "record_no": "TRACE-HTR-K2-T-FG-001"
         }
@@ -742,18 +741,19 @@
       "validation": {
         "required_events": [
           "TOOL_MATCH",
-          "TOOL_EXECUTE_SUCCESS"
+          "TOOL_EXECUTE_FAIL",
+          "FAILURE_CLASSIFIED"
         ],
         "forbidden_routes": [
           "sql",
           "text_to_sql"
         ],
-        "max_loop_depth": 1,
-        "allow_replan": false
+        "max_loop_depth": 2,
+        "forbid_sql_execution": true
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "a723cd2b90ba444dadede113dc0cbc03",
+        "trace_id": "4874eca721b142a2935041671782bf16",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -765,25 +765,14 @@
         "tool_arguments": {
           "record_no": "TRACE-HTR-K2-T-FG-001"
         },
-        "tool_result": {
-          "found": true,
-          "record_no": "TRACE-HTR-K2-T-FG-001",
-          "items": [
-            {
-              "item_code": "K2-T-FG",
-              "lot_code": "LOT-001",
-              "quantity": 12
-            }
-          ],
-          "relation_type": "bound_items"
-        },
-        "final_status": "success",
-        "error_type": null,
-        "failure_type": null,
-        "failure_source": null,
-        "planner_calls": 1,
-        "execution_loops": 1,
-        "replanned": false,
+        "tool_result": null,
+        "final_status": "failed",
+        "error_type": "tool_error",
+        "failure_type": "tool_miss",
+        "failure_source": "tool",
+        "planner_calls": 2,
+        "execution_loops": 2,
+        "replanned": true,
         "sql": null,
         "sql_status": null,
         "sql_error_code": null,
@@ -793,12 +782,13 @@
         "columns": [],
         "rows": [],
         "row_count": null,
-        "execution_trace_count": 1
+        "execution_trace_count": 2
       },
       "events": [
         "PLANNER_END",
         "TOOL_MATCH",
-        "TOOL_EXECUTE_SUCCESS"
+        "TOOL_EXECUTE_FAIL",
+        "FAILURE_CLASSIFIED"
       ],
       "passed": true,
       "failures": []
@@ -809,7 +799,10 @@
       "question": "HT001有哪些产品",
       "expected": {
         "route": "tool",
+        "status": "failed",
         "capability": "heat_batch_products",
+        "failure_type": "tool_miss",
+        "failure_source": "tool",
         "arguments": {
           "record_no": "HT001"
         }
@@ -817,18 +810,19 @@
       "validation": {
         "required_events": [
           "TOOL_MATCH",
-          "TOOL_EXECUTE_SUCCESS"
+          "TOOL_EXECUTE_FAIL",
+          "FAILURE_CLASSIFIED"
         ],
         "forbidden_routes": [
           "sql",
           "text_to_sql"
         ],
-        "max_loop_depth": 1,
-        "allow_replan": false
+        "max_loop_depth": 2,
+        "forbid_sql_execution": true
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "047fde5079db41cd9566f80d39418387",
+        "trace_id": "53622e7ef81a4b22b92720df953855e5",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -840,25 +834,14 @@
         "tool_arguments": {
           "record_no": "HT001"
         },
-        "tool_result": {
-          "found": true,
-          "record_no": "HT001",
-          "items": [
-            {
-              "item_code": "K2-T-FG",
-              "lot_code": "LOT-001",
-              "quantity": 12
-            }
-          ],
-          "relation_type": "bound_items"
-        },
-        "final_status": "success",
-        "error_type": null,
-        "failure_type": null,
-        "failure_source": null,
-        "planner_calls": 1,
-        "execution_loops": 1,
-        "replanned": false,
+        "tool_result": null,
+        "final_status": "failed",
+        "error_type": "tool_error",
+        "failure_type": "tool_miss",
+        "failure_source": "tool",
+        "planner_calls": 2,
+        "execution_loops": 2,
+        "replanned": true,
         "sql": null,
         "sql_status": null,
         "sql_error_code": null,
@@ -868,12 +851,13 @@
         "columns": [],
         "rows": [],
         "row_count": null,
-        "execution_trace_count": 1
+        "execution_trace_count": 2
       },
       "events": [
         "PLANNER_END",
         "TOOL_MATCH",
-        "TOOL_EXECUTE_SUCCESS"
+        "TOOL_EXECUTE_FAIL",
+        "FAILURE_CLASSIFIED"
       ],
       "passed": true,
       "failures": []
@@ -916,7 +900,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "509a9e18c0bf4913a0abc4d2e9cb8f13",
+        "trace_id": "3ec6f3fca9094e12a3d420bff5605a1b",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",
@@ -1000,7 +984,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "700fffe19116478da0194bfe2b5dda08",
+        "trace_id": "4caa3e9d5e5f4ee4940d7e132c6a2e23",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",
@@ -1096,7 +1080,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "b3d8b09c78cc40ac9606f8c0efcb974e",
+        "trace_id": "00198b89ef1243e8a4b4451d8f23a969",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",
@@ -1180,7 +1164,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "7f92c4f5308440a7953f9c53b45fa933",
+        "trace_id": "e3fca3181db24ae78070920ad1dadf10",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",
@@ -1268,7 +1252,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "1263b4c5a75140e18f044f082708a490",
+        "trace_id": "a0dea28d59984298bd881c3539888424",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",
@@ -1339,7 +1323,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "4e5fccda63ca41ea9e98e086db8bdb28",
+        "trace_id": "c1639a5bcc4a4a0ab134d1d552ed2ada",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "tool",
@@ -1410,7 +1394,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "8af11ce31ce24e4dbe361bd16b97860a",
+        "trace_id": "7187cf58152c48f1bde1ae4c3fcf18f4",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",
@@ -1481,7 +1465,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "fbcc64bc4ee34a0b89c69694312a60da",
+        "trace_id": "bfc4cf5aa5464817aaac238ab294f8f5",
         "route": "unknown",
         "intent": "unknown",
         "initial_intent": "unknown",
@@ -1539,7 +1523,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "795f1ade11ae4607b3af17a03cd421fc",
+        "trace_id": "02b8da8a46ae4c8b8390e54a9e91179f",
         "route": "unknown",
         "intent": "unknown",
         "initial_intent": "unknown",
@@ -1594,7 +1578,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "afd6307556394026814c58dfabc9f4b1",
+        "trace_id": "fb49ae0bac074bf6be6e7be6360f9708",
         "route": "unknown",
         "intent": "unknown",
         "initial_intent": "unknown",
@@ -1650,7 +1634,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "237f4a7a6ead4893af9713f7189df1b4",
+        "trace_id": "303709393f0c42fa87b7d63b436304c9",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",
@@ -1712,7 +1696,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "53e4a6158a624790aca92c683668904d",
+        "trace_id": "831b90994d3340b6b7308c1a63d63d4c",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",
@@ -1760,9 +1744,9 @@
         "route": "tool",
         "intent": "tool",
         "initial_intent": "mixed",
-        "status": "partial",
-        "failure_type": "missing_param",
-        "failure_source": "planner"
+        "status": "failed",
+        "failure_type": "tool_miss",
+        "failure_source": "tool"
       },
       "validation": {
         "required_events": [
@@ -1775,7 +1759,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "11ea0c194f8b4635b5b26fac3be14a75",
+        "trace_id": "dde485a1a42045d4b9f8ce1d435c7aaa",
         "route": "tool",
         "intent": "tool",
         "initial_intent": "mixed",
@@ -1786,10 +1770,10 @@
         "tool_name": "production_status",
         "tool_arguments": {},
         "tool_result": null,
-        "final_status": "partial",
-        "error_type": "planner_error",
-        "failure_type": "missing_param",
-        "failure_source": "planner",
+        "final_status": "failed",
+        "error_type": "tool_error",
+        "failure_type": "tool_miss",
+        "failure_source": "tool",
         "planner_calls": 2,
         "execution_loops": 2,
         "replanned": true,
@@ -1835,7 +1819,7 @@
       },
       "actual": {
         "http_status": 200,
-        "trace_id": "66e15bd3f2884b5789fd8f1269116bce",
+        "trace_id": "cc7130283ed94f0c894bc4fd59ec61cd",
         "route": "sql",
         "intent": "sql",
         "initial_intent": "sql",

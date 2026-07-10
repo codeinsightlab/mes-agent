@@ -2942,6 +2942,227 @@ Result: passed.
 ```text
 SYSTEM STATUS: READY
 
+## 2026-07-10 00:00 CST - MES Heat Treatment Capability Discovery V1
+
+### Task Goal
+
+Capability Catalog data collection phase only.
+
+Extract real heat-treatment business facts from `ktg-mes-ui` frontend entry points and `ktg-mes` backend code, then persist discovery assets in `mes-agent`.
+
+Explicitly out of scope:
+
+- No Tool implementation.
+- No Agent implementation.
+- No SQL execution code.
+- No modifications to `ktg-mes-ui`.
+- No modifications to `ktg-mes`.
+- No mes-agent runtime code changes.
+
+### Generated Documents
+
+- `docs/capabilities/heat-treatment/overview.md`
+- `docs/capabilities/heat-treatment/capability-catalog.md`
+- `docs/capabilities/heat-treatment/business-facts.md`
+- `docs/capabilities/heat-treatment/api-mapping.md`
+- `docs/capabilities/heat-treatment/data-source-mapping.md`
+
+### Frontend Scanned
+
+- `ktg-mes-ui/src/router/index.js`
+- `ktg-mes-ui/src/api/md/heatTreatment.js`
+- `ktg-mes-ui/src/views/md/heatTreatment/index.vue`
+- `ktg-mes-ui/src/views/md/heatTreatment/detail.vue`
+- `ktg-mes-ui/src/views/md/heatTreatment/traceability/index.vue`
+- `ktg-mes-ui/src/views/md/heatTreatment/components/HeatTreatmentParameterCard.vue`
+- `ktg-mes-ui/src/views/md/heatTreatment/components/HeatTreatmentEvidenceCard.vue`
+
+### Backend Scanned
+
+- `HeatTreatmentRecordController`
+- `MobileHeatTreatmentController`
+- `IHeatTreatmentService`
+- `HeatTreatmentServiceImpl`
+- `HeatTreatmentRecordMapper.xml`
+- `HeatTreatmentRecordExtraMapper.xml`
+- `HeatTreatmentParamRecordMapper.xml`
+- `HeatTreatmentParamSubmitMapper.xml`
+- `HeatTreatmentPhotoMapper.xml`
+- `HeatTreatmentParamTemplateMapper.xml`
+- heat-treatment Entity / DTO / VO / Enum classes
+- heat-treatment SQL migration files
+
+### Extracted Capabilities
+
+Capability count: 13
+
+- `heat_record_list`
+- `heat_current_stage`
+- `heat_record_detail`
+- `heat_status_options`
+- `heat_device_status`
+- `heat_batch_lifecycle`
+- `heat_traceability_candidates`
+- `heat_related_products`
+- `heat_param_history`
+- `heat_photo_evidence`
+- `heat_record_create`
+- `heat_record_state_transition`
+- `heat_product_info_lookup`
+
+### Extracted Facts
+
+Fact count: 11
+
+- `heat_treatment_record`
+- `heat_treatment_record_status`
+- `heat_equipment_assignment`
+- `heat_batch_products`
+- `heat_parameter_record`
+- `heat_parameter_submit`
+- `heat_parameter_template`
+- `heat_photo_evidence`
+- `heat_lifecycle_trace`
+- `heat_traceability_related_products`
+- `heat_operation_log`
+
+### Key Findings
+
+- Heat-treatment status truth is `HeatTreatmentStatusEnum`: `CREATED`, `RUNNING`, `FINISHED`, `TRANSFERRED`, `ENDED`, `CANCELLED`.
+- Admin device status is derived from heat-treatment records and equipment master data, not PLC telemetry.
+- Product batch lifecycle identity is `itemCode + lotNo`, or `recordNo` resolved to one bound product batch.
+- Bound products/baskets are stored in `mes_heat_treatment_record.items_json`.
+- Traceability candidate SQL searches `items_json.productCode`, `items_json.batchNo`, `items_json.lotCode`, and `items_json.originalLotCode`.
+- Parameter persistence is append-style with submit batch table plus per-parameter record table.
+- Traceability operation logs are derived from parameter submit batches; no independent operation-log table was confirmed.
+
+### Uncertain Items
+
+- PLC runtime device status is UNKNOWN.
+- Quality inspection linkage is UNKNOWN.
+- Warehouse / inventory status linkage is UNKNOWN.
+- Exact ERP source tables behind `MoReceiptRequistionMapper` require separate focused mapping.
+- Backend frontend mismatch: frontend has `RISK` device-state rendering, but scanned backend `toDeviceStatusVo` emits only `ACTIVE` and `IDLE`.
+
+### Next Recommendation
+
+Use the persisted Capability Catalog as the source for the next phase:
+
+```text
+Capability Catalog Runtime
+```
+
+Do not create new heat-treatment Tools by hand until the runtime generation rules consume this catalog.
+
+SYSTEM STATUS:
+
+HEAT_TREATMENT_DISCOVERY_COMPLETE
+
+## 2026-07-10 00:00 CST - Capability Catalog Runtime V1
+
+### Task Goal
+
+Add foundational Capability Catalog Runtime infrastructure without changing current Planner, Tool generation, Text-to-SQL behavior, or heat-treatment query logic.
+
+### Scope
+
+Implemented:
+
+- Capability Schema.
+- YAML Catalog Loader.
+- Catalog Validator.
+- Runtime Registry.
+- One migrated real capability definition: `heat_current_stage`.
+
+Not implemented:
+
+- LLM Router.
+- Planner rewrite.
+- Tool auto-generation.
+- Text-to-SQL enhancement.
+- Cache.
+- New business capability.
+
+### Modified / Added Files
+
+- `backend/app/agent/capability/__init__.py`
+- `backend/app/agent/capability/models.py`
+- `backend/app/agent/capability/loader.py`
+- `backend/app/agent/capability/validator.py`
+- `backend/app/agent/capability/registry.py`
+- `backend/app/agent/capability/definitions/heat-treatment.yaml`
+- `backend/tests/test_capability_runtime.py`
+- `backend/requirements.txt`
+- `docs/agent-architecture-consolidation-v1.md`
+- `log/codex-task-log.md`
+
+### Runtime Design
+
+```text
+definitions/*.yaml
+-> CapabilityLoader
+-> CapabilityDefinition
+-> CapabilityValidator
+-> CapabilityRuntimeRegistry
+```
+
+`CapabilityDefinition` uses Pydantic and contains:
+
+- `name`
+- `domain`
+- `description`
+- `intent`
+- `status`
+- `execution_type`
+- `executor`
+- `input_schema`
+- `output_schema`
+- `data_sources`
+- `examples`
+- `boundaries`
+- `legacy_source`
+
+### Migrated Capability
+
+```text
+capability: heat_current_stage
+domain: heat_treatment
+execution_type: tool
+executor: heat_current_stage
+status: enabled
+legacy_source: old python constant
+```
+
+Execution remains unchanged:
+
+```text
+ToolRegistry
+-> heat_current_stage
+-> HeatTreatmentRepository
+-> readonly SQL against mes_heat_treatment_record
+```
+
+### Validation Coverage
+
+Added `backend/tests/test_capability_runtime.py` with:
+
+- normal load of `heat_current_stage`
+- missing-field load failure
+- unknown executor validation failure
+- planned capability loaded but rejected for execution
+- runtime registry query for `heat_current_stage`
+
+### Compatibility
+
+- Existing `CAPABILITY_BY_NAME` and legacy Python catalog still exist.
+- Runtime Registry is additive and does not replace Planner / Router / ToolRegistry in this round.
+
+### Next Phase
+
+```text
+Capability Router Migration
+```
+
 ## 2026-07-09 - Agent OS Architecture Consolidation V1
 
 ### Task Goal
@@ -3026,6 +3247,139 @@ cd backend && .venv/bin/python scripts/run_agent_os_v1_tests.py
 ```
 
 Result: `15 passed`, `0 failed`, `system_status=PASS`.
+
+## 2026-07-09 - Agent Architecture Cleanup V1
+
+### Task Goal
+
+Perform code governance before `Capability Catalog V1`.
+
+Scope:
+
+- Identify legacy architecture remnants.
+- Deprecate transitional code.
+- Prevent mock Tools from remaining executable.
+- Prepare capability definition migration.
+
+Out of scope:
+
+- New Tool.
+- New Planner ability.
+- New Text-to-SQL ability.
+- Database change.
+- Frontend change.
+- New framework.
+- Large refactor.
+
+### Files Changed
+
+- `backend/app/agent/catalog/heat_treatment.py`
+- `backend/app/agent/models.py`
+- `backend/app/agent/orchestrator/agent_orchestrator.py`
+- `backend/app/agent/graph.py`
+- `backend/app/agent/nodes/tool_matcher.py`
+- `backend/app/agent/prompts/tool_matcher.py`
+- `backend/tests/test_agent_catalog_and_tools.py`
+- `backend/tests/test_agent_orchestrator.py`
+- `backend/tests/fixtures/heat_treatment_tool_match_cases.json`
+- `backend/tests/golden/tool_cases.json`
+- `backend/tests/golden/mixed_cases.json`
+- `backend/results/agent_regression_report.json`
+- `backend/results/agent_os_v1_test_report.json`
+- `docs/agent-architecture-cleanup-v1.md`
+- `log/codex-task-log.md`
+
+### Key Decisions
+
+- `heat_current_stage` remains `enabled` because it is real and repository-backed.
+- `heat_equipment_assignment` changed from `enabled` to `planned` because it still returns fixed mock equipment data.
+- `heat_batch_products` changed from `enabled` to `planned` because it still returns fixed/default product and lot data.
+- `CapabilityStatus` now includes `planned` and `experimental`.
+- `PlanExecutionAdapter` now refuses non-`enabled` capabilities before invoking Tool functions.
+- `ToolRegistry` remains a second guardrail for non-`enabled` capabilities.
+- `graph.py` and `nodes/tool_matcher.py` are marked `DEPRECATED` / eval-only.
+- Matcher prompt now states `planned`, `experimental`, and `blocked` capabilities may be identified but must not execute Tool or fall back to Text-to-SQL.
+- Golden and matcher fixture baselines were updated so mock capabilities are expected to fail explainably rather than succeed with fake facts.
+
+### Removed
+
+None.
+
+Reason:
+
+- Candidate graph/matcher files are still referenced by tests and `evaluate_heat_tool_matcher.py`.
+- Removing them safely should happen after Capability Router parity exists.
+
+### Deprecated
+
+- `backend/app/agent/graph.py`
+- `backend/app/agent/nodes/tool_matcher.py`
+
+### Kept
+
+- `/api/agent/run`
+- `AgentOrchestrator`
+- `DebuggablePlanner` V1 with legacy routing documented
+- `ExecutionFeedbackLoop`
+- `ToolRegistry`
+- Real `heat_current_stage` executor
+- Text-to-SQL controlled pipeline
+- Trace / Analytics
+
+### Documentation
+
+Created:
+
+- `docs/agent-architecture-cleanup-v1.md`
+
+Sections:
+
+- Current directory structure.
+- Legacy inventory.
+- REMOVE / DEPRECATE / KEEP classification.
+- Agent entry review.
+- Planner legacy list.
+- Tool governance.
+- Capability definition duplication report.
+- Text-to-SQL boundary check.
+- Execution summary.
+- Validation results.
+
+### Verification
+
+```text
+cd backend && .venv/bin/python -m compileall app scripts
+```
+
+Result: passed.
+
+```text
+cd backend && .venv/bin/pytest
+```
+
+Result: `122 passed, 159 warnings`.
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_os_v1_tests.py
+```
+
+Result: `15 passed`, `0 failed`, `system_status=PASS`.
+
+Additional regression check:
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_regression.py
+```
+
+Result: `23 passed`, `0 failed`, `system_status=READY`, `agent_quality_score=0.9818`.
+
+### Status
+
+```text
+SYSTEM STATUS: ARCHITECTURE_CLEANUP_COMPLETE
+CAPABILITY_MIGRATION_PREPARED: true
+NEXT_PHASE: Capability Catalog V1
+```
 ```
 
 ### Remaining Risks

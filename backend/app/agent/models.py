@@ -6,7 +6,7 @@ from app.core.type_defs import JsonObject
 
 
 RouteName = Literal["tool", "text_to_sql", "blocked", "clarification", "error"]
-CapabilityStatus = Literal["enabled", "blocked", "disabled"]
+CapabilityStatus = Literal["enabled", "blocked", "disabled", "planned", "experimental"]
 
 
 class HeatToolArguments(BaseModel):

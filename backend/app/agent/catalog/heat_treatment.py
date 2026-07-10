@@ -74,7 +74,8 @@ CAPABILITIES = [
         examples=["TRACE-HTR-K2-T-FG-001分配到了哪个炉子", "HT001当前绑定的设备是什么"],
         confusing_with=["heat_current_stage", "heat_batch_products"],
         version=TOOL_VERSION,
-        status="enabled",
+        status="planned",
+        blocked_reason="当前仍是 mock 实现，需接入真实 Repository 后才能启用。",
     ),
     CapabilitySpec(
         name="heat_batch_products",
@@ -89,7 +90,8 @@ CAPABILITIES = [
         examples=["TRACE-HTR-K2-T-FG-001绑定了哪些产品", "HT001里有哪些产品"],
         confusing_with=["trace_route_by_item_lot", "heat_current_stage"],
         version=TOOL_VERSION,
-        status="enabled",
+        status="planned",
+        blocked_reason="当前仍是 mock 实现，需接入真实 Repository 后才能启用。",
     ),
     CapabilitySpec(
         name="heat_param_submitted",

@@ -309,6 +309,19 @@ class PlanExecutionAdapter:
                 execution_quality=ExecutionQuality(tool_hit=False),
                 trace=ExecutionTrace(tool_name=step.name),
             )
+        if capability.status != "enabled":
+            reason = capability.blocked_reason or f"Capability is not executable: {step.name}."
+            return ExecutionObservation(
+                status="fail",
+                data={"error": reason, "capability_status": capability.status},
+                observation=ObservationFacts(
+                    missing_facts=[step.name],
+                    decision_signals=["capability_not_executable"],
+                    failure_type="tool_miss",
+                ),
+                execution_quality=ExecutionQuality(tool_hit=False),
+                trace=ExecutionTrace(tool_name=step.name),
+            )
         missing_fields = _missing_required_fields(
             capability.required_argument_groups,
             step.args,

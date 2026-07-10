@@ -261,7 +261,7 @@ def test_agent_run_missing_tool_parameter_does_not_execute_tool_or_enter_sql():
     assert result.execution_trace[-1]["result"]["trace"]["sql"] is None
 
 
-def test_agent_run_executes_equipment_and_batch_tools_without_replan():
+def test_agent_run_rejects_planned_mock_tools_without_execution():
     registry = SpyRegistry()
     orchestrator = AgentOrchestrator(
         DebuggablePlanner(),
@@ -271,14 +271,11 @@ def test_agent_run_executes_equipment_and_batch_tools_without_replan():
     equipment = orchestrator.run(AgentRunInput(message="TRACE-HTR-K2-T-FG-001分配到了哪个炉子"))
     batch = orchestrator.run(AgentRunInput(message="TRACE-HTR-K2-T-FG-001包含哪些批次"))
 
-    assert equipment.final_result.status == "success"
-    assert batch.final_result.status == "success"
-    assert equipment.debug["execution_summary"]["replanned"] is False
-    assert batch.debug["execution_summary"]["replanned"] is False
-    assert registry.calls == [
-        ("heat_equipment_assignment", {"record_no": "TRACE-HTR-K2-T-FG-001"}),
-        ("heat_batch_products", {"record_no": "TRACE-HTR-K2-T-FG-001"}),
-    ]
+    assert equipment.final_result.status == "failed"
+    assert batch.final_result.status == "failed"
+    assert equipment.debug["failure_analysis"]["failure_type"] == "tool_miss"
+    assert batch.debug["failure_analysis"]["failure_type"] == "tool_miss"
+    assert registry.calls == []
 
 
 def test_agent_run_sql_path_remains_text_to_sql_and_cross_request_isolated():

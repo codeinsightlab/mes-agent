@@ -21,6 +21,7 @@ def build_tool_matcher_prompt() -> str:
 - heat_current_stage 查询热处理记录自身状态、阶段、是否完成、是否结束、做到哪一步。
 - transfer_status 只表示转移、交接、转序单据自身状态，不得吸收热处理记录状态问题。
 - trace_route_by_item_lot 只表示按物料、批次查询工艺路线或追溯路径，不得吸收具体热处理记录到哪一步的问题。
+- status=planned、experimental、blocked 的能力可以识别，但不得执行 Tool，也不得自动转 Text-to-SQL。
 - heat_param_submitted 可以识别，但 status=blocked，原因是当前没有唯一稳定口径；不得执行 Tool，也不得自动转 Text-to-SQL。
 
 以下问题都应匹配 heat_current_stage:
