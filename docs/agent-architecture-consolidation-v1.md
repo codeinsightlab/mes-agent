@@ -354,3 +354,228 @@ Planner keyword router, graph/matcher parallel path, hardcoded matcher prompt, e
 NEXT_PHASE:
 Capability Catalog V1
 ```
+
+## 13. Capability Router Migration V1
+
+Date: 2026-07-10
+
+Capability Router V1 has been added as the first production migration from Planner-owned Tool selection toward Catalog-owned capability routing.
+
+New runtime chain:
+
+```text
+DebuggablePlanner
+-> SemanticIntent
+-> CapabilityRouter
+-> CapabilityRuntimeRegistry
+-> CapabilityDefinition
+-> PlanExecutionAdapter
+-> ToolRegistry / TextToSqlNode
+```
+
+Migrated capability:
+
+| Capability | Domain | Intent | Execution |
+| --- | --- | --- | --- |
+| `heat_current_stage` | `heat_treatment` | `query_status` | `tool -> heat_current_stage` |
+
+Key changes:
+
+- Planner Tool steps for migrated heat-treatment status queries now carry `semantic_domain` and `semantic_intent`.
+- Planner no longer places `heat_current_stage` in `PlanStep.name` for the migrated path.
+- `CapabilityRouter` resolves `heat_treatment.query_status` from the YAML Catalog.
+- Router returns `capability_not_found` for uncataloged intents such as `heat_treatment.query_equipment`.
+- Router returns `capability_not_executable` when a matching Catalog capability is not `enabled`.
+- Execution trace now records `capability_source`, `capability_name`, and `catalog_version`.
+
+Still legacy:
+
+- Planner keyword detection still exists as the temporary Semantic Intent producer.
+- SQL route classification still lives in Planner.
+- Mixed diagnostic direct Tool names still exist for legacy behavior.
+- Graph matcher path remains eval-only / legacy.
+
+Detailed migration note:
+
+- `docs/capabilities/router-migration-v1.md`
+
+Validation snapshot:
+
+```text
+compileall app scripts: passed
+pytest: 131 passed, 159 warnings
+run_agent_os_v1_tests.py: 15 passed, 0 failed, SYSTEM STATUS = PASS
+run_production_acceptance_v1.py: 32 passed, 0 failed, SYSTEM STATUS = READY
+```
+
+```text
+SYSTEM STATUS: CAPABILITY_ROUTER_V1_COMPLETE
+CATALOG_ROUTING: enabled
+MIGRATED_CAPABILITIES: heat_current_stage
+LEGACY_ROUTING: still_exists
+NEXT_PHASE: Semantic Router V1
+```
+
+## 14. Semantic Router V1
+
+Date: 2026-07-10
+
+Semantic Router V1 has been added before Planner to separate user semantic understanding from execution planning.
+
+New runtime chain:
+
+```text
+User Input
+-> SemanticRouter
+-> SemanticRouterResult
+-> DebuggablePlanner
+-> CapabilityRouter
+-> Capability Catalog
+-> Execution
+```
+
+Semantic Router responsibilities:
+
+- understand user intent
+- identify business domain
+- extract entities
+- judge uncertainty and clarification need
+
+Explicit non-responsibilities:
+
+- Tool selection
+- Capability selection
+- SQL generation
+- business execution
+- database access
+
+Migrated semantic intent:
+
+| Domain | Intent | Entities | Downstream |
+| --- | --- | --- | --- |
+| `heat_treatment` | `query_status` | `record_no` when present | Planner semantic step -> Capability Router |
+
+Planner change:
+
+- `PlannerRequest` now accepts `semantic_router_result`.
+- Planner uses `SemanticRouterResult` for `heat_treatment.query_status`.
+- Planner no longer places a Tool name in `PlanStep.name` for this migrated semantic path.
+- Ambiguous heat-treatment questions such as `这个热处理怎么样` produce no execution step.
+
+Trace change:
+
+- `execution_trace[].semantic_router_result` records `domain`, `intent`, `entities`, `confidence`, and `need_clarification`.
+
+Legacy status:
+
+- Keyword routing still exists as fallback.
+- SQL route classification remains Planner-owned.
+- Mixed diagnostic planning remains legacy.
+- Replan branches still inspect missing facts.
+
+Detailed migration note:
+
+- `docs/capabilities/semantic-router-v1.md`
+
+Validation snapshot:
+
+```text
+compileall app scripts: passed
+pytest: 137 passed, 159 warnings
+run_agent_os_v1_tests.py: 15 passed, 0 failed, SYSTEM STATUS = PASS
+run_production_acceptance_v1.py: 32 passed, 0 failed, SYSTEM STATUS = READY
+```
+
+```text
+SYSTEM STATUS: SEMANTIC_ROUTER_V1_COMPLETE
+SEMANTIC_ROUTING: enabled
+MIGRATED_INTENTS: heat_treatment.query_status
+LEGACY_KEYWORD_ROUTING: still_exists
+NEXT_PHASE: Semantic Router LLM Adapter or analytical intent migration
+```
+
+## 15. Semantic Router V1 Protocol Freeze And Legacy Fallback Isolation
+
+Date: 2026-07-10
+
+Semantic Router V1 protocol is now fixed with explicit version metadata.
+
+Frozen output protocol:
+
+```json
+{
+  "semantic_router_version": "v1",
+  "domain": "heat_treatment",
+  "intent": "query_status",
+  "entities": {
+    "record_no": "HT20260603-007"
+  },
+  "confidence": 0.95,
+  "need_clarification": false,
+  "clarification_reason": null
+}
+```
+
+Semantic Router remains forbidden from outputting Tool, Capability, SQL, Repository, or execution action fields.
+
+Legacy fallback position:
+
+```text
+Planner
+-> SemanticRouterResult handling
+
+LegacyFallbackRouter
+-> historical keyword / regex fallback
+```
+
+Legacy fallback implementation:
+
+- `backend/app/agent/planner/legacy_fallback_router.py`
+
+Legacy plans are marked with:
+
+```json
+{
+  "routing_source": "legacy_fallback",
+  "legacy": true
+}
+```
+
+Trace fields:
+
+- `semantic_router_version`
+- `semantic_router_result`
+- `routing_source`
+
+Routing source values:
+
+- `semantic_router`
+- `legacy_fallback`
+
+Semantic Router golden tests:
+
+- `backend/tests/golden/semantic_router/cases.json`
+
+Coverage:
+
+- explicit heat-treatment status query
+- synonym normalization
+- missing `record_no`
+- ambiguous heat-treatment question
+- unrelated question
+
+Validation snapshot:
+
+```text
+compileall app scripts: passed
+pytest: 145 passed, 159 warnings
+run_agent_os_v1_tests.py: 15 passed, 0 failed, SYSTEM STATUS = PASS
+run_production_acceptance_v1.py: 32 passed, 0 failed, SYSTEM STATUS = READY
+```
+
+Current risks:
+
+- Analytical SQL routing still depends on legacy fallback.
+- Mixed diagnostic planning still depends on legacy fallback and uncataloged names.
+- Replan policy still contains missing-fact business branches.
+- Semantic Router V1 is deterministic; future LLM adapter must preserve the frozen output protocol.

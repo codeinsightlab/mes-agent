@@ -3,12 +3,14 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.agent.execution_observation import ExecutionObservation
+from app.agent.semantic_router.models import SemanticRouterResult
 from app.core.type_defs import JsonObject, JsonValue
 
 
 PlanIntent = Literal["tool", "sql", "mixed", "unknown"]
 PlanStepType = Literal["tool", "sql"]
 ExecutionMode = Literal["sequential"]
+RoutingSource = Literal["semantic_router", "legacy_fallback"]
 
 
 class ExecutionHistoryItem(BaseModel):
@@ -28,6 +30,7 @@ class PlannerRequest(BaseModel):
     execution_history: list[ExecutionHistoryItem] = Field(default_factory=list)
     previous_plan: JsonObject | None = None
     execution_observation: ExecutionObservation | None = None
+    semantic_router_result: SemanticRouterResult | None = None
 
     @field_validator("user_query")
     @classmethod
@@ -42,6 +45,8 @@ class PlanStep(BaseModel):
     step_id: int
     type: PlanStepType
     name: str | None = None
+    semantic_domain: str | None = None
+    semantic_intent: str | None = None
     query_goal: str
     args: JsonObject = Field(default_factory=dict)
     reason: str
@@ -49,6 +54,7 @@ class PlanStep(BaseModel):
     expected_output: str
     reuse_from_history: int | None = None
     skip_reason: str | None = None
+    legacy: bool = False
 
 
 class ExecutionPlanPolicy(BaseModel):
@@ -77,3 +83,6 @@ class PlannerPlan(BaseModel):
     confidence: float = Field(..., ge=0, le=1)
     debug_trace: DebugTrace
     failure_analysis: list[FailureAnalysis] = Field(default_factory=list)
+    semantic_router_result: JsonObject | None = None
+    semantic_router_version: str | None = None
+    routing_source: RoutingSource = "legacy_fallback"

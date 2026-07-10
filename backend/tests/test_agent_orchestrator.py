@@ -181,13 +181,19 @@ def test_agent_run_executes_known_tool_with_record_no_once_without_replan():
     assert result.debug["route"] == "tool"
     assert result.debug["execution_summary"]["replanned"] is False
     assert result.debug["execution_summary"]["planner_calls"] == 1
-    assert step["name"] == "heat_current_stage"
+    assert step["name"] is None
+    assert step["semantic_domain"] == "heat_treatment"
+    assert step["semantic_intent"] == "query_status"
     assert step["args"]["record_no"] == "TRACE-HTR-K2-T-FG-001"
     assert registry.calls == [
         ("heat_current_stage", {"record_no": "TRACE-HTR-K2-T-FG-001"})
     ]
     assert result.final_result.error is None
     trace = result.execution_trace[-1]["result"]["trace"]
+    assert trace["capability_source"] == "catalog"
+    assert trace["capability_name"] == "heat_current_stage"
+    assert trace["catalog_version"] == "v1"
+    assert trace["tool_name"] == "heat_current_stage"
     assert trace["sql_executed"] is True
     assert trace["used_tables"] == ["mes_heat_treatment_record"]
 
@@ -206,7 +212,9 @@ def test_agent_run_executes_real_heat_current_stage_repository_trace():
     tool_result = result.final_result.data["last_result"]["tool_result"]
     assert result.final_result.status == "success"
     assert result.debug["route"] == "tool"
-    assert step["name"] == "heat_current_stage"
+    assert step["name"] is None
+    assert step["semantic_domain"] == "heat_treatment"
+    assert step["semantic_intent"] == "query_status"
     assert step["args"]["record_no"] == "HT20260603-007"
     assert tool_result == {
         "found": True,
@@ -215,6 +223,9 @@ def test_agent_run_executes_real_heat_current_stage_repository_trace():
         "status_name": "进行中",
     }
     assert trace["sql_executed"] is True
+    assert trace["capability_name"] == "heat_current_stage"
+    assert trace["catalog_version"] == "v1"
+    assert trace["tool_name"] == "heat_current_stage"
     assert trace["used_tables"] == ["mes_heat_treatment_record"]
     assert trace["sql"].startswith("SELECT record_no, status")
 

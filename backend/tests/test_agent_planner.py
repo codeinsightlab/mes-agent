@@ -19,7 +19,11 @@ def test_planner_single_tool_query_creates_executable_tool_step():
     assert len(plan.steps) == 1
     step = plan.steps[0]
     assert step.type == "tool"
-    assert step.name == "heat_current_stage"
+    assert step.legacy is True
+    assert plan.routing_source == "legacy_fallback"
+    assert step.name is None
+    assert step.semantic_domain == "heat_treatment"
+    assert step.semantic_intent == "query_status"
     assert step.args == {"record_no": "TRACE-HTR-K2-T-FG-001"}
     assert step.reason
     assert plan.debug_trace.tool_selection_reason
@@ -30,7 +34,9 @@ def test_planner_equipment_tool_query_creates_equipment_step():
 
     assert plan.intent == "tool"
     step = plan.steps[0]
-    assert step.name == "heat_equipment_assignment"
+    assert step.name is None
+    assert step.semantic_domain == "heat_treatment"
+    assert step.semantic_intent == "query_equipment"
     assert step.args == {"record_no": "TRACE-HTR-K2-T-FG-001"}
 
 
@@ -39,7 +45,9 @@ def test_planner_completion_query_with_furnace_word_keeps_current_stage_tool():
 
     assert plan.intent == "tool"
     step = plan.steps[0]
-    assert step.name == "heat_current_stage"
+    assert step.name is None
+    assert step.semantic_domain == "heat_treatment"
+    assert step.semantic_intent == "query_status"
     assert step.args == {"record_no": "TRACE-HTR-K2-T-FG-001"}
 
 
@@ -48,7 +56,9 @@ def test_planner_batch_tool_query_creates_batch_step():
 
     assert plan.intent == "tool"
     step = plan.steps[0]
-    assert step.name == "heat_batch_products"
+    assert step.name is None
+    assert step.semantic_domain == "heat_treatment"
+    assert step.semantic_intent == "query_batch_products"
     assert step.args == {"record_no": "TRACE-HTR-K2-T-FG-001"}
 
 
@@ -56,8 +66,10 @@ def test_planner_sql_query_creates_single_sql_step():
     plan = plan_for("统计本月每台设备产量")
 
     assert plan.intent == "sql"
+    assert plan.routing_source == "legacy_fallback"
     assert len(plan.steps) == 1
     step = plan.steps[0]
+    assert step.legacy is True
     assert step.type == "sql"
     assert step.name is None
     assert step.args == {"question": "统计本月每台设备产量"}
@@ -71,6 +83,8 @@ def test_planner_mixed_diagnostic_query_exposes_capability_gaps():
     assert plan.intent == "mixed"
     assert [step.type for step in plan.steps] == ["tool", "tool", "sql"]
     assert [step.name for step in plan.steps] == ["production_status", "quality_status", None]
+    assert all(step.legacy is True for step in plan.steps)
+    assert plan.routing_source == "legacy_fallback"
     assert len(plan.steps) <= 5
     assert "未注册" in plan.debug_trace.risk_assessment
 
@@ -127,7 +141,9 @@ def test_replan_keeps_tool_missing_args_out_of_sql_fallback():
 
     assert plan.intent == "tool"
     assert plan.steps[0].type == "tool"
-    assert plan.steps[0].name == "heat_current_stage"
+    assert plan.steps[0].name is None
+    assert plan.steps[0].semantic_domain == "heat_treatment"
+    assert plan.steps[0].semantic_intent == "query_status"
     assert plan.steps[0].args == {}
     assert "不能用 SQL 兜底" in plan.debug_trace.sql_intent_reason
 

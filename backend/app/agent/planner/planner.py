@@ -1,8 +1,11 @@
-import re
 from typing import cast
 
 from app.agent.catalog.heat_treatment import CAPABILITIES
 from app.agent.execution_observation import ExecutionObservation
+from app.agent.planner.legacy_fallback_router import (
+    LegacyFallbackDecision,
+    LegacyFallbackRouter,
+)
 from app.agent.planner.models import (
     DebugTrace,
     ExecutionHistoryItem,
@@ -12,13 +15,14 @@ from app.agent.planner.models import (
     PlannerRequest,
     PlanStep,
 )
+from app.agent.semantic_router.models import SemanticRouterResult
 from app.core.type_defs import JsonObject
 
 
-RECORD_NO_PATTERN = re.compile(r"(TRACE-[A-Z0-9-]+|HT[0-9A-Z-]+)", re.I)
-
-
 class DebuggablePlanner:
+    def __init__(self, legacy_fallback_router: LegacyFallbackRouter | None = None):
+        self._legacy_fallback_router = legacy_fallback_router or LegacyFallbackRouter()
+
     def plan(self, request: PlannerRequest) -> PlannerPlan:
         query = request.user_query
         catalog = request.tool_catalog or _default_tool_catalog()
@@ -28,46 +32,169 @@ class DebuggablePlanner:
             if isinstance(name := item.get("name"), str)
         }
         history = request.execution_history
+        semantic_result = request.semantic_router_result
+
+        if (
+            request.execution_observation is not None
+            and semantic_result is not None
+            and semantic_result.need_clarification
+            and semantic_result.domain != "unknown"
+        ):
+            return _with_semantic_result(
+                self._semantic_clarification_plan(query, semantic_result, history),
+                semantic_result,
+            )
 
         if request.execution_observation is not None:
-            return self._replan_from_observation(
+            plan = self._replan_from_observation(
                 query=query,
                 catalog_names=catalog_names,
                 history=history,
                 observation=request.execution_observation,
             )
+            return _with_semantic_result(plan, semantic_result)
 
-        if _is_mixed_diagnostic_query(query):
-            return self._mixed_diagnostic_plan(query, catalog_names, history)
-        if _is_sql_query(query):
-            return self._sql_plan(query, history)
-        if _is_tool_query(query):
-            return self._tool_plan(query, catalog_names, history)
-        return self._unknown_plan(query, history)
+        if semantic_result is not None:
+            semantic_plan = self._plan_from_semantic_result(semantic_result, query, catalog_names, history)
+            if semantic_plan is not None:
+                return _with_semantic_result(semantic_plan, semantic_result)
+
+        legacy_decision = self._legacy_fallback_router.route(query)
+        if legacy_decision.route == "mixed":
+            plan = self._mixed_diagnostic_plan(query, catalog_names, history, legacy=True)
+        elif legacy_decision.route == "sql":
+            plan = self._sql_plan(query, history, legacy=True)
+        elif legacy_decision.route == "tool":
+            plan = self._tool_plan(query, catalog_names, history, legacy_decision)
+        else:
+            plan = self._unknown_plan(query, history, legacy=True)
+        return _with_semantic_result(plan, semantic_result)
+
+    def _plan_from_semantic_result(
+        self,
+        semantic_result: SemanticRouterResult,
+        query: str,
+        catalog_names: set[str],
+        history: list[ExecutionHistoryItem],
+    ) -> PlannerPlan | None:
+        if semantic_result.need_clarification and semantic_result.domain != "unknown":
+            return self._semantic_clarification_plan(query, semantic_result, history)
+        if semantic_result.domain == "heat_treatment" and semantic_result.intent == "query_status":
+            return self._semantic_tool_plan(semantic_result, catalog_names, history)
+        return None
+
+    def _semantic_tool_plan(
+        self,
+        semantic_result: SemanticRouterResult,
+        catalog_names: set[str],
+        history: list[ExecutionHistoryItem],
+    ) -> PlannerPlan:
+        capability_name = "heat_current_stage"
+        tool_label = _tool_label(capability_name)
+        args = {
+            key: value
+            for key, value in semantic_result.entities.items()
+            if key in {"record_no", "record_id", "object_id"} and isinstance(value, str) and value
+        }
+        step = PlanStep(
+            step_id=1,
+            type="tool",
+            name=None,
+            semantic_domain=semantic_result.domain,
+            semantic_intent=semantic_result.intent,
+            query_goal=tool_label["query_goal"],
+            args=args,
+            reason="Semantic Router 已识别热处理状态查询；Planner 只生成执行计划，不再选择 Tool 名称。",
+            dependency=[],
+            expected_output=tool_label["expected_output"],
+        )
+        _apply_history_reuse(step, history)
+        risk = (
+            "Semantic Router 未抽取 record_no，执行层会要求补充记录标识。"
+            if not args
+            else "主要风险是 Semantic Router 抽取的记录编号不正确。"
+        )
+        if capability_name not in catalog_names:
+            risk += f" 当前 Tool Catalog 未注册 {capability_name}。"
+        return PlannerPlan(
+            intent="tool",
+            goal=tool_label["goal"],
+            steps=[step],
+            execution_plan=ExecutionPlanPolicy(
+                stop_condition=(
+                    "when catalog-routed capability returns a found result or asks for a missing record identifier"
+                )
+            ),
+            confidence=min(max(semantic_result.confidence, 0.0), 0.95),
+            debug_trace=DebugTrace(
+                classification_reason="Semantic Router 输出 heat_treatment.query_status。",
+                tool_selection_reason="Planner 未选择 Tool；后续由 Capability Router 根据 Catalog 解析能力。",
+                sql_intent_reason="Semantic Router 未输出分析型查询意图，因此不进入 SQL。",
+                risk_assessment=risk,
+            ),
+            failure_analysis=_analyze_history(history),
+            semantic_router_version=semantic_result.semantic_router_version,
+            routing_source="semantic_router",
+        )
+
+    def _semantic_clarification_plan(
+        self,
+        query: str,
+        semantic_result: SemanticRouterResult,
+        history: list[ExecutionHistoryItem],
+    ) -> PlannerPlan:
+        reason = semantic_result.clarification_reason or "Semantic Router 判断需要补充信息。"
+        return PlannerPlan(
+            intent="unknown",
+            goal=f"需要用户补充后才能稳定规划：{query}",
+            steps=[],
+            execution_plan=ExecutionPlanPolicy(
+                stop_condition="when user clarifies the business domain, intent, or entity identifier"
+            ),
+            confidence=semantic_result.confidence,
+            debug_trace=DebugTrace(
+                classification_reason="Semantic Router 标记 need_clarification=true。",
+                tool_selection_reason="语义不明确时禁止 Planner 选择 Tool 或 Capability。",
+                sql_intent_reason="语义不明确时禁止生成 SQL。",
+                risk_assessment=reason,
+            ),
+            failure_analysis=_analyze_history(history),
+            semantic_router_version=semantic_result.semantic_router_version,
+            routing_source="semantic_router",
+        )
 
     def _tool_plan(
         self,
         query: str,
         catalog_names: set[str],
         history: list[ExecutionHistoryItem],
+        legacy_decision: LegacyFallbackDecision | None = None,
     ) -> PlannerPlan:
-        record_no = _extract_record_no(query)
-        capability_name = _tool_capability_name(query) or "heat_current_stage"
+        record_no = self._legacy_fallback_router.extract_record_no(query)
+        capability_name = (
+            legacy_decision.capability_name
+            if legacy_decision is not None and legacy_decision.capability_name is not None
+            else "heat_current_stage"
+        )
+        semantic_intent = _tool_semantic_intent(capability_name)
         tool_label = _tool_label(capability_name)
         step = PlanStep(
             step_id=1,
             type="tool",
-            name=capability_name,
+            name=None,
+            semantic_domain="heat_treatment",
+            semantic_intent=semantic_intent,
             query_goal=tool_label["query_goal"],
             args={"record_no": record_no} if record_no else {},
             reason=tool_label["reason"],
             dependency=[],
             expected_output=tool_label["expected_output"],
+            legacy=True,
         )
         _apply_history_reuse(step, history)
         confidence = 0.9 if record_no else 0.72
         risk = "主要风险是 record_no 未抽取或抽取错误。" if record_no else "缺少记录编号，执行层可能进入澄清。"
-        if step.name not in catalog_names:
+        if capability_name not in catalog_names:
             risk += f" 当前 Tool Catalog 未注册 {capability_name}。"
             confidence = min(confidence, 0.45)
 
@@ -86,12 +213,14 @@ class DebuggablePlanner:
                 risk_assessment=risk,
             ),
             failure_analysis=_analyze_history(history),
+            routing_source="legacy_fallback",
         )
 
     def _sql_plan(
         self,
         query: str,
         history: list[ExecutionHistoryItem],
+        legacy: bool = False,
     ) -> PlannerPlan:
         step = PlanStep(
             step_id=1,
@@ -102,6 +231,7 @@ class DebuggablePlanner:
             reason="用户问题是统计/聚合/按设备分组类问题，需要 Text-to-SQL 生成候选 SQL 后由 Validator 和只读执行器处理。",
             dependency=[],
             expected_output="包含 generated_sql、validated_sql、columns、rows、row_count、duration_ms 的结构化 SQL 结果。",
+            legacy=legacy,
         )
         _apply_history_reuse(step, history)
         return PlannerPlan(
@@ -119,6 +249,7 @@ class DebuggablePlanner:
                 risk_assessment="主要风险是 Schema 字段不存在、SQL 生成错误、Validator 拦截或 MES 只读库执行失败。",
             ),
             failure_analysis=_analyze_history(history),
+            routing_source="legacy_fallback" if legacy else "semantic_router",
         )
 
     def _mixed_diagnostic_plan(
@@ -126,6 +257,7 @@ class DebuggablePlanner:
         query: str,
         catalog_names: set[str],
         history: list[ExecutionHistoryItem],
+        legacy: bool = False,
     ) -> PlannerPlan:
         steps = [
             PlanStep(
@@ -137,6 +269,7 @@ class DebuggablePlanner:
                 reason="不能入库通常先要排查生产状态是否满足入库前置条件。",
                 dependency=[],
                 expected_output="生产状态、完成状态、阻断原因。",
+                legacy=legacy,
             ),
             PlanStep(
                 step_id=2,
@@ -147,6 +280,7 @@ class DebuggablePlanner:
                 reason="入库受质检结果影响，质检失败或未检会阻断入库。",
                 dependency=[1],
                 expected_output="质检状态、检验结论、不良原因。",
+                legacy=legacy,
             ),
             PlanStep(
                 step_id=3,
@@ -157,6 +291,7 @@ class DebuggablePlanner:
                 reason="库存和入库约束通常需要通过只读 SQL 汇总当前业务数据。",
                 dependency=[1, 2],
                 expected_output="库存/入库约束相关 columns、rows、row_count。",
+                legacy=legacy,
             ),
         ]
         for step in steps:
@@ -190,12 +325,14 @@ class DebuggablePlanner:
                 risk_assessment=risk,
             ),
             failure_analysis=_analyze_history(history),
+            routing_source="legacy_fallback" if legacy else "semantic_router",
         )
 
     def _unknown_plan(
         self,
         query: str,
         history: list[ExecutionHistoryItem],
+        legacy: bool = False,
     ) -> PlannerPlan:
         return PlannerPlan(
             intent="unknown",
@@ -212,6 +349,7 @@ class DebuggablePlanner:
                 risk_assessment="主要风险是意图不明确，需要用户补充业务对象或目标。",
             ),
             failure_analysis=_analyze_history(history),
+            routing_source="legacy_fallback" if legacy else "semantic_router",
         )
 
     def _replan_from_observation(
@@ -233,6 +371,7 @@ class DebuggablePlanner:
                 reason="上一轮 observation 明确缺少 QC/质检事实，因此 replan 剪枝为只聚焦质检状态。",
                 dependency=[],
                 expected_output="质检状态、检验结论、不良原因或缺失原因。",
+                legacy=True,
             )
             risk = (
                 "quality_status 未注册，执行层会暴露 tool_miss；本轮按禁止扩 Tool 要求仅输出可排查计划。"
@@ -254,6 +393,7 @@ class DebuggablePlanner:
                     risk_assessment=risk,
                 ),
                 failure_analysis=failure_analysis,
+                routing_source="legacy_fallback",
             )
 
         if _contains_fact(missing_facts, ["factory", "工厂"]):
@@ -266,6 +406,7 @@ class DebuggablePlanner:
                 reason="上一轮 SQL observation 标记缺少工厂事实，因此第二轮计划只聚焦工厂过滤条件。",
                 dependency=[],
                 expected_output="带工厂过滤或工厂维度的 generated_sql、validated_sql、columns、rows。",
+                legacy=True,
             )
             return PlannerPlan(
                 intent="sql",
@@ -282,10 +423,11 @@ class DebuggablePlanner:
                     risk_assessment="如果用户仍未提供具体工厂，执行层应返回 missing_param 而不是扩大查询范围。",
                 ),
                 failure_analysis=failure_analysis,
+                routing_source="legacy_fallback",
             )
 
         if _contains_fact(missing_facts, ["plan.steps"]):
-            plan = self._unknown_plan(query, history)
+            plan = self._unknown_plan(query, history, legacy=True)
             return plan.model_copy(
                 update={
                     "failure_analysis": failure_analysis,
@@ -302,8 +444,9 @@ class DebuggablePlanner:
                 }
             )
 
-        if _is_tool_query(query) and not _is_sql_query(query):
-            plan = self._tool_plan(query, catalog_names, history)
+        legacy_decision = self._legacy_fallback_router.route(query)
+        if legacy_decision.route == "tool" and not self._legacy_fallback_router.is_sql_query(query):
+            plan = self._tool_plan(query, catalog_names, history, legacy_decision)
             return plan.model_copy(
                 update={
                     "failure_analysis": failure_analysis,
@@ -324,8 +467,8 @@ class DebuggablePlanner:
             )
 
         if missing_facts:
-            if not _is_sql_query(query):
-                plan = self._unknown_plan(query, history)
+            if not self._legacy_fallback_router.is_sql_query(query):
+                plan = self._unknown_plan(query, history, legacy=True)
                 return plan.model_copy(
                     update={
                         "failure_analysis": failure_analysis,
@@ -352,6 +495,7 @@ class DebuggablePlanner:
                 reason="上一轮 execution_observation 返回 partial，Planner V1 进行一次有限补充规划。",
                 dependency=[],
                 expected_output="缺失事实相关的结构化查询结果或稳定失败原因。",
+                legacy=True,
             )
             return PlannerPlan(
                 intent="sql",
@@ -368,27 +512,37 @@ class DebuggablePlanner:
                     risk_assessment="缺失事实可能不在允许 Schema 中，可能产生 schema_gap。",
                 ),
                 failure_analysis=failure_analysis,
+                routing_source="legacy_fallback",
             )
 
-        return self._unknown_plan(query, history)
+        return self._unknown_plan(query, history, legacy=True)
 
 
 def _default_tool_catalog() -> list[JsonObject]:
     return [cast(JsonObject, capability.model_dump(mode="json")) for capability in CAPABILITIES]
 
 
-def _is_tool_query(query: str) -> bool:
-    return _tool_capability_name(query) is not None
+def _with_semantic_result(
+    plan: PlannerPlan,
+    semantic_result: SemanticRouterResult | None,
+) -> PlannerPlan:
+    if semantic_result is None:
+        return plan
+    return plan.model_copy(
+        update={
+            "semantic_router_result": cast(JsonObject, semantic_result.model_dump(mode="json")),
+            "semantic_router_version": semantic_result.semantic_router_version,
+        }
+    )
 
 
-def _tool_capability_name(query: str) -> str | None:
-    if any(keyword in query for keyword in ["到哪", "哪一步", "状态", "处理完", "结束", "阶段"]):
-        return "heat_current_stage"
-    if any(keyword in query for keyword in ["分配", "哪个炉子", "哪台", "绑定设备", "使用什么设备", "设备编码", "设备名称"]):
-        return "heat_equipment_assignment"
-    if any(keyword in query for keyword in ["包含", "批次", "绑定", "产品"]):
-        return "heat_batch_products"
-    return None
+def _tool_semantic_intent(capability_name: str) -> str:
+    intents = {
+        "heat_current_stage": "query_status",
+        "heat_equipment_assignment": "query_equipment",
+        "heat_batch_products": "query_batch_products",
+    }
+    return intents[capability_name]
 
 
 def _tool_label(capability_name: str) -> dict[str, str]:
@@ -413,22 +567,6 @@ def _tool_label(capability_name: str) -> dict[str, str]:
         },
     }
     return labels[capability_name]
-
-
-def _is_sql_query(query: str) -> bool:
-    return any(keyword in query for keyword in ["统计", "每台", "产量", "平均", "最近", "多少", "排行"])
-
-
-def _is_mixed_diagnostic_query(query: str) -> bool:
-    return "为什么" in query and any(keyword in query for keyword in ["不能入库", "无法入库", "入不了库"])
-
-
-def _extract_record_no(query: str) -> str | None:
-    matched = RECORD_NO_PATTERN.search(query)
-    if not matched:
-        return None
-    return matched.group(1).upper()
-
 
 def _apply_history_reuse(step: PlanStep, history: list[ExecutionHistoryItem]) -> None:
     for item in history:

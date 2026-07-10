@@ -3,6 +3,7 @@ capabilities:
     domain: heat_treatment
     description: 查询热处理记录当前阶段、状态、是否完成或结束。
     intent:
+      - query_status
       - 热处理当前阶段
       - 热处理做到哪一步
       - 热处理是否完成或结束

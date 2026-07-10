@@ -5,6 +5,12 @@ from typing import cast
 
 from pydantic import BaseModel, Field
 
+from app.agent.capability.loader import CapabilityLoader
+from app.agent.capability.router import (
+    CapabilityExecutionPlan,
+    CapabilityRouter,
+    SemanticIntent,
+)
 from app.agent.execution_loop import (
     ExecutionFeedbackLoop,
     ExecutionLoopResult,
@@ -20,6 +26,7 @@ from app.agent.execution_observation import (
 )
 from app.agent.planner.models import PlannerPlan, PlannerRequest, PlanStep
 from app.agent.planner.planner import DebuggablePlanner
+from app.agent.semantic_router import SemanticRouter
 from app.agent.state import AgentState
 from app.agent.text_to_sql.models import NormalizedTextToSqlResult
 from app.agent.nodes.text_to_sql import TextToSqlNode
@@ -68,14 +75,20 @@ class AgentOrchestrator:
         planner: DebuggablePlanner,
         execution_layer,
         event_collector: AgentEventCollector | None = None,
+        semantic_router: SemanticRouter | None = None,
     ):
         self._planner = planner
         self._execution_layer = execution_layer
         self._event_collector = event_collector
+        self._semantic_router = semantic_router or SemanticRouter()
 
     def run(self, request: AgentRunInput) -> AgentRunResult:
         trace_id = uuid.uuid4().hex
-        planner_request = PlannerRequest(user_query=request.message)
+        semantic_router_result = self._semantic_router.route(request.message)
+        planner_request = PlannerRequest(
+            user_query=request.message,
+            semantic_router_result=semantic_router_result,
+        )
         started_at = time.perf_counter()
         try:
             loop_result = ExecutionFeedbackLoop(
@@ -195,9 +208,11 @@ class PlanExecutionAdapter:
         self,
         text_to_sql_node: TextToSqlNode,
         registry: ToolRegistry = DEFAULT_TOOL_REGISTRY,
+        capability_router: CapabilityRouter | None = None,
     ):
         self._text_to_sql_node = text_to_sql_node
         self._registry = registry
+        self._capability_router = capability_router or CapabilityRouter(CapabilityLoader().load())
 
     def execute(self, plan: PlannerPlan) -> ExecutionObservation:
         if not plan.steps:
@@ -209,6 +224,11 @@ class PlanExecutionAdapter:
                     failure_type="missing_param",
                 ),
                 execution_quality=ExecutionQuality(),
+                trace=ExecutionTrace(
+                    semantic_router_result=plan.semantic_router_result,
+                    semantic_router_version=plan.semantic_router_version,
+                    routing_source=plan.routing_source,
+                ),
             )
 
         step_results: list[JsonObject] = []
@@ -220,7 +240,7 @@ class PlanExecutionAdapter:
                 step.name,
                 sorted(step.args.keys()),
             )
-            observation = self._execute_step(plan, step)
+            observation = _with_plan_trace_metadata(self._execute_step(plan, step), plan)
             logger.info(
                 "PlanExecutionAdapter step completed step_id=%s step_type=%s capability_name=%s observation_status=%s missing_fields=%s",
                 step.step_id,
@@ -263,6 +283,13 @@ class PlanExecutionAdapter:
                 sql_executed=_collect_sql_executed(step_results),
             ),
             trace=ExecutionTrace(
+                semantic_router_result=plan.semantic_router_result,
+                semantic_router_version=plan.semantic_router_version,
+                routing_source=plan.routing_source,
+                capability_source=_collect_trace_field(step_results, "capability_source"),
+                capability_name=_collect_trace_field(step_results, "capability_name"),
+                catalog_version=_collect_trace_field(step_results, "catalog_version"),
+                tool_name=_collect_trace_field(step_results, "tool_name"),
                 sql=_collect_sql(step_results),
                 used_tables=_collect_used_tables(step_results),
                 sql_executed=_collect_sql_executed(step_results),
@@ -287,6 +314,40 @@ class PlanExecutionAdapter:
         return self._execute_sql_step(plan, step)
 
     def _execute_tool_step(self, step: PlanStep) -> ExecutionObservation:
+        routed_step = self._route_tool_step(step)
+        if routed_step.status != "matched":
+            missing_fact = (
+                f"{step.semantic_domain}.{step.semantic_intent}"
+                if step.semantic_domain and step.semantic_intent
+                else step.name or "capability"
+            )
+            return ExecutionObservation(
+                status="fail",
+                data={
+                    "error": routed_step.reason,
+                    "route_status": routed_step.status,
+                    "capability": routed_step.capability,
+                },
+                observation=ObservationFacts(
+                    missing_facts=[missing_fact],
+                    decision_signals=[routed_step.status],
+                    failure_type="tool_miss",
+                ),
+                execution_quality=ExecutionQuality(tool_hit=False),
+                trace=ExecutionTrace(
+                    capability_source=routed_step.capability_source,
+                    capability_name=routed_step.capability,
+                    catalog_version=routed_step.catalog_version,
+                    tool_name=routed_step.executor,
+                    error_type=routed_step.status,
+                ),
+            )
+        step = step.model_copy(
+            update={
+                "name": routed_step.executor,
+                "args": routed_step.arguments,
+            }
+        )
         if not step.name:
             return ExecutionObservation(
                 status="fail",
@@ -295,6 +356,12 @@ class PlanExecutionAdapter:
                     failure_type="missing_param",
                 ),
                 execution_quality=ExecutionQuality(tool_hit=False),
+                trace=ExecutionTrace(
+                    capability_source=routed_step.capability_source,
+                    capability_name=routed_step.capability,
+                    catalog_version=routed_step.catalog_version,
+                    error_type="missing_param",
+                ),
             )
         capability = self._registry.get_capability(step.name)
         if capability is None:
@@ -307,7 +374,12 @@ class PlanExecutionAdapter:
                     failure_type="tool_miss",
                 ),
                 execution_quality=ExecutionQuality(tool_hit=False),
-                trace=ExecutionTrace(tool_name=step.name),
+                trace=ExecutionTrace(
+                    capability_source=routed_step.capability_source,
+                    capability_name=routed_step.capability,
+                    catalog_version=routed_step.catalog_version,
+                    tool_name=step.name,
+                ),
             )
         if capability.status != "enabled":
             reason = capability.blocked_reason or f"Capability is not executable: {step.name}."
@@ -320,7 +392,12 @@ class PlanExecutionAdapter:
                     failure_type="tool_miss",
                 ),
                 execution_quality=ExecutionQuality(tool_hit=False),
-                trace=ExecutionTrace(tool_name=step.name),
+                trace=ExecutionTrace(
+                    capability_source=routed_step.capability_source,
+                    capability_name=routed_step.capability,
+                    catalog_version=routed_step.catalog_version,
+                    tool_name=step.name,
+                ),
             )
         missing_fields = _missing_required_fields(
             capability.required_argument_groups,
@@ -339,7 +416,12 @@ class PlanExecutionAdapter:
                     failure_type="missing_param",
                 ),
                 execution_quality=ExecutionQuality(tool_hit=False),
-                trace=ExecutionTrace(tool_name=step.name),
+                trace=ExecutionTrace(
+                    capability_source=routed_step.capability_source,
+                    capability_name=routed_step.capability,
+                    catalog_version=routed_step.catalog_version,
+                    tool_name=step.name,
+                ),
             )
         try:
             data = self._registry.execute(step.name, step.args)
@@ -357,6 +439,9 @@ class PlanExecutionAdapter:
                     sql_executed=_trace_bool(tool_trace, "sql_executed"),
                 ),
                 trace=ExecutionTrace(
+                    capability_source=routed_step.capability_source,
+                    capability_name=routed_step.capability,
+                    catalog_version=routed_step.catalog_version,
                     tool_name=step.name,
                     sql=_trace_str(tool_trace, "sql"),
                     used_tables=_trace_str_list(tool_trace, "used_tables"),
@@ -379,8 +464,24 @@ class PlanExecutionAdapter:
                     failure_type=failure_type,
                 ),
                 execution_quality=ExecutionQuality(tool_hit=False),
-                trace=ExecutionTrace(tool_name=step.name),
+                trace=ExecutionTrace(
+                    capability_source=routed_step.capability_source,
+                    capability_name=routed_step.capability,
+                    catalog_version=routed_step.catalog_version,
+                    tool_name=step.name,
+                ),
             )
+
+    def _route_tool_step(self, step: PlanStep) -> CapabilityExecutionPlan:
+        if step.semantic_domain and step.semantic_intent:
+            return self._capability_router.route(
+                SemanticIntent(
+                    domain=step.semantic_domain,
+                    intent=step.semantic_intent,
+                    arguments=step.args,
+                )
+            )
+        return _legacy_tool_route(step)
 
     def _execute_sql_step(self, plan: PlannerPlan, step: PlanStep) -> ExecutionObservation:
         question = step.args.get("question")
@@ -452,7 +553,13 @@ def _normalize_loop_result(trace_id: str, loop_result: ExecutionLoopResult) -> A
             ),
         },
         execution_trace=[
-            {"step": index + 1, "result": _model_json_object(observation)}
+            {
+                "step": index + 1,
+                "semantic_router_result": _semantic_trace_for_index(loop_result, index),
+                "semantic_router_version": _semantic_version_for_index(loop_result, index),
+                "routing_source": _routing_source_for_index(loop_result, index),
+                "result": _model_json_object(observation),
+            }
             for index, observation in enumerate(loop_result.observations)
         ],
         final_result=AgentFinalResult(
@@ -510,6 +617,47 @@ def _error_result(
                 "max_planner_call": 2,
             },
         },
+    )
+
+
+def _semantic_trace_for_index(
+    loop_result: ExecutionLoopResult,
+    index: int,
+) -> JsonObject | None:
+    plan = loop_result.initial_plan if index == 0 else loop_result.final_plan
+    return plan.semantic_router_result
+
+
+def _semantic_version_for_index(
+    loop_result: ExecutionLoopResult,
+    index: int,
+) -> str | None:
+    plan = loop_result.initial_plan if index == 0 else loop_result.final_plan
+    return plan.semantic_router_version
+
+
+def _routing_source_for_index(
+    loop_result: ExecutionLoopResult,
+    index: int,
+) -> str:
+    plan = loop_result.initial_plan if index == 0 else loop_result.final_plan
+    return plan.routing_source
+
+
+def _with_plan_trace_metadata(
+    observation: ExecutionObservation,
+    plan: PlannerPlan,
+) -> ExecutionObservation:
+    return observation.model_copy(
+        update={
+            "trace": observation.trace.model_copy(
+                update={
+                    "semantic_router_result": plan.semantic_router_result,
+                    "semantic_router_version": plan.semantic_router_version,
+                    "routing_source": plan.routing_source,
+                }
+            )
+        }
     )
 
 
@@ -585,6 +733,25 @@ def _is_record_identifier_missing(fact: str) -> bool:
     )
 
 
+def _legacy_tool_route(step: PlanStep) -> CapabilityExecutionPlan:
+    if not step.name:
+        return CapabilityExecutionPlan(
+            status="capability_not_found",
+            arguments=step.args,
+            reason="Legacy tool step did not include a capability name.",
+        )
+    return CapabilityExecutionPlan(
+        status="matched",
+        capability=step.name,
+        execution_type="tool",
+        executor=step.name,
+        arguments=step.args,
+        capability_source="catalog",
+        catalog_version="legacy",
+        reason="Legacy planner supplied a direct tool name.",
+    )
+
+
 def _collect_used_tables(step_results: list[JsonObject]) -> list[str]:
     tables: set[str] = set()
     for item in step_results:
@@ -601,6 +768,17 @@ def _collect_used_tables(step_results: list[JsonObject]) -> list[str]:
             if isinstance(table, str):
                 tables.add(table)
     return sorted(tables)
+
+
+def _collect_trace_field(step_results: list[JsonObject], key: str) -> str | None:
+    for item in step_results:
+        trace = _step_trace(item)
+        if trace is None:
+            continue
+        value = trace.get(key)
+        if isinstance(value, str) and value:
+            return value
+    return None
 
 
 def _collect_sql(step_results: list[JsonObject]) -> str | None:
@@ -773,7 +951,8 @@ def _record_observation_events(
         for item in step_results:
             step_observation = _json_object_or_empty(item.get("observation"))
             step_type = item.get("type")
-            component_value = item.get("name")
+            trace = _json_object_or_empty(step_observation.get("trace"))
+            component_value = item.get("name") or trace.get("tool_name") or trace.get("capability_name")
             component = component_value if isinstance(component_value, str) else "text_to_sql"
             step_id_value = item.get("step_id")
             step_id = step_id_value if isinstance(step_id_value, int) else None
@@ -802,7 +981,8 @@ def _record_observation_events(
 
     if plan.steps:
         first_step = plan.steps[0]
-        component = first_step.name or "text_to_sql"
+        trace = _model_json_object(observation.trace)
+        component = first_step.name or trace.get("tool_name") or trace.get("capability_name") or "text_to_sql"
         if first_step.type == "tool":
             collector.record_event(
                 event_type="TOOL_MATCH",

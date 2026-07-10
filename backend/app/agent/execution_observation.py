@@ -29,6 +29,12 @@ class ExecutionQuality(BaseModel):
 
 
 class ExecutionTrace(BaseModel):
+    semantic_router_version: str | None = None
+    semantic_router_result: JsonObject | None = None
+    routing_source: str | None = None
+    capability_source: str | None = None
+    capability_name: str | None = None
+    catalog_version: str | None = None
     tool_name: str | None = None
     sql: str | None = None
     used_tables: list[str] = Field(default_factory=list)

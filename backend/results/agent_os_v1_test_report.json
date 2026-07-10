@@ -33,7 +33,9 @@
           {
             "step_id": 1,
             "type": "tool",
-            "name": "heat_current_stage",
+            "name": null,
+            "semantic_domain": "heat_treatment",
+            "semantic_intent": "query_status",
             "query_goal": "查询热处理记录当前阶段、状态或是否已完成。",
             "args": {
               "record_no": "TRACE-HTR-K2-T-FG-001"
@@ -42,7 +44,8 @@
             "dependency": [],
             "expected_output": "包含 found、record_no、status、status_name 的 Tool 结构化结果。",
             "reuse_from_history": null,
-            "skip_reason": null
+            "skip_reason": null,
+            "legacy": true
           }
         ],
         "tool_name": "heat_current_stage",
@@ -59,7 +62,7 @@
         "execution_loops": 1,
         "planner_calls": 1,
         "replanned": false,
-        "trace_id": "b25a24bfc92742e48db6e61c484f0aa8",
+        "trace_id": "b7927183109345a4ad6077a3b84bd6ac",
         "sql": "SELECT record_no, status FROM mes_heat_treatment_record WHERE record_no = :record_no LIMIT 1",
         "sql_is_select": true,
         "sql_has_group_by": false,
@@ -94,7 +97,9 @@
           {
             "step_id": 1,
             "type": "tool",
-            "name": "heat_current_stage",
+            "name": null,
+            "semantic_domain": "heat_treatment",
+            "semantic_intent": "query_status",
             "query_goal": "查询热处理记录当前阶段、状态或是否已完成。",
             "args": {
               "record_no": "TRACE-HTR-K2-T-FG-001"
@@ -103,7 +108,8 @@
             "dependency": [],
             "expected_output": "包含 found、record_no、status、status_name 的 Tool 结构化结果。",
             "reuse_from_history": null,
-            "skip_reason": null
+            "skip_reason": null,
+            "legacy": true
           }
         ],
         "tool_name": "heat_current_stage",
@@ -120,7 +126,7 @@
         "execution_loops": 1,
         "planner_calls": 1,
         "replanned": false,
-        "trace_id": "ed2ad728d0ce473fae11b1b715dbad5a",
+        "trace_id": "147fa5f9a0ae4345ad9a92b737266d4e",
         "sql": "SELECT record_no, status FROM mes_heat_treatment_record WHERE record_no = :record_no LIMIT 1",
         "sql_is_select": true,
         "sql_has_group_by": false,
@@ -158,14 +164,17 @@
           {
             "step_id": 1,
             "type": "tool",
-            "name": "heat_current_stage",
+            "name": null,
+            "semantic_domain": "heat_treatment",
+            "semantic_intent": "query_status",
             "query_goal": "查询热处理记录当前阶段、状态或是否已完成。",
             "args": {},
-            "reason": "用户询问'到哪了/哪一步/状态/是否完成'，该语义由 heat_current_stage Tool 负责。",
+            "reason": "Semantic Router 已识别热处理状态查询；Planner 只生成执行计划，不再选择 Tool 名称。",
             "dependency": [],
             "expected_output": "包含 found、record_no、status、status_name 的 Tool 结构化结果。",
             "reuse_from_history": null,
-            "skip_reason": null
+            "skip_reason": null,
+            "legacy": false
           }
         ],
         "tool_name": "heat_current_stage",
@@ -184,7 +193,7 @@
         "execution_loops": 2,
         "planner_calls": 2,
         "replanned": true,
-        "trace_id": "4363d703bd0f4fa9b52c50386859939b",
+        "trace_id": "b9254149a83f41d684573e170058b407",
         "sql": null,
         "sql_is_select": false,
         "sql_has_group_by": false,
@@ -225,6 +234,8 @@
             "step_id": 1,
             "type": "sql",
             "name": null,
+            "semantic_domain": null,
+            "semantic_intent": null,
             "query_goal": "基于限定 Schema 生成并执行只读统计查询。",
             "args": {
               "question": "统计本月每台设备产量"
@@ -233,7 +244,8 @@
             "dependency": [],
             "expected_output": "包含 generated_sql、validated_sql、columns、rows、row_count、duration_ms 的结构化 SQL 结果。",
             "reuse_from_history": null,
-            "skip_reason": null
+            "skip_reason": null,
+            "legacy": true
           }
         ],
         "tool_name": null,
@@ -245,7 +257,7 @@
         "execution_loops": 1,
         "planner_calls": 1,
         "replanned": false,
-        "trace_id": "483b2504381e46419aba6f25adf600f3",
+        "trace_id": "4d0e9f65685d4997b63e345bcaa45632",
         "sql": "SELECT equipment_name, COUNT(id) AS production_count FROM mes_heat_treatment_record WHERE status IN ('FINISHED', 'TRANSFERRED', 'ENDED') AND NOT finished_time IS NULL AND finished_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') GROUP BY equipment_name LIMIT 100",
         "sql_is_select": true,
         "sql_has_group_by": true,
@@ -283,6 +295,8 @@
             "step_id": 1,
             "type": "sql",
             "name": null,
+            "semantic_domain": null,
+            "semantic_intent": null,
             "query_goal": "基于限定 Schema 生成并执行只读统计查询。",
             "args": {
               "question": "最近三个月各设备平均处理时长"
@@ -291,7 +305,8 @@
             "dependency": [],
             "expected_output": "包含 generated_sql、validated_sql、columns、rows、row_count、duration_ms 的结构化 SQL 结果。",
             "reuse_from_history": null,
-            "skip_reason": null
+            "skip_reason": null,
+            "legacy": true
           }
         ],
         "tool_name": null,
@@ -303,7 +318,7 @@
         "execution_loops": 1,
         "planner_calls": 1,
         "replanned": false,
-        "trace_id": "1c1f46ed3198484299d73b3f56f77e9f",
+        "trace_id": "5afc062385544df98c4f6f0ffb2077ab",
         "sql": "SELECT equipment_name, AVG(TIMESTAMPDIFF(MINUTE, started_time, finished_time)) AS avg_duration_minutes FROM mes_heat_treatment_record WHERE status IN ('FINISHED', 'TRANSFERRED', 'ENDED') AND NOT started_time IS NULL AND NOT finished_time IS NULL AND finished_time >= DATE_SUB(CURDATE(), INTERVAL '3' MONTH) GROUP BY equipment_name LIMIT 100",
         "sql_is_select": true,
         "sql_has_group_by": true,
@@ -351,7 +366,7 @@
         "execution_loops": 2,
         "planner_calls": 2,
         "replanned": true,
-        "trace_id": "322fc04754a345018fd8accef1eb359a",
+        "trace_id": "96bb2a01f4d04cc6b6ece2e6dac33269",
         "sql": null,
         "sql_is_select": false,
         "sql_has_group_by": false,
@@ -384,13 +399,15 @@
         "has_execution_trace": true,
         "has_final_result": true,
         "has_debug": true,
-        "route": "tool",
+        "route": "unknown",
         "intent": "mixed",
         "steps": [
           {
             "step_id": 1,
             "type": "tool",
             "name": "production_status",
+            "semantic_domain": null,
+            "semantic_intent": null,
             "query_goal": "确认这批产品是否已经完成生产或处于可入库前置状态。",
             "args": {
               "question": "为什么这批产品不能入库？"
@@ -399,12 +416,15 @@
             "dependency": [],
             "expected_output": "生产状态、完成状态、阻断原因。",
             "reuse_from_history": null,
-            "skip_reason": null
+            "skip_reason": null,
+            "legacy": true
           },
           {
             "step_id": 2,
             "type": "tool",
             "name": "quality_status",
+            "semantic_domain": null,
+            "semantic_intent": null,
             "query_goal": "确认质检是否通过、是否存在不良或待检状态。",
             "args": {
               "question": "为什么这批产品不能入库？"
@@ -415,12 +435,15 @@
             ],
             "expected_output": "质检状态、检验结论、不良原因。",
             "reuse_from_history": null,
-            "skip_reason": null
+            "skip_reason": null,
+            "legacy": true
           },
           {
             "step_id": 3,
             "type": "sql",
             "name": null,
+            "semantic_domain": null,
+            "semantic_intent": null,
             "query_goal": "查询库存或入库相关记录，确认是否已有库存、库位或入库约束。",
             "args": {
               "question": "为什么这批产品不能入库？"
@@ -432,26 +455,27 @@
             ],
             "expected_output": "库存/入库约束相关 columns、rows、row_count。",
             "reuse_from_history": null,
-            "skip_reason": null
+            "skip_reason": null,
+            "legacy": true
           }
         ],
         "tool_name": "production_status",
         "tool_result": null,
         "record_no": null,
         "final_status": "failed",
-        "error_type": "tool_error",
+        "error_type": "planner_error",
         "failure_analysis": {
-          "failure_type": "tool_miss",
-          "source_layer": "tool",
-          "reason": "Tool was missing, mismatched, or did not return the expected fact.",
+          "failure_type": "missing_param",
+          "source_layer": "planner",
+          "reason": "Plan lacks required parameters or facts to execute completely.",
           "missing_facts": [
-            "heat_batch_products"
+            "plan.steps"
           ]
         },
         "execution_loops": 2,
         "planner_calls": 2,
         "replanned": true,
-        "trace_id": "6989fc6bfa864c39bdfcccead269469a",
+        "trace_id": "95431687e9634533aba524626aca7fb8",
         "sql": null,
         "sql_is_select": false,
         "sql_has_group_by": false,
@@ -460,7 +484,7 @@
         "sql_valid": null,
         "observation_missing_facts": [
           "production_status",
-          "heat_batch_products"
+          "plan.steps"
         ],
         "execution_trace_count": 2
       },
@@ -489,14 +513,17 @@
           {
             "step_id": 1,
             "type": "tool",
-            "name": "heat_current_stage",
+            "name": null,
+            "semantic_domain": "heat_treatment",
+            "semantic_intent": "query_status",
             "query_goal": "查询热处理记录当前阶段、状态或是否已完成。",
             "args": {},
-            "reason": "用户询问'到哪了/哪一步/状态/是否完成'，该语义由 heat_current_stage Tool 负责。",
+            "reason": "Semantic Router 已识别热处理状态查询；Planner 只生成执行计划，不再选择 Tool 名称。",
             "dependency": [],
             "expected_output": "包含 found、record_no、status、status_name 的 Tool 结构化结果。",
             "reuse_from_history": null,
-            "skip_reason": null
+            "skip_reason": null,
+            "legacy": false
           }
         ],
         "tool_name": "heat_current_stage",
@@ -515,7 +542,7 @@
         "execution_loops": 2,
         "planner_calls": 2,
         "replanned": true,
-        "trace_id": "e050d9fb06ac4678b51e0fce7a6cd567",
+        "trace_id": "b058a1105e3041b59de5a9291628ec2b",
         "sql": null,
         "sql_is_select": false,
         "sql_has_group_by": false,
@@ -552,7 +579,9 @@
           {
             "step_id": 1,
             "type": "tool",
-            "name": "heat_current_stage",
+            "name": null,
+            "semantic_domain": "heat_treatment",
+            "semantic_intent": "query_status",
             "query_goal": "查询热处理记录当前阶段、状态或是否已完成。",
             "args": {
               "record_no": "TRACE-HTR-K2-T-FG-001"
@@ -561,7 +590,8 @@
             "dependency": [],
             "expected_output": "包含 found、record_no、status、status_name 的 Tool 结构化结果。",
             "reuse_from_history": null,
-            "skip_reason": null
+            "skip_reason": null,
+            "legacy": true
           }
         ],
         "tool_name": "heat_current_stage",
@@ -578,7 +608,7 @@
         "execution_loops": 1,
         "planner_calls": 1,
         "replanned": false,
-        "trace_id": "83c84c78d0094e22892bb472360fef19",
+        "trace_id": "a3cef670ec7f464eb9500123ab9af48e",
         "sql": "SELECT record_no, status FROM mes_heat_treatment_record WHERE record_no = :record_no LIMIT 1",
         "sql_is_select": true,
         "sql_has_group_by": false,
@@ -612,7 +642,9 @@
           {
             "step_id": 1,
             "type": "tool",
-            "name": "heat_current_stage",
+            "name": null,
+            "semantic_domain": "heat_treatment",
+            "semantic_intent": "query_status",
             "query_goal": "查询热处理记录当前阶段、状态或是否已完成。",
             "args": {
               "record_no": "TRACE-HTR-K2-T-FG-001"
@@ -621,7 +653,8 @@
             "dependency": [],
             "expected_output": "包含 found、record_no、status、status_name 的 Tool 结构化结果。",
             "reuse_from_history": null,
-            "skip_reason": null
+            "skip_reason": null,
+            "legacy": true
           }
         ],
         "tool_name": "heat_current_stage",
@@ -638,7 +671,7 @@
         "execution_loops": 1,
         "planner_calls": 1,
         "replanned": false,
-        "trace_id": "80ec1ed53fd24b20802bdbad5c3ba328",
+        "trace_id": "454817da55274dd781f1f8a46b181c47",
         "sql": "SELECT record_no, status FROM mes_heat_treatment_record WHERE record_no = :record_no LIMIT 1",
         "sql_is_select": true,
         "sql_has_group_by": false,
@@ -673,6 +706,8 @@
             "step_id": 1,
             "type": "sql",
             "name": null,
+            "semantic_domain": null,
+            "semantic_intent": null,
             "query_goal": "基于限定 Schema 生成并执行只读统计查询。",
             "args": {
               "question": "统计本月每台设备产量"
@@ -681,7 +716,8 @@
             "dependency": [],
             "expected_output": "包含 generated_sql、validated_sql、columns、rows、row_count、duration_ms 的结构化 SQL 结果。",
             "reuse_from_history": null,
-            "skip_reason": null
+            "skip_reason": null,
+            "legacy": true
           }
         ],
         "tool_name": null,
@@ -693,7 +729,7 @@
         "execution_loops": 1,
         "planner_calls": 1,
         "replanned": false,
-        "trace_id": "3aa95fdc62574afab0286a72a82d4363",
+        "trace_id": "c278ddfd81af49f6ac8bcbc841123542",
         "sql": "SELECT equipment_name, COUNT(id) AS production_count FROM mes_heat_treatment_record WHERE status IN ('FINISHED', 'TRANSFERRED', 'ENDED') AND NOT finished_time IS NULL AND finished_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') GROUP BY equipment_name LIMIT 100",
         "sql_is_select": true,
         "sql_has_group_by": true,
@@ -721,13 +757,15 @@
         "has_execution_trace": true,
         "has_final_result": true,
         "has_debug": true,
-        "route": "tool",
+        "route": "unknown",
         "intent": "mixed",
         "steps": [
           {
             "step_id": 1,
             "type": "tool",
             "name": "production_status",
+            "semantic_domain": null,
+            "semantic_intent": null,
             "query_goal": "确认这批产品是否已经完成生产或处于可入库前置状态。",
             "args": {
               "question": "为什么这批产品不能入库？"
@@ -736,12 +774,15 @@
             "dependency": [],
             "expected_output": "生产状态、完成状态、阻断原因。",
             "reuse_from_history": null,
-            "skip_reason": null
+            "skip_reason": null,
+            "legacy": true
           },
           {
             "step_id": 2,
             "type": "tool",
             "name": "quality_status",
+            "semantic_domain": null,
+            "semantic_intent": null,
             "query_goal": "确认质检是否通过、是否存在不良或待检状态。",
             "args": {
               "question": "为什么这批产品不能入库？"
@@ -752,12 +793,15 @@
             ],
             "expected_output": "质检状态、检验结论、不良原因。",
             "reuse_from_history": null,
-            "skip_reason": null
+            "skip_reason": null,
+            "legacy": true
           },
           {
             "step_id": 3,
             "type": "sql",
             "name": null,
+            "semantic_domain": null,
+            "semantic_intent": null,
             "query_goal": "查询库存或入库相关记录，确认是否已有库存、库位或入库约束。",
             "args": {
               "question": "为什么这批产品不能入库？"
@@ -769,26 +813,27 @@
             ],
             "expected_output": "库存/入库约束相关 columns、rows、row_count。",
             "reuse_from_history": null,
-            "skip_reason": null
+            "skip_reason": null,
+            "legacy": true
           }
         ],
         "tool_name": "production_status",
         "tool_result": null,
         "record_no": null,
         "final_status": "failed",
-        "error_type": "tool_error",
+        "error_type": "planner_error",
         "failure_analysis": {
-          "failure_type": "tool_miss",
-          "source_layer": "tool",
-          "reason": "Tool was missing, mismatched, or did not return the expected fact.",
+          "failure_type": "missing_param",
+          "source_layer": "planner",
+          "reason": "Plan lacks required parameters or facts to execute completely.",
           "missing_facts": [
-            "heat_batch_products"
+            "plan.steps"
           ]
         },
         "execution_loops": 2,
         "planner_calls": 2,
         "replanned": true,
-        "trace_id": "2797f73a72c64ad08c99f56ada6e267e",
+        "trace_id": "46581e9f48ba488c83626da8de196a04",
         "sql": null,
         "sql_is_select": false,
         "sql_has_group_by": false,
@@ -797,7 +842,7 @@
         "sql_valid": null,
         "observation_missing_facts": [
           "production_status",
-          "heat_batch_products"
+          "plan.steps"
         ],
         "execution_trace_count": 2
       },
@@ -838,7 +883,7 @@
         "execution_loops": 2,
         "planner_calls": 2,
         "replanned": true,
-        "trace_id": "4cc30e1c6c7f4009be0fe1d4bf2167df",
+        "trace_id": "beaa3cdab4d24dff9caa39c647f92380",
         "sql": null,
         "sql_is_select": false,
         "sql_has_group_by": false,
@@ -888,7 +933,7 @@
         "execution_loops": 2,
         "planner_calls": 2,
         "replanned": true,
-        "trace_id": "4d36044190aa4ad387f2579caa6e837c",
+        "trace_id": "c9422ee523ed4cbaa508199632b14f8c",
         "sql": null,
         "sql_is_select": false,
         "sql_has_group_by": false,
@@ -939,7 +984,7 @@
         "execution_loops": 2,
         "planner_calls": 2,
         "replanned": true,
-        "trace_id": "639e806d64384eaa9e747eb1462e9b5f",
+        "trace_id": "77fa4c543684427bb65b68e6e186e7f6",
         "sql": null,
         "sql_is_select": false,
         "sql_has_group_by": false,

@@ -380,10 +380,19 @@ def _find_sql(payload: JsonObject) -> str | None:
 
 def _find_tool(payload: JsonObject) -> tuple[str | None, JsonObject | None]:
     for trace in payload.get("execution_trace") or []:
+        result_trace = trace.get("result", {}).get("trace", {})
+        trace_tool_name = result_trace.get("tool_name") or result_trace.get("capability_name")
         for step_result in trace.get("result", {}).get("data", {}).get("step_results", []):
             if step_result.get("type") == "tool":
                 observation = step_result.get("observation", {})
-                return step_result.get("name"), observation.get("data", {}).get("tool_result")
+                step_trace = observation.get("trace", {})
+                tool_name = (
+                    step_result.get("name")
+                    or step_trace.get("tool_name")
+                    or step_trace.get("capability_name")
+                    or trace_tool_name
+                )
+                return tool_name, observation.get("data", {}).get("tool_result")
     return None, None
 
 

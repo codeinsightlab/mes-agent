@@ -297,13 +297,20 @@ def _post_agent(client: TestClient, message: str) -> dict[str, Any]:
 
 def _check_tool_case(result: dict[str, Any], recorder: AcceptanceRecorder) -> None:
     step = _first_step(result)
+    trace = _execution_trace(result)
     tool_payload = _tool_result(result)
     summary = _execution_summary(result)
     passed = (
         result.get("_http_status") == 200
         and _final_status(result) == "success"
         and _route(result) == "tool"
-        and step.get("name") == "heat_current_stage"
+        and step.get("name") is None
+        and step.get("semantic_domain") == "heat_treatment"
+        and step.get("semantic_intent") == "query_status"
+        and trace.get("capability_source") == "catalog"
+        and trace.get("capability_name") == "heat_current_stage"
+        and trace.get("catalog_version") == "v1"
+        and trace.get("tool_name") == "heat_current_stage"
         and step.get("args", {}).get("record_no") == "TRACE-HTR-K2-T-FG-001"
         and tool_payload.get("record_no") == "TRACE-HTR-K2-T-FG-001"
         and summary.get("planner_calls") == 1
@@ -320,6 +327,7 @@ def _check_tool_case(result: dict[str, Any], recorder: AcceptanceRecorder) -> No
         final_status=_final_status(result),
         route=_route(result),
         step=step,
+        trace=trace,
         tool_result=tool_payload,
         execution_summary=summary,
     )
@@ -707,6 +715,14 @@ def _failures(engine, trace_id: str | None) -> list[dict[str, Any]]:
 
 def _first_step(result: dict[str, Any]) -> dict[str, Any]:
     return ((result.get("plan_trace") or {}).get("initial_plan") or {}).get("steps", [{}])[0]
+
+
+def _execution_trace(result: dict[str, Any]) -> dict[str, Any]:
+    traces = result.get("execution_trace") or []
+    if not traces:
+        return {}
+    trace = (traces[-1].get("result") or {}).get("trace") or {}
+    return trace if isinstance(trace, dict) else {}
 
 
 def _execution_summary(result: dict[str, Any]) -> dict[str, Any]:

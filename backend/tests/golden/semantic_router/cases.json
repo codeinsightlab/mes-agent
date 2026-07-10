@@ -1,0 +1,64 @@
+[
+  {
+    "id": "explicit_heat_status",
+    "input": "HT20260603-007热处理状态",
+    "expected": {
+      "semantic_router_version": "v1",
+      "domain": "heat_treatment",
+      "intent": "query_status",
+      "record_no": "HT20260603-007",
+      "need_clarification": false
+    }
+  },
+  {
+    "id": "synonym_heat_step",
+    "input": "这个热处理做到哪一步了",
+    "expected": {
+      "domain": "heat_treatment",
+      "intent": "query_status"
+    }
+  },
+  {
+    "id": "synonym_current_condition",
+    "input": "当前热处理什么情况",
+    "expected": {
+      "domain": "heat_treatment",
+      "intent": "query_status"
+    }
+  },
+  {
+    "id": "synonym_status_how",
+    "input": "热处理状态如何",
+    "expected": {
+      "domain": "heat_treatment",
+      "intent": "query_status"
+    }
+  },
+  {
+    "id": "missing_record_no",
+    "input": "查询热处理状态",
+    "expected": {
+      "domain": "heat_treatment",
+      "intent": "query_status",
+      "need_clarification": true,
+      "clarification_reason_contains": "缺少记录编号"
+    }
+  },
+  {
+    "id": "ambiguous_heat_question",
+    "input": "这个热处理怎么样",
+    "expected": {
+      "domain": "heat_treatment",
+      "intent": "unknown",
+      "need_clarification": true
+    }
+  },
+  {
+    "id": "irrelevant_weather",
+    "input": "今天天气怎么样",
+    "expected": {
+      "domain": "unknown",
+      "need_clarification": true
+    }
+  }
+]

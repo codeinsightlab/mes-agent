@@ -2942,6 +2942,291 @@ Result: passed.
 ```text
 SYSTEM STATUS: READY
 
+## 2026-07-10 Capability Router Migration V1
+
+### Task Goal
+
+Migrate the first Tool routing decision from Planner-owned direct capability names to Catalog-owned Capability Router V1.
+
+### Modified Files
+
+- `backend/app/agent/capability/router/models.py`
+- `backend/app/agent/capability/router/matcher.py`
+- `backend/app/agent/capability/router/router.py`
+- `backend/app/agent/capability/router/__init__.py`
+- `backend/app/agent/capability/definitions/heat-treatment.yaml`
+- `backend/app/agent/planner/models.py`
+- `backend/app/agent/planner/planner.py`
+- `backend/app/agent/orchestrator/agent_orchestrator.py`
+- `backend/app/agent/execution_observation.py`
+- `backend/tests/test_capability_router.py`
+- `backend/tests/test_agent_planner.py`
+- `backend/tests/test_agent_orchestrator.py`
+- `backend/scripts/run_agent_os_v1_tests.py`
+- `backend/scripts/run_production_acceptance_v1.py`
+- `docs/capabilities/router-migration-v1.md`
+- `docs/agent-architecture-consolidation-v1.md`
+- `log/codex-task-log.md`
+
+### Key Decisions
+
+- Added `CapabilityRouter` with deterministic Catalog matching only.
+- Migrated `heat_current_stage` through `heat_treatment.query_status`.
+- Kept legacy Planner keyword detection as the temporary semantic-intent producer.
+- Did not modify ToolRegistry, Repository, SQL Executor, Text-to-SQL internals, Analytics schema, or frontend.
+- Added trace fields: `capability_source`, `capability_name`, `catalog_version`.
+- Router fails closed for `capability_not_found` and non-`enabled` Catalog status.
+
+### Verification Commands
+
+```text
+cd backend && .venv/bin/python -m compileall app scripts
+```
+
+Result: passed.
+
+```text
+cd backend && .venv/bin/pytest
+```
+
+Result: `131 passed, 159 warnings`.
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_os_v1_tests.py
+```
+
+Result: `15 passed`, `0 failed`, `SYSTEM STATUS = PASS`.
+
+```text
+cd backend && .venv/bin/python scripts/run_production_acceptance_v1.py
+```
+
+Result: `32 passed`, `0 failed`, `SYSTEM STATUS = READY`.
+
+### Risks Or Issues
+
+- `legacy_keyword_router` still exists and should be replaced by Semantic Router V1 later.
+- SQL route classification remains Planner-owned.
+- Mixed diagnostic Tool names remain legacy direct mappings.
+- `query_equipment` and `query_batch_products` are intentionally not guessed from Catalog in this round.
+
+### Documentation
+
+Created:
+
+- `docs/capabilities/router-migration-v1.md`
+
+Appended:
+
+- `docs/agent-architecture-consolidation-v1.md`
+
+SYSTEM STATUS: CAPABILITY_ROUTER_V1_COMPLETE
+
+## 2026-07-10 Semantic Router V1
+
+### Task Goal
+
+Add Semantic Router V1 before Planner so user semantic understanding is separated from execution planning.
+
+### Modified Files
+
+- `backend/app/agent/semantic_router/models.py`
+- `backend/app/agent/semantic_router/router.py`
+- `backend/app/agent/semantic_router/prompt/semantic_router.md`
+- `backend/app/agent/semantic_router/__init__.py`
+- `backend/app/agent/planner/models.py`
+- `backend/app/agent/planner/planner.py`
+- `backend/app/agent/orchestrator/agent_orchestrator.py`
+- `backend/app/agent/execution_observation.py`
+- `backend/tests/test_semantic_router.py`
+- `docs/capabilities/semantic-router-v1.md`
+- `docs/agent-architecture-consolidation-v1.md`
+- `log/codex-task-log.md`
+
+### Semantic Router Data Flow
+
+```text
+User Input
+-> SemanticRouter.route(user_message)
+-> SemanticRouterResult
+-> PlannerRequest.semantic_router_result
+-> DebuggablePlanner
+-> semantic PlanStep
+-> CapabilityRouter
+-> Capability Catalog
+-> Execution
+```
+
+### Planner Responsibility Change
+
+- Planner now consumes `SemanticRouterResult` for `heat_treatment.query_status`.
+- Planner no longer chooses Tool name for that migrated path.
+- Planner still generates execution plans.
+- Capability Router still owns capability mapping.
+- Catalog still owns capability boundaries.
+
+### Key Decisions
+
+- Implemented deterministic Semantic Router V1 without adding a new dependency or real LLM call.
+- Added `semantic_router.md` as the prompt contract for a future LLM adapter.
+- Router output is constrained to `domain`, `intent`, `entities`, `confidence`, `need_clarification`, and `clarification_reason`.
+- Router does not output Tool name, Capability name, executor, or SQL.
+- Ambiguous heat-treatment input is blocked before execution planning.
+
+### Verification Commands
+
+```text
+cd backend && .venv/bin/python -m compileall app scripts
+```
+
+Result: passed.
+
+```text
+cd backend && .venv/bin/pytest
+```
+
+Result: `137 passed, 159 warnings`.
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_os_v1_tests.py
+```
+
+Result: `15 passed`, `0 failed`, `SYSTEM STATUS = PASS`.
+
+```text
+cd backend && .venv/bin/python scripts/run_production_acceptance_v1.py
+```
+
+Result: `32 passed`, `0 failed`, `SYSTEM STATUS = READY`.
+
+### Legacy Routing Status
+
+Still exists:
+
+- Planner keyword Tool fallback.
+- Planner SQL keyword fallback.
+- Planner mixed diagnostic fallback.
+- Replan missing-fact branches.
+
+These were recorded but not deleted because this round only adds the new Semantic Router chain.
+
+### Documentation
+
+Created:
+
+- `docs/capabilities/semantic-router-v1.md`
+
+Appended:
+
+- `docs/agent-architecture-consolidation-v1.md`
+
+SYSTEM STATUS: SEMANTIC_ROUTER_V1_COMPLETE
+
+## 2026-07-10 Semantic Router V1 Protocol Freeze And Legacy Fallback Isolation
+
+### Task Goal
+
+Continue Semantic Router V1 by freezing the output protocol, isolating legacy keyword routing, adding golden regression coverage, and improving trace attribution.
+
+### Modified Files
+
+- `backend/app/agent/semantic_router/models.py`
+- `backend/app/agent/semantic_router/router.py`
+- `backend/app/agent/planner/legacy_fallback_router.py`
+- `backend/app/agent/planner/models.py`
+- `backend/app/agent/planner/planner.py`
+- `backend/app/agent/orchestrator/agent_orchestrator.py`
+- `backend/app/agent/execution_observation.py`
+- `backend/tests/test_semantic_router.py`
+- `backend/tests/test_agent_planner.py`
+- `backend/tests/golden/semantic_router/cases.json`
+- `docs/capabilities/semantic-router-v1.md`
+- `docs/agent-architecture-consolidation-v1.md`
+- `log/codex-task-log.md`
+
+### Semantic Router Current Architecture
+
+```text
+User Input
+-> SemanticRouter
+-> SemanticRouterResult(version=v1)
+-> Planner
+-> CapabilityRouter
+-> Capability Catalog
+-> Execution
+-> Observation / Trace
+```
+
+### Legacy Routing Migration Difference
+
+Before:
+
+```text
+Planner
+-> semantic result handling
+-> keyword / regex routing fallback
+```
+
+After:
+
+```text
+Planner
+-> SemanticRouterResult handling
+
+LegacyFallbackRouter
+-> historical keyword / regex routing fallback
+```
+
+Legacy fallback plans use `routing_source=legacy_fallback`; legacy fallback steps use `legacy=true`.
+
+### Trace Field Changes
+
+Added:
+
+- `semantic_router_version`
+- `semantic_router_result`
+- `routing_source`
+
+Routing source values:
+
+- `semantic_router`
+- `legacy_fallback`
+
+### Verification Commands
+
+```text
+cd backend && .venv/bin/python -m compileall app scripts
+```
+
+Result: passed.
+
+```text
+cd backend && .venv/bin/pytest
+```
+
+Result: `145 passed, 159 warnings`.
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_os_v1_tests.py
+```
+
+Result: `15 passed`, `0 failed`, `SYSTEM STATUS = PASS`.
+
+```text
+cd backend && .venv/bin/python scripts/run_production_acceptance_v1.py
+```
+
+Result: `32 passed`, `0 failed`, `SYSTEM STATUS = READY`.
+
+### Current Architecture Risks
+
+- SQL analytical routing still uses legacy fallback.
+- Mixed diagnostic routing still uses legacy fallback and uncataloged Tool names.
+- Replan missing-fact branches still contain legacy business-specific behavior.
+- Semantic Router V1 is deterministic; a future LLM adapter must preserve the frozen protocol.
+
+SYSTEM STATUS: SEMANTIC_ROUTER_V1_PROTOCOL_FROZEN
+
 ## 2026-07-10 00:00 CST - MES Heat Treatment Capability Discovery V1
 
 ### Task Goal
@@ -3151,6 +3436,30 @@ Added `backend/tests/test_capability_runtime.py` with:
 - unknown executor validation failure
 - planned capability loaded but rejected for execution
 - runtime registry query for `heat_current_stage`
+
+### Validation Commands And Results
+
+```text
+cd backend && .venv/bin/python -m compileall app scripts
+```
+
+Result: passed.
+
+Initial sandboxed run could not write `app/agent/capability/__pycache__`; rerun with filesystem approval passed.
+
+```text
+cd backend && .venv/bin/pytest tests/test_capability_runtime.py
+```
+
+Result: `5 passed`, `1 warning`.
+
+```text
+cd backend && .venv/bin/pytest
+```
+
+Result: `127 passed`, `160 warnings`.
+
+Warning note: pytest cache write warning is from sandbox filesystem restriction and did not affect test results.
 
 ### Compatibility
 
