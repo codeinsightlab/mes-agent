@@ -3977,3 +3977,98 @@ Appended implementation and validation section to:
 - `docs/agent-tool-text-to-sql-routing-v1.md`
 
 SYSTEM STATUS: READY
+
+## 2026-07-10 - Capability Catalog V2 And MVP Evaluation
+
+### Task Goal
+
+Enter the first MES Agent MVP experiment stage and validate a minimal traceable loop:
+
+```text
+User Input -> Semantic Router -> Planner -> Capability Router -> Capability Catalog -> Execution -> Trace / Analytics
+```
+
+### Modified Files
+
+- `backend/app/agent/capability/models.py`
+- `backend/app/agent/capability/validator.py`
+- `backend/app/agent/capability/router/router.py`
+- `backend/app/agent/capability/definitions/heat-treatment.yaml`
+- `backend/app/agent/capability/definitions/mvp-planned.yaml`
+- `backend/app/agent/execution_observation.py`
+- `backend/app/agent/planner/models.py`
+- `backend/app/agent/planner/planner.py`
+- `backend/app/agent/semantic_router/router.py`
+- `backend/app/agent/orchestrator/agent_orchestrator.py`
+- `backend/scripts/run_agent_mvp_evaluation.py`
+- `backend/scripts/run_production_acceptance_v1.py`
+- `backend/tests/test_capability_runtime.py`
+- `backend/tests/test_capability_router.py`
+- `backend/tests/test_semantic_router.py`
+- `backend/tests/test_agent_orchestrator.py`
+- `docs/capabilities/mvp-evaluation-v1.md`
+- `docs/capabilities/semantic-router-v1.md`
+- `docs/agent-architecture-consolidation-v1.md`
+- `log/codex-task-log.md`
+
+### Key Decisions
+
+- Keep the MVP scope to heat-treatment status Tool, one heat-treatment read-only SQL analysis capability, and planned-only contracts for production-order and inspection status.
+- Keep `work_order_status` and `inspection_status` as `planned`; they are not executable and must not be guessed.
+- Keep single-record heat-treatment status on the Tool path through `heat_current_stage`.
+- Allow only the explicit monthly heat-treatment completion-count intent to enter the Catalog-backed read-only SQL path.
+- Preserve legacy fallback but trace `legacy_used=true/false`.
+
+### Verification Commands
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_mvp_evaluation.py
+```
+
+Result:
+
+```text
+total=6
+passed=6
+failed=0
+success_rate=1.00
+capability_hit_rate=0.67
+clarification_rate=0.33
+legacy_usage_rate=0.00
+system_status=PASS
+```
+
+Full verification commands:
+
+```text
+cd backend && .venv/bin/python -m compileall app scripts
+cd backend && .venv/bin/pytest
+cd backend && .venv/bin/python scripts/run_agent_os_v1_tests.py
+cd backend && .venv/bin/python scripts/run_production_acceptance_v1.py
+cd backend && git diff --check
+```
+
+Results:
+
+```text
+compileall app scripts: passed
+pytest: 149 passed, 159 warnings
+run_agent_os_v1_tests.py: 15 passed, 0 failed, SYSTEM STATUS = PASS
+run_production_acceptance_v1.py: 32 passed, 0 failed, SYSTEM STATUS = READY
+run_agent_mvp_evaluation.py: 6 passed, 0 failed, SYSTEM STATUS = PASS
+git diff --check: passed
+```
+
+### Risks Or Issues
+
+- Production-order and inspection capabilities are Catalog contracts only; no real Tool or MES source is bound in this round.
+- Legacy fallback still exists outside the MVP evaluation set.
+- Semantic Router V1 remains deterministic and must keep its frozen output protocol if an LLM adapter is added later.
+
+### Documentation
+
+Added or updated:
+
+- `docs/capabilities/mvp-evaluation-v1.md`
+- `docs/capabilities/semantic-router-v1.md`
+- `docs/agent-architecture-consolidation-v1.md`

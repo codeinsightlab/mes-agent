@@ -15,6 +15,7 @@ STATUS_KEYWORDS = [
     "当前什么情况",
     "什么情况",
 ]
+ANALYSIS_KEYWORDS = ["统计", "多少批", "完成多少", "完成数量"]
 AMBIGUOUS_HEAT_KEYWORDS = ["怎么样", "情况怎么样"]
 
 
@@ -23,6 +24,15 @@ class SemanticRouter:
         message = user_message.strip()
         record_no = _extract_record_no(message)
         entities = {"record_no": record_no} if record_no else {}
+
+        if _is_heat_completion_analysis(message):
+            return SemanticRouterResult(
+                domain="heat_treatment",
+                intent="analyze_completion_count",
+                entities={"time_range": "current_month"},
+                confidence=0.86,
+                need_clarification=False,
+            )
 
         if _is_heat_status_query(message):
             if _is_generic_heat_status_query(message) and record_no is None:
@@ -50,6 +60,26 @@ class SemanticRouter:
                 confidence=0.42,
                 need_clarification=True,
                 clarification_reason="用户表达了热处理对象，但没有明确要查询状态、设备、批次或统计。",
+            )
+
+        if "热处理" in message:
+            return SemanticRouterResult(
+                domain="heat_treatment",
+                intent="unknown",
+                entities=entities,
+                confidence=0.46,
+                need_clarification=True,
+                clarification_reason="用户表达了热处理对象，但没有明确要查询状态、设备、批次或统计。",
+            )
+
+        if "产品" in message and "怎么样" in message:
+            return SemanticRouterResult(
+                domain="product",
+                intent="unknown",
+                entities=entities,
+                confidence=0.4,
+                need_clarification=True,
+                clarification_reason="用户表达了产品对象，但没有明确要查询生产、质检、库存还是追溯信息。",
             )
 
         return SemanticRouterResult(
@@ -81,3 +111,7 @@ def _is_ambiguous_heat_query(message: str) -> bool:
 
 def _is_generic_heat_status_query(message: str) -> bool:
     return message.startswith("查询") and "热处理" in message and "状态" in message
+
+
+def _is_heat_completion_analysis(message: str) -> bool:
+    return "热处理" in message and any(keyword in message for keyword in ANALYSIS_KEYWORDS)

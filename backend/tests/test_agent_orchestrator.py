@@ -192,7 +192,7 @@ def test_agent_run_executes_known_tool_with_record_no_once_without_replan():
     trace = result.execution_trace[-1]["result"]["trace"]
     assert trace["capability_source"] == "catalog"
     assert trace["capability_name"] == "heat_current_stage"
-    assert trace["catalog_version"] == "v1"
+    assert trace["catalog_version"] == "v2"
     assert trace["tool_name"] == "heat_current_stage"
     assert trace["sql_executed"] is True
     assert trace["used_tables"] == ["mes_heat_treatment_record"]
@@ -224,7 +224,7 @@ def test_agent_run_executes_real_heat_current_stage_repository_trace():
     }
     assert trace["sql_executed"] is True
     assert trace["capability_name"] == "heat_current_stage"
-    assert trace["catalog_version"] == "v1"
+    assert trace["catalog_version"] == "v2"
     assert trace["tool_name"] == "heat_current_stage"
     assert trace["used_tables"] == ["mes_heat_treatment_record"]
     assert trace["sql"].startswith("SELECT record_no, status")

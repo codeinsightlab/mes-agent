@@ -26,8 +26,11 @@ def test_runtime_loads_heat_current_stage_from_default_catalog():
     assert capability.name == "heat_current_stage"
     assert capability.domain == "heat_treatment"
     assert capability.status == "enabled"
+    assert capability.catalog_version == "v2"
     assert capability.execution_type == "tool"
     assert capability.executor == "heat_current_stage"
+    assert capability.required_entities == ["record_no"]
+    assert "capability_name" in capability.trace_fields
     assert capability.legacy_source == "old python constant"
 
 
@@ -109,5 +112,11 @@ def test_runtime_registry_can_query_heat_current_stage():
     registry = CapabilityLoader().load()
 
     assert "heat_current_stage" in registry.names()
+    assert "heat_completion_count_monthly" in registry.names()
+    assert "work_order_status" in registry.names()
+    assert "inspection_status" in registry.names()
     assert registry.get("heat_current_stage").executor == "heat_current_stage"
     assert registry.require_executable("heat_current_stage").name == "heat_current_stage"
+    assert registry.require_executable("heat_completion_count_monthly").execution_type == "readonly_sql"
+    with pytest.raises(CapabilityNotExecutableError, match="planned"):
+        registry.require_executable("work_order_status")

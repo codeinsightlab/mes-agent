@@ -1,5 +1,6 @@
 capabilities:
   - name: heat_current_stage
+    catalog_version: v2
     domain: heat_treatment
     description: 查询热处理记录当前阶段、状态、是否完成或结束。
     intent:
@@ -11,6 +12,8 @@ capabilities:
     status: enabled
     execution_type: tool
     executor: heat_current_stage
+    required_entities:
+      - record_no
     input_schema:
       required:
         - record_no
@@ -49,6 +52,14 @@ capabilities:
             - CANCELLED
         status_name:
           type: string
+    trace_fields:
+      - user_input
+      - semantic_router_result
+      - routing_source
+      - capability_name
+      - execution_type
+      - sql_executed
+      - used_tables
     data_sources:
       - type: table
         name: mes_heat_treatment_record
@@ -60,9 +71,76 @@ capabilities:
       - HT20260603-007热处理的状态
       - HT20260603-007现在做到哪一步
       - 这个热处理完成了吗 HT20260603-007
+    example_queries:
+      - HT20260603-007热处理状态
+      - HT20260603-007现在热处理到哪一步
+      - 这个热处理完成了吗 HT20260603-007
     boundaries:
       - 不负责转序单状态
       - 不负责检验状态
       - 不负责仓库状态
       - 不推断 PLC 设备状态
     legacy_source: old python constant
+  - name: heat_completion_count_monthly
+    catalog_version: v2
+    domain: heat_treatment
+    description: 统计本月热处理完成批次数，属于分析型只读查询能力。
+    intent:
+      - analyze_completion_count
+      - 统计本月热处理完成数量
+      - 本月热处理完成多少批
+    status: enabled
+    execution_type: readonly_sql
+    executor: text_to_sql
+    required_entities:
+      - time_range
+    input_schema:
+      required:
+        - question
+      optional:
+        - time_range
+      properties:
+        question:
+          type: string
+          description: 用户原始分析问题
+        time_range:
+          type: string
+          description: 统计时间范围
+    output_schema:
+      required:
+        - rows
+        - row_count
+        - validated_sql
+      properties:
+        rows:
+          type: array
+        row_count:
+          type: integer
+        validated_sql:
+          type: string
+    trace_fields:
+      - user_input
+      - semantic_router_result
+      - routing_source
+      - capability_name
+      - execution_type
+      - sql_executed
+      - used_tables
+    data_sources:
+      - type: table
+        name: mes_heat_treatment_record
+        fields:
+          - status
+          - finished_time
+        description: 热处理完成数量统计来源
+    examples:
+      - 本月热处理完成多少批
+      - 统计本月热处理完成数量
+    example_queries:
+      - 本月热处理完成多少批
+      - 统计本月热处理完成数量
+    boundaries:
+      - 只允许只读统计查询
+      - 不负责单个热处理记录状态
+      - 不负责跨业务模块自由查询
+    legacy_source: none

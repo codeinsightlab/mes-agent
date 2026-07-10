@@ -76,6 +76,7 @@ class FailureAnalysis(BaseModel):
 
 
 class PlannerPlan(BaseModel):
+    user_input: str | None = None
     intent: PlanIntent
     goal: str
     steps: list[PlanStep] = Field(default_factory=list, max_length=5)

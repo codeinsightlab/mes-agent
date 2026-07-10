@@ -1,0 +1,111 @@
+capabilities:
+  - name: work_order_status
+    catalog_version: v2
+    domain: production
+    description: 查询生产工单或订单状态。本轮只定义合同，不启用执行。
+    intent:
+      - query_status
+      - 查询工单状态
+      - 查询生产订单状态
+    status: planned
+    execution_type: tool
+    executor: work_order_status
+    required_entities:
+      - work_order_no
+    input_schema:
+      required:
+        - work_order_no
+      properties:
+        work_order_no:
+          type: string
+          description: 工单号或生产订单号
+    output_schema:
+      required:
+        - found
+        - work_order_no
+        - status
+      properties:
+        found:
+          type: boolean
+        work_order_no:
+          type: string
+        status:
+          type: string
+    trace_fields:
+      - user_input
+      - semantic_router_result
+      - routing_source
+      - capability_name
+      - execution_type
+    data_sources:
+      - type: table_or_api
+        name: mes_work_order
+        fields:
+          - work_order_no
+          - status
+        description: 待绑定真实 MES 工单状态来源
+    example_queries:
+      - 工单 WO20260603-001 当前状态
+      - 订单号 MO20260603-001 做到哪了
+    boundaries:
+      - 本轮不执行
+      - 不猜测工单状态
+    legacy_source: none
+  - name: inspection_status
+    catalog_version: v2
+    domain: quality
+    description: 查询质量检验状态。本轮只定义合同，不启用执行。
+    intent:
+      - query_status
+      - 查询检验状态
+      - 查询质检结果
+    status: planned
+    execution_type: tool
+    executor: inspection_status
+    required_entities:
+      - inspection_no
+    input_schema:
+      required:
+        - inspection_no
+      optional:
+        - lot_no
+      properties:
+        inspection_no:
+          type: string
+          description: 检验单号
+        lot_no:
+          type: string
+          description: 产品批次号
+    output_schema:
+      required:
+        - found
+        - status
+      properties:
+        found:
+          type: boolean
+        status:
+          type: string
+        reject_reason:
+          type: string
+    trace_fields:
+      - user_input
+      - semantic_router_result
+      - routing_source
+      - capability_name
+      - execution_type
+    data_sources:
+      - type: table_or_api
+        name: inspection_record
+        fields:
+          - inspection_no
+          - lot_no
+          - status
+          - reject_reason
+        description: 待绑定真实 MES 检验状态来源
+    example_queries:
+      - 检验单 INS20260603-001 状态
+      - 批次 LOT20260603-001 质检结果
+    boundaries:
+      - 本轮不执行
+      - 不替代检验规则判断
+    legacy_source: none

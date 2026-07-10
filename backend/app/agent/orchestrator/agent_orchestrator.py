@@ -225,9 +225,13 @@ class PlanExecutionAdapter:
                 ),
                 execution_quality=ExecutionQuality(),
                 trace=ExecutionTrace(
+                    user_input=plan.user_input,
                     semantic_router_result=plan.semantic_router_result,
                     semantic_router_version=plan.semantic_router_version,
                     routing_source=plan.routing_source,
+                    legacy_used=plan.routing_source == "legacy_fallback",
+                    success=False,
+                    error_reason="plan.steps",
                 ),
             )
 
@@ -283,17 +287,21 @@ class PlanExecutionAdapter:
                 sql_executed=_collect_sql_executed(step_results),
             ),
             trace=ExecutionTrace(
+                user_input=plan.user_input,
                 semantic_router_result=plan.semantic_router_result,
                 semantic_router_version=plan.semantic_router_version,
                 routing_source=plan.routing_source,
+                legacy_used=plan.routing_source == "legacy_fallback",
                 capability_source=_collect_trace_field(step_results, "capability_source"),
                 capability_name=_collect_trace_field(step_results, "capability_name"),
                 catalog_version=_collect_trace_field(step_results, "catalog_version"),
+                execution_type=_collect_trace_field(step_results, "execution_type"),
                 tool_name=_collect_trace_field(step_results, "tool_name"),
                 sql=_collect_sql(step_results),
                 used_tables=_collect_used_tables(step_results),
                 sql_executed=_collect_sql_executed(step_results),
                 error_type=_collect_error_type(step_results),
+                success=True,
             ),
         )
 
@@ -338,6 +346,7 @@ class PlanExecutionAdapter:
                     capability_source=routed_step.capability_source,
                     capability_name=routed_step.capability,
                     catalog_version=routed_step.catalog_version,
+                    execution_type=routed_step.execution_type,
                     tool_name=routed_step.executor,
                     error_type=routed_step.status,
                 ),
@@ -360,6 +369,7 @@ class PlanExecutionAdapter:
                     capability_source=routed_step.capability_source,
                     capability_name=routed_step.capability,
                     catalog_version=routed_step.catalog_version,
+                    execution_type=routed_step.execution_type,
                     error_type="missing_param",
                 ),
             )
@@ -378,6 +388,7 @@ class PlanExecutionAdapter:
                     capability_source=routed_step.capability_source,
                     capability_name=routed_step.capability,
                     catalog_version=routed_step.catalog_version,
+                    execution_type=routed_step.execution_type,
                     tool_name=step.name,
                 ),
             )
@@ -396,6 +407,7 @@ class PlanExecutionAdapter:
                     capability_source=routed_step.capability_source,
                     capability_name=routed_step.capability,
                     catalog_version=routed_step.catalog_version,
+                    execution_type=routed_step.execution_type,
                     tool_name=step.name,
                 ),
             )
@@ -420,6 +432,7 @@ class PlanExecutionAdapter:
                     capability_source=routed_step.capability_source,
                     capability_name=routed_step.capability,
                     catalog_version=routed_step.catalog_version,
+                    execution_type=routed_step.execution_type,
                     tool_name=step.name,
                 ),
             )
@@ -442,6 +455,7 @@ class PlanExecutionAdapter:
                     capability_source=routed_step.capability_source,
                     capability_name=routed_step.capability,
                     catalog_version=routed_step.catalog_version,
+                    execution_type=routed_step.execution_type,
                     tool_name=step.name,
                     sql=_trace_str(tool_trace, "sql"),
                     used_tables=_trace_str_list(tool_trace, "used_tables"),
@@ -468,6 +482,7 @@ class PlanExecutionAdapter:
                     capability_source=routed_step.capability_source,
                     capability_name=routed_step.capability,
                     catalog_version=routed_step.catalog_version,
+                    execution_type=routed_step.execution_type,
                     tool_name=step.name,
                 ),
             )
@@ -484,6 +499,36 @@ class PlanExecutionAdapter:
         return _legacy_tool_route(step)
 
     def _execute_sql_step(self, plan: PlannerPlan, step: PlanStep) -> ExecutionObservation:
+        routed_step = self._route_sql_step(step)
+        if routed_step.status != "matched":
+            missing_fact = (
+                f"{step.semantic_domain}.{step.semantic_intent}"
+                if step.semantic_domain and step.semantic_intent
+                else "readonly_sql_capability"
+            )
+            return ExecutionObservation(
+                status="fail",
+                data={
+                    "error": routed_step.reason,
+                    "route_status": routed_step.status,
+                    "capability": routed_step.capability,
+                },
+                observation=ObservationFacts(
+                    missing_facts=[missing_fact],
+                    decision_signals=[routed_step.status],
+                    failure_type="schema_gap",
+                ),
+                execution_quality=ExecutionQuality(sql_valid=False, sql_executed=False),
+                trace=ExecutionTrace(
+                    capability_source=routed_step.capability_source,
+                    capability_name=routed_step.capability,
+                    catalog_version=routed_step.catalog_version,
+                    execution_type=routed_step.execution_type,
+                    error_type=routed_step.status,
+                    success=False,
+                    error_reason=routed_step.reason,
+                ),
+            )
         question = step.args.get("question")
         state: AgentState = {
             "user_query": question if isinstance(question, str) else plan.goal,
@@ -508,9 +553,14 @@ class PlanExecutionAdapter:
                     sql_executed=True,
                 ),
                 trace=ExecutionTrace(
+                    capability_source=routed_step.capability_source,
+                    capability_name=routed_step.capability,
+                    catalog_version=routed_step.catalog_version,
+                    execution_type=routed_step.execution_type,
                     sql=normalized.validated_sql or normalized.generated_sql,
                     used_tables=normalized.used_tables,
                     sql_executed=True,
+                    success=True,
                 ),
             )
 
@@ -530,11 +580,37 @@ class PlanExecutionAdapter:
                 sql_executed=False,
             ),
             trace=ExecutionTrace(
+                capability_source=routed_step.capability_source,
+                capability_name=routed_step.capability,
+                catalog_version=routed_step.catalog_version,
+                execution_type=routed_step.execution_type,
                 sql=normalized.validated_sql or normalized.generated_sql,
                 used_tables=normalized.used_tables,
                 sql_executed=False,
                 error_type=failure_type,
+                success=False,
+                error_reason=error_code,
             ),
+        )
+
+    def _route_sql_step(self, step: PlanStep) -> CapabilityExecutionPlan:
+        if step.semantic_domain and step.semantic_intent:
+            return self._capability_router.route(
+                SemanticIntent(
+                    domain=step.semantic_domain,
+                    intent=step.semantic_intent,
+                    arguments=step.args,
+                )
+            )
+        return CapabilityExecutionPlan(
+            status="matched",
+            capability=None,
+            execution_type="readonly_sql",
+            executor="text_to_sql",
+            arguments=step.args,
+            capability_source="catalog",
+            catalog_version="legacy",
+            reason="Legacy planner supplied a direct SQL route.",
         )
 
 
@@ -655,6 +731,14 @@ def _with_plan_trace_metadata(
                     "semantic_router_result": plan.semantic_router_result,
                     "semantic_router_version": plan.semantic_router_version,
                     "routing_source": plan.routing_source,
+                    "user_input": plan.user_input,
+                    "legacy_used": plan.routing_source == "legacy_fallback",
+                    "success": observation.status == "success",
+                    "error_reason": (
+                        observation.observation.failure_type
+                        or observation.trace.error_type
+                        or observation.trace.error_reason
+                    ),
                 }
             )
         }

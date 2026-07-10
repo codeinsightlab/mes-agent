@@ -38,7 +38,7 @@ def test_router_matches_heat_status_intent_to_catalog_capability():
     assert plan.executor == "heat_current_stage"
     assert plan.arguments == {"record_no": "HT20260603-007"}
     assert plan.capability_source == "catalog"
-    assert plan.catalog_version == "v1"
+    assert plan.catalog_version == "v2"
 
 
 def test_router_returns_not_found_for_uncataloged_intent_without_guessing():
@@ -57,6 +57,25 @@ def test_router_returns_not_found_for_uncataloged_intent_without_guessing():
     assert plan.capability is None
     assert plan.executor is None
     assert plan.arguments == {"record_no": "HT20260603-007"}
+    assert plan.catalog_version == "v2"
+
+
+def test_router_matches_heat_analysis_sql_capability():
+    router = CapabilityRouter(CapabilityLoader().load())
+
+    plan = router.route(
+        SemanticIntent(
+            domain="heat_treatment",
+            intent="analyze_completion_count",
+            arguments={"question": "本月热处理完成多少批", "time_range": "current_month"},
+        )
+    )
+
+    assert plan.status == "matched"
+    assert plan.capability == "heat_completion_count_monthly"
+    assert plan.execution_type == "readonly_sql"
+    assert plan.executor == "text_to_sql"
+    assert plan.catalog_version == "v2"
 
 
 def test_router_blocks_planned_catalog_capability_before_execution(tmp_path):
@@ -120,7 +139,7 @@ def test_planner_router_tool_registry_repository_sql_chain_succeeds():
     assert step["semantic_intent"] == "query_status"
     assert trace["capability_source"] == "catalog"
     assert trace["capability_name"] == "heat_current_stage"
-    assert trace["catalog_version"] == "v1"
+    assert trace["catalog_version"] == "v2"
     assert trace["tool_name"] == "heat_current_stage"
     assert trace["sql"].startswith("SELECT record_no, status")
     assert trace["used_tables"] == ["mes_heat_treatment_record"]

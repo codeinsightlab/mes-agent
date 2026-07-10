@@ -29,17 +29,22 @@ class ExecutionQuality(BaseModel):
 
 
 class ExecutionTrace(BaseModel):
+    user_input: str | None = None
     semantic_router_version: str | None = None
     semantic_router_result: JsonObject | None = None
     routing_source: str | None = None
+    legacy_used: bool | None = None
     capability_source: str | None = None
     capability_name: str | None = None
     catalog_version: str | None = None
+    execution_type: str | None = None
     tool_name: str | None = None
     sql: str | None = None
     used_tables: list[str] = Field(default_factory=list)
     sql_executed: bool | None = None
     error_type: str | None = None
+    success: bool | None = None
+    error_reason: str | None = None
 
 
 class ExecutionObservation(BaseModel):

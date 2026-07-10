@@ -579,3 +579,90 @@ Current risks:
 - Mixed diagnostic planning still depends on legacy fallback and uncataloged names.
 - Replan policy still contains missing-fact business branches.
 - Semantic Router V1 is deterministic; future LLM adapter must preserve the frozen output protocol.
+
+## 16. Capability Catalog V2 And MVP Evaluation
+
+Date: 2026-07-10
+
+The project has entered the first MVP experiment stage.
+
+Validated MVP flow:
+
+```text
+User Input
+-> Semantic Router
+-> Planner
+-> Capability Router
+-> Capability Catalog
+-> Execution
+-> Trace / Analytics
+```
+
+Capability Catalog V2 contract now standardizes:
+
+- `name`
+- `catalog_version`
+- `domain`
+- `intent`
+- `description`
+- `required_entities`
+- `execution_type`
+- `input_schema`
+- `output_schema`
+- `trace_fields`
+- `example_queries`
+
+Current MVP capabilities:
+
+- `heat_current_stage`: enabled Tool capability for heat-treatment status.
+- `heat_completion_count_monthly`: enabled read-only SQL capability for monthly heat-treatment completion count.
+- `work_order_status`: planned production-order status contract, not executable.
+- `inspection_status`: planned inspection-status contract, not executable.
+
+Catalog remains the only source of capability boundaries. Planner and Semantic Router do not define executable capability names.
+
+Legacy fallback status:
+
+- `LegacyFallbackRouter` still exists.
+- MVP evaluation cases do not depend on legacy fallback.
+- Trace records `legacy_used=true/false` for future migration metrics.
+
+Trace fields added or confirmed for the MVP:
+
+- `user_input`
+- `semantic_router_version`
+- `semantic_router_result`
+- `plan`
+- `capability_name`
+- `capability_source`
+- `catalog_version`
+- `routing_source`
+- `legacy_used`
+- `execution_type`
+- `success`
+- `error_reason`
+
+Stable MVP evaluation entry:
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_mvp_evaluation.py
+```
+
+Latest MVP result:
+
+```text
+total=6
+passed=6
+failed=0
+success_rate=1.00
+capability_hit_rate=0.67
+clarification_rate=0.33
+legacy_usage_rate=0.00
+system_status=PASS
+```
+
+Detailed record:
+
+- `docs/capabilities/mvp-evaluation-v1.md`
+- `backend/results/agent_mvp_evaluation_report.json`
+- `backend/results/agent_mvp_evaluation_report.md`

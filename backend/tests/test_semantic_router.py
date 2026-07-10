@@ -76,6 +76,15 @@ def test_semantic_router_normalizes_chinese_status_expressions():
         assert result.need_clarification is False
 
 
+def test_semantic_router_recognizes_heat_completion_analysis():
+    result = SemanticRouter().route("本月热处理完成多少批")
+
+    assert result.domain == "heat_treatment"
+    assert result.intent == "analyze_completion_count"
+    assert result.entities == {"time_range": "current_month"}
+    assert result.need_clarification is False
+
+
 def test_planner_consumes_semantic_router_result_without_tool_name_selection():
     semantic_result = SemanticRouter().route("HT20260603-007热处理状态")
 
@@ -117,6 +126,49 @@ def test_ambiguous_semantic_result_does_not_execute_status_query():
     assert trace["result"]["trace"]["semantic_router_result"]["need_clarification"] is True
     assert trace["result"]["trace"]["semantic_router_version"] == "v1"
     assert trace["result"]["trace"]["routing_source"] == "semantic_router"
+
+
+def test_ambiguous_product_question_stops_before_legacy_execution():
+    orchestrator = AgentOrchestrator(
+        DebuggablePlanner(),
+        PlanExecutionAdapter(
+            text_to_sql_node=FakeTextToSqlNode(),
+            registry=build_heat_treatment_test_registry(),
+        ),
+    )
+
+    result = orchestrator.run(AgentRunInput(message="这个产品怎么样"))
+
+    trace = result.execution_trace[-1]["result"]["trace"]
+    assert result.final_result.status == "failed"
+    assert result.plan_trace["initial_plan"]["steps"] == []
+    assert trace["routing_source"] == "semantic_router"
+    assert trace["legacy_used"] is False
+    assert trace["semantic_router_result"]["domain"] == "product"
+    assert trace["semantic_router_result"]["need_clarification"] is True
+
+
+def test_heat_completion_analysis_enters_sql_capability():
+    orchestrator = AgentOrchestrator(
+        DebuggablePlanner(),
+        PlanExecutionAdapter(
+            text_to_sql_node=FakeTextToSqlNode(),
+            registry=build_heat_treatment_test_registry(),
+        ),
+    )
+
+    result = orchestrator.run(AgentRunInput(message="本月热处理完成多少批"))
+
+    step = result.plan_trace["initial_plan"]["steps"][0]
+    trace = result.execution_trace[-1]["result"]["trace"]
+    assert result.final_result.status == "success"
+    assert step["type"] == "sql"
+    assert step["semantic_domain"] == "heat_treatment"
+    assert step["semantic_intent"] == "analyze_completion_count"
+    assert trace["routing_source"] == "semantic_router"
+    assert trace["legacy_used"] is False
+    assert trace["capability_name"] == "heat_completion_count_monthly"
+    assert trace["execution_type"] == "readonly_sql"
 
 
 @pytest.mark.parametrize("case", load_golden_cases(), ids=lambda case: case["id"])

@@ -16,6 +16,7 @@ class CapabilityRouter:
             return CapabilityExecutionPlan(
                 status="capability_not_found",
                 arguments=semantic_intent.arguments,
+                catalog_version="v2",
                 reason=(
                     "No catalog capability matched "
                     f"domain={semantic_intent.domain} intent={semantic_intent.intent}."
@@ -28,6 +29,7 @@ class CapabilityRouter:
                 execution_type=capability.execution_type,
                 executor=capability.executor,
                 arguments=semantic_intent.arguments,
+                catalog_version=capability.catalog_version,
                 reason=(
                     f"Capability '{capability.name}' is not executable because "
                     f"status is '{capability.status}'."
@@ -39,5 +41,6 @@ class CapabilityRouter:
             execution_type=capability.execution_type,
             executor=capability.executor,
             arguments=semantic_intent.arguments,
+            catalog_version=capability.catalog_version,
             reason=f"Catalog matched capability '{capability.name}'.",
         )

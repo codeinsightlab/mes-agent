@@ -38,6 +38,7 @@ class CapabilityDataSource(BaseModel):
 class CapabilityDefinition(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    catalog_version: str = "v1"
     name: str
     domain: str
     description: str
@@ -45,10 +46,13 @@ class CapabilityDefinition(BaseModel):
     status: CapabilityStatus
     execution_type: ExecutionType
     executor: str
+    required_entities: list[str] = Field(default_factory=list)
     input_schema: CapabilitySchema
     output_schema: CapabilitySchema
+    trace_fields: list[str] = Field(default_factory=list)
     data_sources: list[CapabilityDataSource] = Field(default_factory=list)
     examples: list[str] = Field(default_factory=list)
+    example_queries: list[str] = Field(default_factory=list)
     boundaries: list[str] = Field(default_factory=list)
     legacy_source: LegacySource = "none"
 
@@ -59,6 +63,16 @@ class CapabilityDefinition(BaseModel):
         if not stripped:
             raise ValueError("field must not be empty")
         return stripped
+
+    @field_validator("required_entities", "trace_fields", "example_queries")
+    @classmethod
+    def normalize_string_list(cls, values: list[str]) -> list[str]:
+        normalized: list[str] = []
+        for value in values:
+            stripped = value.strip()
+            if stripped and stripped not in normalized:
+                normalized.append(stripped)
+        return normalized
 
     @model_validator(mode="after")
     def validate_executable_shape(self):

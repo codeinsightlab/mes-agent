@@ -202,6 +202,42 @@ Coverage:
 - ambiguous heat-treatment expression
 - unrelated weather question
 
+## MVP Extension
+
+Date: 2026-07-10
+
+Semantic Router V1 now recognizes the MVP analytical intent:
+
+```json
+{
+  "semantic_router_version": "v1",
+  "domain": "heat_treatment",
+  "intent": "analyze_completion_count",
+  "entities": {
+    "time_range": "current_month"
+  },
+  "confidence": 0.86,
+  "need_clarification": false,
+  "clarification_reason": null
+}
+```
+
+This intent is routed through Capability Catalog V2 to:
+
+- `heat_completion_count_monthly`
+
+The Semantic Router still does not return Tool, Capability, SQL, Repository, or execution action fields.
+
+MVP evaluation entry:
+
+```text
+cd backend && .venv/bin/python scripts/run_agent_mvp_evaluation.py
+```
+
+Detailed MVP record:
+
+- `docs/capabilities/mvp-evaluation-v1.md`
+
 ## Verification
 
 ```text

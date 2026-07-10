@@ -40,8 +40,9 @@ class DebuggablePlanner:
             and semantic_result.need_clarification
             and semantic_result.domain != "unknown"
         ):
-            return _with_semantic_result(
+            return _with_request_metadata(
                 self._semantic_clarification_plan(query, semantic_result, history),
+                query,
                 semantic_result,
             )
 
@@ -52,12 +53,12 @@ class DebuggablePlanner:
                 history=history,
                 observation=request.execution_observation,
             )
-            return _with_semantic_result(plan, semantic_result)
+            return _with_request_metadata(plan, query, semantic_result)
 
         if semantic_result is not None:
             semantic_plan = self._plan_from_semantic_result(semantic_result, query, catalog_names, history)
             if semantic_plan is not None:
-                return _with_semantic_result(semantic_plan, semantic_result)
+                return _with_request_metadata(semantic_plan, query, semantic_result)
 
         legacy_decision = self._legacy_fallback_router.route(query)
         if legacy_decision.route == "mixed":
@@ -68,7 +69,7 @@ class DebuggablePlanner:
             plan = self._tool_plan(query, catalog_names, history, legacy_decision)
         else:
             plan = self._unknown_plan(query, history, legacy=True)
-        return _with_semantic_result(plan, semantic_result)
+        return _with_request_metadata(plan, query, semantic_result)
 
     def _plan_from_semantic_result(
         self,
@@ -81,6 +82,11 @@ class DebuggablePlanner:
             return self._semantic_clarification_plan(query, semantic_result, history)
         if semantic_result.domain == "heat_treatment" and semantic_result.intent == "query_status":
             return self._semantic_tool_plan(semantic_result, catalog_names, history)
+        if (
+            semantic_result.domain == "heat_treatment"
+            and semantic_result.intent == "analyze_completion_count"
+        ):
+            return self._semantic_sql_plan(query, semantic_result, history)
         return None
 
     def _semantic_tool_plan(
@@ -131,6 +137,44 @@ class DebuggablePlanner:
                 tool_selection_reason="Planner 未选择 Tool；后续由 Capability Router 根据 Catalog 解析能力。",
                 sql_intent_reason="Semantic Router 未输出分析型查询意图，因此不进入 SQL。",
                 risk_assessment=risk,
+            ),
+            failure_analysis=_analyze_history(history),
+            semantic_router_version=semantic_result.semantic_router_version,
+            routing_source="semantic_router",
+        )
+
+    def _semantic_sql_plan(
+        self,
+        query: str,
+        semantic_result: SemanticRouterResult,
+        history: list[ExecutionHistoryItem],
+    ) -> PlannerPlan:
+        step = PlanStep(
+            step_id=1,
+            type="sql",
+            name=None,
+            semantic_domain=semantic_result.domain,
+            semantic_intent=semantic_result.intent,
+            query_goal="执行 Catalog 中定义的热处理完成数量统计能力。",
+            args={"question": query, **semantic_result.entities},
+            reason="Semantic Router 已识别热处理完成数量统计；Planner 只生成 SQL Capability 执行计划。",
+            dependency=[],
+            expected_output="包含 validated_sql、rows、row_count、used_tables 的只读统计结果。",
+        )
+        _apply_history_reuse(step, history)
+        return PlannerPlan(
+            intent="sql",
+            goal="得到热处理完成数量统计结果。",
+            steps=[step],
+            execution_plan=ExecutionPlanPolicy(
+                stop_condition="when catalog-routed readonly SQL capability returns rows or a stable SQL error"
+            ),
+            confidence=min(max(semantic_result.confidence, 0.0), 0.95),
+            debug_trace=DebugTrace(
+                classification_reason="Semantic Router 输出 heat_treatment.analyze_completion_count。",
+                tool_selection_reason="分析型问题不选择 Tool；后续由 Capability Router 根据 Catalog 确认 SQL Capability。",
+                sql_intent_reason="这是明确统计分析意图，可进入 Catalog 中的 readonly_sql 能力。",
+                risk_assessment="主要风险是 Text-to-SQL 生成字段与允许 Schema 不一致。",
             ),
             failure_analysis=_analyze_history(history),
             semantic_router_version=semantic_result.semantic_router_version,
@@ -522,18 +566,16 @@ def _default_tool_catalog() -> list[JsonObject]:
     return [cast(JsonObject, capability.model_dump(mode="json")) for capability in CAPABILITIES]
 
 
-def _with_semantic_result(
+def _with_request_metadata(
     plan: PlannerPlan,
+    query: str,
     semantic_result: SemanticRouterResult | None,
 ) -> PlannerPlan:
-    if semantic_result is None:
-        return plan
-    return plan.model_copy(
-        update={
-            "semantic_router_result": cast(JsonObject, semantic_result.model_dump(mode="json")),
-            "semantic_router_version": semantic_result.semantic_router_version,
-        }
-    )
+    update: JsonObject = {"user_input": query}
+    if semantic_result is not None:
+        update["semantic_router_result"] = cast(JsonObject, semantic_result.model_dump(mode="json"))
+        update["semantic_router_version"] = semantic_result.semantic_router_version
+    return plan.model_copy(update=update)
 
 
 def _tool_semantic_intent(capability_name: str) -> str:

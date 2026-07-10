@@ -309,7 +309,7 @@ def _check_tool_case(result: dict[str, Any], recorder: AcceptanceRecorder) -> No
         and step.get("semantic_intent") == "query_status"
         and trace.get("capability_source") == "catalog"
         and trace.get("capability_name") == "heat_current_stage"
-        and trace.get("catalog_version") == "v1"
+        and trace.get("catalog_version") == "v2"
         and trace.get("tool_name") == "heat_current_stage"
         and step.get("args", {}).get("record_no") == "TRACE-HTR-K2-T-FG-001"
         and tool_payload.get("record_no") == "TRACE-HTR-K2-T-FG-001"

@@ -34,7 +34,11 @@ class CapabilityValidator:
             self.validate_capability(capability)
 
     def validate_capability(self, capability: CapabilityDefinition) -> None:
-        if capability.execution_type == "tool" and capability.executor not in self._executor_names:
+        if (
+            capability.status == "enabled"
+            and capability.execution_type == "tool"
+            and capability.executor not in self._executor_names
+        ):
             raise CapabilityCatalogValidationError(
                 f"Capability '{capability.name}' references unknown executor: {capability.executor}"
             )
