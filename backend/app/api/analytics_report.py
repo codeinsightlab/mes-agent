@@ -1,7 +1,7 @@
 import json
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from app.analytics.report.models import ReportArtifactMetrics
@@ -81,8 +81,9 @@ def get_report_generator() -> MdReportGenerator:
 @router.post("/generate", response_model=ReportGenerateResponse)
 def generate_report(
     request: ReportGenerateRequest,
-    generator: MdReportGenerator = Depends(get_report_generator),
+    http_request: Request,
 ):
+    generator = _resolve_report_generator(http_request)
     try:
         artifact = generator.generate(request.type)
     except PersistenceError as exc:
@@ -96,6 +97,13 @@ def generate_report(
         status="generated",
         metrics=artifact.metrics,
     )
+
+
+def _resolve_report_generator(request: Request) -> MdReportGenerator:
+    override = request.app.dependency_overrides.get(get_report_generator)
+    if override is not None:
+        return override()
+    return get_report_generator()
 
 
 @router.get("/traces/{trace_id}", response_model=TraceReplayResponse)

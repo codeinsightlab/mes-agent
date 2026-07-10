@@ -113,9 +113,11 @@ def test_runtime_registry_can_query_heat_current_stage():
 
     assert "heat_current_stage" in registry.names()
     assert "heat_completion_count_monthly" in registry.names()
+    assert "heat_device_trace" in registry.names()
     assert "work_order_status" in registry.names()
     assert "inspection_status" in registry.names()
     assert registry.get("heat_current_stage").executor == "heat_current_stage"
+    assert registry.get("heat_device_trace").status == "planned"
     assert registry.require_executable("heat_current_stage").name == "heat_current_stage"
     assert registry.require_executable("heat_completion_count_monthly").execution_type == "readonly_sql"
     with pytest.raises(CapabilityNotExecutableError, match="planned"):

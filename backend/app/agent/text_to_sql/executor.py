@@ -1,6 +1,7 @@
 import datetime as dt
 import decimal
 import json
+import logging
 import time
 from collections.abc import Mapping, Sequence
 
@@ -11,8 +12,12 @@ from sqlalchemy.engine.url import URL
 
 from app.agent.text_to_sql.models import SqlExecutionResult
 from app.core.config import Settings
+from app.core.logging import log_event
 from app.core.type_defs import JsonObject, JsonValue
 from app.domain.persistence.exceptions import DatabaseConfigurationError
+
+
+sql_logger = logging.getLogger("agent.sql")
 
 
 class ReadonlySqlExecutor:
@@ -33,6 +38,16 @@ class ReadonlySqlExecutor:
                 rows: list[dict[str, object]] = [dict(row._mapping) for row in result.fetchmany(self._max_rows)]
                 columns = list(result.keys())
             duration_ms = int((time.perf_counter() - start) * 1000)
+            if sql_logger.isEnabledFor(logging.DEBUG):
+                log_event(
+                    sql_logger,
+                    logging.DEBUG,
+                    "sql.execute",
+                    sql=sql,
+                    parameters={},
+                    duration_ms=duration_ms,
+                    success=True,
+                )
             return SqlExecutionResult(
                 status="success",
                 columns=columns,
@@ -41,16 +56,40 @@ class ReadonlySqlExecutor:
                 duration_ms=duration_ms,
             )
         except DatabaseConfigurationError as exc:
+            duration_ms = int((time.perf_counter() - start) * 1000)
+            if sql_logger.isEnabledFor(logging.DEBUG):
+                log_event(
+                    sql_logger,
+                    logging.DEBUG,
+                    "sql.execute",
+                    sql=sql,
+                    parameters={},
+                    duration_ms=duration_ms,
+                    success=False,
+                    error_code="mes_db_configuration_error",
+                )
             return SqlExecutionResult(
                 status="failed",
-                duration_ms=int((time.perf_counter() - start) * 1000),
+                duration_ms=duration_ms,
                 error_code="mes_db_configuration_error",
                 error_message=str(exc),
             )
         except SQLAlchemyError:
+            duration_ms = int((time.perf_counter() - start) * 1000)
+            if sql_logger.isEnabledFor(logging.DEBUG):
+                log_event(
+                    sql_logger,
+                    logging.DEBUG,
+                    "sql.execute",
+                    sql=sql,
+                    parameters={},
+                    duration_ms=duration_ms,
+                    success=False,
+                    error_code="mes_sql_execution_error",
+                )
             return SqlExecutionResult(
                 status="failed",
-                duration_ms=int((time.perf_counter() - start) * 1000),
+                duration_ms=duration_ms,
                 error_code="mes_sql_execution_error",
                 error_message="MES 只读查询执行失败。",
             )

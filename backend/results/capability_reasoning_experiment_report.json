@@ -1,0 +1,1953 @@
+{
+  "summary": {
+    "total": 30,
+    "top1_capability_accuracy": 1.0,
+    "top3_candidate_coverage": 1.0,
+    "catalog_only_top1_accuracy": 0.7333333333333333,
+    "business_facts_top1_accuracy": 1.0,
+    "business_facts_lift": 0.26666666666666666,
+    "failed": 0,
+    "system_status": "PASS",
+    "audit_db_path": "/Users/user/Documents/mes-agent/backend/results/capability_reasoning_audit.sqlite"
+  },
+  "cases": [
+    {
+      "id": "status_001",
+      "request_id": "3b8f1cbb46c0436daaf103a9d448ed1f",
+      "user_input": "TRACE-HTR-B-H-001什么状态",
+      "expected_capability": "heat_current_stage",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-001"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-001"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-001"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "matched",
+        "selected_capability": "heat_current_stage",
+        "execution_type": "tool",
+        "executor": "heat_current_stage",
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-001"
+        },
+        "missing_entities": [],
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "status_002",
+      "request_id": "42806cb15ada4158a0b1f8681d86d08a",
+      "user_input": "TRACE-HTR-B-H-002热处理状态",
+      "expected_capability": "heat_current_stage",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-002"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-002"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-002"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "matched",
+        "selected_capability": "heat_current_stage",
+        "execution_type": "tool",
+        "executor": "heat_current_stage",
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-002"
+        },
+        "missing_entities": [],
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "status_003",
+      "request_id": "9160da336bbb48aa8e13e9f84a51990f",
+      "user_input": "TRACE-HTR-B-H-003做到哪一步了",
+      "expected_capability": "heat_current_stage",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-003"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-003"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-003"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "matched",
+        "selected_capability": "heat_current_stage",
+        "execution_type": "tool",
+        "executor": "heat_current_stage",
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-003"
+        },
+        "missing_entities": [],
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "status_004",
+      "request_id": "e6c0365b271949cdb3f5bf64e0660eff",
+      "user_input": "TRACE-HTR-B-H-004做完了吗",
+      "expected_capability": "heat_current_stage",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-004"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-004"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-004"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "matched",
+        "selected_capability": "heat_current_stage",
+        "execution_type": "tool",
+        "executor": "heat_current_stage",
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-004"
+        },
+        "missing_entities": [],
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "status_005",
+      "request_id": "a9ac2e925a134c12b08139984a1da4bd",
+      "user_input": "TRACE-HTR-B-H-005当前情况",
+      "expected_capability": "heat_current_stage",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-005"
+        },
+        "candidates": []
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.87,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-005"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.87,
+            "reason": "Business Facts 将进度类表达归一到状态查询。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.87,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-005"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.87,
+            "reason": "Business Facts 将进度类表达归一到状态查询。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "matched",
+        "selected_capability": "heat_current_stage",
+        "execution_type": "tool",
+        "executor": "heat_current_stage",
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-005"
+        },
+        "missing_entities": [],
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": false,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "status_006",
+      "request_id": "ade59ff6750e4380a79c9aadc0d5527b",
+      "user_input": "HT20260603-007热处理的状态",
+      "expected_capability": "heat_current_stage",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "HT20260603-007"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "HT20260603-007"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "HT20260603-007"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "matched",
+        "selected_capability": "heat_current_stage",
+        "execution_type": "tool",
+        "executor": "heat_current_stage",
+        "entities": {
+          "record_no": "HT20260603-007"
+        },
+        "missing_entities": [],
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "status_007",
+      "request_id": "4e4dd3c7bad644e0bdb76a28d049b6c7",
+      "user_input": "HT20260603-008现在到哪了",
+      "expected_capability": "heat_current_stage",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {
+          "record_no": "HT20260603-008"
+        },
+        "candidates": []
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.87,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "HT20260603-008"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.87,
+            "reason": "Business Facts 将进度类表达归一到状态查询。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.87,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "HT20260603-008"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.87,
+            "reason": "Business Facts 将进度类表达归一到状态查询。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "matched",
+        "selected_capability": "heat_current_stage",
+        "execution_type": "tool",
+        "executor": "heat_current_stage",
+        "entities": {
+          "record_no": "HT20260603-008"
+        },
+        "missing_entities": [],
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": false,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "status_008",
+      "request_id": "b072fc5625a2420eb459a01ba7078995",
+      "user_input": "查TRACE-HTR-B-H-008进度",
+      "expected_capability": "heat_current_stage",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-008"
+        },
+        "candidates": []
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.87,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-008"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.87,
+            "reason": "Business Facts 将进度类表达归一到状态查询。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.87,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-008"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.87,
+            "reason": "Business Facts 将进度类表达归一到状态查询。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "matched",
+        "selected_capability": "heat_current_stage",
+        "execution_type": "tool",
+        "executor": "heat_current_stage",
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-008"
+        },
+        "missing_entities": [],
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": false,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "status_009",
+      "request_id": "fb2def5e1ffd4173b89cf74ea8024053",
+      "user_input": "TRACE-HTR-B-H-009完成了吗",
+      "expected_capability": "heat_current_stage",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-009"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-009"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-009"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "matched",
+        "selected_capability": "heat_current_stage",
+        "execution_type": "tool",
+        "executor": "heat_current_stage",
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-009"
+        },
+        "missing_entities": [],
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "status_010",
+      "request_id": "7c943c56bd5e409ab5b5c536794d7644",
+      "user_input": "TRACE-HTR-B-H-010目前哪一步",
+      "expected_capability": "heat_current_stage",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-010"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-010"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.93,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-010"
+        },
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.93,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "matched",
+        "selected_capability": "heat_current_stage",
+        "execution_type": "tool",
+        "executor": "heat_current_stage",
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-010"
+        },
+        "missing_entities": [],
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "device_001",
+      "request_id": "ae4c7de728d44d4aa29aac44205a9629",
+      "user_input": "TRACE-HTR-B-H-001在哪个设备进行",
+      "expected_capability": "heat_device_trace",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.9,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-001"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.9,
+            "reason": "用户询问热处理记录对应设备。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.9,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-001"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.9,
+            "reason": "用户询问热处理记录对应设备。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.9,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-001"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.9,
+            "reason": "用户询问热处理记录对应设备。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "capability_not_executable",
+        "selected_capability": "heat_device_trace",
+        "execution_type": "tool",
+        "executor": "heat_device_trace",
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-001"
+        },
+        "missing_entities": [],
+        "need_clarification": true,
+        "clarification_reason": "Capability 'heat_device_trace' 当前状态为 planned，不能执行。"
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "device_002",
+      "request_id": "63f7cf7eeefe45489644906111d1b0c1",
+      "user_input": "TRACE-HTR-B-H-002在哪个炉子完成",
+      "expected_capability": "heat_device_trace",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": null,
+        "confidence": 0.58,
+        "need_clarification": true,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-002"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.58,
+            "reason": "Catalog-only 阶段仅弱匹配炉子表达。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.88,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-002"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.88,
+            "reason": "Business Facts 将炉子归一为热处理设备。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.88,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-002"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.88,
+            "reason": "Business Facts 将炉子归一为热处理设备。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "capability_not_executable",
+        "selected_capability": "heat_device_trace",
+        "execution_type": "tool",
+        "executor": "heat_device_trace",
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-002"
+        },
+        "missing_entities": [],
+        "need_clarification": true,
+        "clarification_reason": "Capability 'heat_device_trace' 当前状态为 planned，不能执行。"
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": false,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "device_003",
+      "request_id": "28baf422847f4ef5826f54aeca19e366",
+      "user_input": "TRACE-HTR-B-H-003哪台炉做的",
+      "expected_capability": "heat_device_trace",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": null,
+        "confidence": 0.58,
+        "need_clarification": true,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-003"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.58,
+            "reason": "Catalog-only 阶段仅弱匹配炉子表达。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.88,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-003"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.88,
+            "reason": "Business Facts 将炉子归一为热处理设备。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.88,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-003"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.88,
+            "reason": "Business Facts 将炉子归一为热处理设备。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "capability_not_executable",
+        "selected_capability": "heat_device_trace",
+        "execution_type": "tool",
+        "executor": "heat_device_trace",
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-003"
+        },
+        "missing_entities": [],
+        "need_clarification": true,
+        "clarification_reason": "Capability 'heat_device_trace' 当前状态为 planned，不能执行。"
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": false,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "device_004",
+      "request_id": "901ebd7085b84a3eb328f37a52c40562",
+      "user_input": "TRACE-HTR-B-H-004生产设备是什么",
+      "expected_capability": "heat_device_trace",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.9,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-004"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.9,
+            "reason": "用户询问热处理记录对应设备。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.9,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-004"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.9,
+            "reason": "用户询问热处理记录对应设备。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.9,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-004"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.9,
+            "reason": "用户询问热处理记录对应设备。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "capability_not_executable",
+        "selected_capability": "heat_device_trace",
+        "execution_type": "tool",
+        "executor": "heat_device_trace",
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-004"
+        },
+        "missing_entities": [],
+        "need_clarification": true,
+        "clarification_reason": "Capability 'heat_device_trace' 当前状态为 planned，不能执行。"
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "device_005",
+      "request_id": "6632cc423879479eba5d96aa13108e0a",
+      "user_input": "TRACE-HTR-B-H-005用的哪个炉",
+      "expected_capability": "heat_device_trace",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-005"
+        },
+        "candidates": []
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.88,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-005"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.88,
+            "reason": "Business Facts 将炉子归一为热处理设备。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.88,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-005"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.88,
+            "reason": "Business Facts 将炉子归一为热处理设备。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "capability_not_executable",
+        "selected_capability": "heat_device_trace",
+        "execution_type": "tool",
+        "executor": "heat_device_trace",
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-005"
+        },
+        "missing_entities": [],
+        "need_clarification": true,
+        "clarification_reason": "Capability 'heat_device_trace' 当前状态为 planned，不能执行。"
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": false,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "device_006",
+      "request_id": "7e21e1e3e3c14f43b2f8d49b19a7eb87",
+      "user_input": "这个热处理在哪个设备 TRACE-HTR-B-H-006",
+      "expected_capability": "heat_device_trace",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.9,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-006"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.9,
+            "reason": "用户询问热处理记录对应设备。"
+          },
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.62,
+            "reason": "存在热处理记录号，但目标不够明确。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.9,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-006"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.9,
+            "reason": "用户询问热处理记录对应设备。"
+          },
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.62,
+            "reason": "存在热处理记录号，但目标不够明确。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.9,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-006"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.9,
+            "reason": "用户询问热处理记录对应设备。"
+          },
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.62,
+            "reason": "存在热处理记录号，但目标不够明确。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "capability_not_executable",
+        "selected_capability": "heat_device_trace",
+        "execution_type": "tool",
+        "executor": "heat_device_trace",
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-006"
+        },
+        "missing_entities": [],
+        "need_clarification": true,
+        "clarification_reason": "Capability 'heat_device_trace' 当前状态为 planned，不能执行。"
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "device_007",
+      "request_id": "5b35287a70b549f3b812a807937cb27c",
+      "user_input": "TRACE-HTR-B-H-007设备追溯",
+      "expected_capability": "heat_device_trace",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.9,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-007"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.9,
+            "reason": "用户询问热处理记录对应设备。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.9,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-007"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.9,
+            "reason": "用户询问热处理记录对应设备。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.9,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-007"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.9,
+            "reason": "用户询问热处理记录对应设备。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "capability_not_executable",
+        "selected_capability": "heat_device_trace",
+        "execution_type": "tool",
+        "executor": "heat_device_trace",
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-007"
+        },
+        "missing_entities": [],
+        "need_clarification": true,
+        "clarification_reason": "Capability 'heat_device_trace' 当前状态为 planned，不能执行。"
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "device_008",
+      "request_id": "ed144a2605084b539f98451fe53974e6",
+      "user_input": "TRACE-HTR-B-H-008在哪完成",
+      "expected_capability": "heat_device_trace",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-008"
+        },
+        "candidates": []
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.88,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-008"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.88,
+            "reason": "Business Facts 将炉子归一为热处理设备。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.88,
+        "need_clarification": false,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-008"
+        },
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.88,
+            "reason": "Business Facts 将炉子归一为热处理设备。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "capability_not_executable",
+        "selected_capability": "heat_device_trace",
+        "execution_type": "tool",
+        "executor": "heat_device_trace",
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-008"
+        },
+        "missing_entities": [],
+        "need_clarification": true,
+        "clarification_reason": "Capability 'heat_device_trace' 当前状态为 planned，不能执行。"
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": false,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "analysis_001",
+      "request_id": "f32ae6fc1dba41f787cba8d2114dbc90",
+      "user_input": "本月热处理完成多少批",
+      "expected_capability": "heat_completion_count_monthly",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_completion_count_monthly",
+        "confidence": 0.92,
+        "need_clarification": false,
+        "entities": {
+          "time_range": "current_month"
+        },
+        "candidates": [
+          {
+            "name": "heat_completion_count_monthly",
+            "confidence": 0.92,
+            "reason": "用户询问热处理完成数量统计。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_completion_count_monthly",
+        "confidence": 0.92,
+        "need_clarification": false,
+        "entities": {
+          "time_range": "current_month"
+        },
+        "candidates": [
+          {
+            "name": "heat_completion_count_monthly",
+            "confidence": 0.92,
+            "reason": "用户询问热处理完成数量统计。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_completion_count_monthly",
+        "confidence": 0.92,
+        "need_clarification": false,
+        "entities": {
+          "time_range": "current_month"
+        },
+        "candidates": [
+          {
+            "name": "heat_completion_count_monthly",
+            "confidence": 0.92,
+            "reason": "用户询问热处理完成数量统计。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "matched",
+        "selected_capability": "heat_completion_count_monthly",
+        "execution_type": "readonly_sql",
+        "executor": "text_to_sql",
+        "entities": {
+          "time_range": "current_month"
+        },
+        "missing_entities": [],
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "analysis_002",
+      "request_id": "3d106687704843b085afbd30bead7d2a",
+      "user_input": "统计本月热处理完成数量",
+      "expected_capability": "heat_completion_count_monthly",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_completion_count_monthly",
+        "confidence": 0.92,
+        "need_clarification": false,
+        "entities": {
+          "time_range": "current_month"
+        },
+        "candidates": [
+          {
+            "name": "heat_completion_count_monthly",
+            "confidence": 0.92,
+            "reason": "用户询问热处理完成数量统计。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_completion_count_monthly",
+        "confidence": 0.92,
+        "need_clarification": false,
+        "entities": {
+          "time_range": "current_month"
+        },
+        "candidates": [
+          {
+            "name": "heat_completion_count_monthly",
+            "confidence": 0.92,
+            "reason": "用户询问热处理完成数量统计。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_completion_count_monthly",
+        "confidence": 0.92,
+        "need_clarification": false,
+        "entities": {
+          "time_range": "current_month"
+        },
+        "candidates": [
+          {
+            "name": "heat_completion_count_monthly",
+            "confidence": 0.92,
+            "reason": "用户询问热处理完成数量统计。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "matched",
+        "selected_capability": "heat_completion_count_monthly",
+        "execution_type": "readonly_sql",
+        "executor": "text_to_sql",
+        "entities": {
+          "time_range": "current_month"
+        },
+        "missing_entities": [],
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "analysis_003",
+      "request_id": "c9cc85024209491295bad36dc1e27a8b",
+      "user_input": "这个月热处理完成多少批次",
+      "expected_capability": "heat_completion_count_monthly",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_completion_count_monthly",
+        "confidence": 0.92,
+        "need_clarification": false,
+        "entities": {
+          "time_range": "current_month"
+        },
+        "candidates": [
+          {
+            "name": "heat_completion_count_monthly",
+            "confidence": 0.92,
+            "reason": "用户询问热处理完成数量统计。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_completion_count_monthly",
+        "confidence": 0.92,
+        "need_clarification": false,
+        "entities": {
+          "time_range": "current_month"
+        },
+        "candidates": [
+          {
+            "name": "heat_completion_count_monthly",
+            "confidence": 0.92,
+            "reason": "用户询问热处理完成数量统计。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_completion_count_monthly",
+        "confidence": 0.92,
+        "need_clarification": false,
+        "entities": {
+          "time_range": "current_month"
+        },
+        "candidates": [
+          {
+            "name": "heat_completion_count_monthly",
+            "confidence": 0.92,
+            "reason": "用户询问热处理完成数量统计。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "matched",
+        "selected_capability": "heat_completion_count_monthly",
+        "execution_type": "readonly_sql",
+        "executor": "text_to_sql",
+        "entities": {
+          "time_range": "current_month"
+        },
+        "missing_entities": [],
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "analysis_004",
+      "request_id": "b83874a84f684525a7a226a9e0796e29",
+      "user_input": "热处理本月完成数量是多少",
+      "expected_capability": "heat_completion_count_monthly",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_completion_count_monthly",
+        "confidence": 0.92,
+        "need_clarification": false,
+        "entities": {
+          "time_range": "current_month"
+        },
+        "candidates": [
+          {
+            "name": "heat_completion_count_monthly",
+            "confidence": 0.92,
+            "reason": "用户询问热处理完成数量统计。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_completion_count_monthly",
+        "confidence": 0.92,
+        "need_clarification": false,
+        "entities": {
+          "time_range": "current_month"
+        },
+        "candidates": [
+          {
+            "name": "heat_completion_count_monthly",
+            "confidence": 0.92,
+            "reason": "用户询问热处理完成数量统计。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_completion_count_monthly",
+        "confidence": 0.92,
+        "need_clarification": false,
+        "entities": {
+          "time_range": "current_month"
+        },
+        "candidates": [
+          {
+            "name": "heat_completion_count_monthly",
+            "confidence": 0.92,
+            "reason": "用户询问热处理完成数量统计。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "matched",
+        "selected_capability": "heat_completion_count_monthly",
+        "execution_type": "readonly_sql",
+        "executor": "text_to_sql",
+        "entities": {
+          "time_range": "current_month"
+        },
+        "missing_entities": [],
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "analysis_005",
+      "request_id": "bd489bfb939d4e7bbd17e3fab0aa908d",
+      "user_input": "帮我统计热处理完成多少批",
+      "expected_capability": "heat_completion_count_monthly",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_completion_count_monthly",
+        "confidence": 0.92,
+        "need_clarification": false,
+        "entities": {},
+        "candidates": [
+          {
+            "name": "heat_completion_count_monthly",
+            "confidence": 0.92,
+            "reason": "用户询问热处理完成数量统计。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_completion_count_monthly",
+        "confidence": 0.92,
+        "need_clarification": false,
+        "entities": {},
+        "candidates": [
+          {
+            "name": "heat_completion_count_monthly",
+            "confidence": 0.92,
+            "reason": "用户询问热处理完成数量统计。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_completion_count_monthly",
+        "confidence": 0.92,
+        "need_clarification": false,
+        "entities": {},
+        "candidates": [
+          {
+            "name": "heat_completion_count_monthly",
+            "confidence": 0.92,
+            "reason": "用户询问热处理完成数量统计。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "missing_required_entities",
+        "selected_capability": "heat_completion_count_monthly",
+        "execution_type": "readonly_sql",
+        "executor": "text_to_sql",
+        "entities": {},
+        "missing_entities": [
+          "time_range"
+        ],
+        "need_clarification": true,
+        "clarification_reason": "缺少必要业务实体：time_range"
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "ambiguous_001",
+      "request_id": "c4e9590bd33a4751a5ab289d28855df9",
+      "user_input": "这个热处理怎么样",
+      "expected_capability": null,
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {},
+        "candidates": []
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {},
+        "candidates": []
+      },
+      "final": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {},
+        "candidates": []
+      },
+      "validation": {
+        "status": "need_clarification",
+        "selected_capability": null,
+        "execution_type": null,
+        "executor": null,
+        "entities": {},
+        "missing_entities": [],
+        "need_clarification": true,
+        "clarification_reason": "无法从 Catalog 稳定选择唯一 MES Capability。"
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "ambiguous_002",
+      "request_id": "d3df1d4193374a8c9f7a52f94dcce500",
+      "user_input": "这个产品怎么样",
+      "expected_capability": null,
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {},
+        "candidates": []
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {},
+        "candidates": []
+      },
+      "final": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {},
+        "candidates": []
+      },
+      "validation": {
+        "status": "need_clarification",
+        "selected_capability": null,
+        "execution_type": null,
+        "executor": null,
+        "entities": {},
+        "missing_entities": [],
+        "need_clarification": true,
+        "clarification_reason": "无法从 Catalog 稳定选择唯一 MES Capability。"
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "missing_001",
+      "request_id": "0ea1714e42da4b28b6410d6abcc27c8a",
+      "user_input": "查热处理状态",
+      "expected_capability": "heat_current_stage",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.78,
+        "need_clarification": false,
+        "entities": {},
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.78,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.78,
+        "need_clarification": false,
+        "entities": {},
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.78,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_only",
+        "selected_capability": "heat_current_stage",
+        "confidence": 0.78,
+        "need_clarification": false,
+        "entities": {},
+        "candidates": [
+          {
+            "name": "heat_current_stage",
+            "confidence": 0.78,
+            "reason": "用户询问热处理当前状态或阶段。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "missing_required_entities",
+        "selected_capability": "heat_current_stage",
+        "execution_type": "tool",
+        "executor": "heat_current_stage",
+        "entities": {},
+        "missing_entities": [
+          "record_no"
+        ],
+        "need_clarification": true,
+        "clarification_reason": "缺少必要业务实体：record_no"
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "missing_002",
+      "request_id": "c5c4d37cc32a449380a042dcd45290b9",
+      "user_input": "查一下热处理",
+      "expected_capability": null,
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {},
+        "candidates": []
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {},
+        "candidates": []
+      },
+      "final": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {},
+        "candidates": []
+      },
+      "validation": {
+        "status": "need_clarification",
+        "selected_capability": null,
+        "execution_type": null,
+        "executor": null,
+        "entities": {},
+        "missing_entities": [],
+        "need_clarification": true,
+        "clarification_reason": "无法从 Catalog 稳定选择唯一 MES Capability。"
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "missing_003",
+      "request_id": "31c8a1c57a664301b5f4e8dba9537ae5",
+      "user_input": "这个热处理在哪个炉子完成",
+      "expected_capability": "heat_device_trace",
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": null,
+        "confidence": 0.58,
+        "need_clarification": true,
+        "entities": {},
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.58,
+            "reason": "Catalog-only 阶段仅弱匹配炉子表达。"
+          }
+        ]
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.8,
+        "need_clarification": false,
+        "entities": {},
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.8,
+            "reason": "Business Facts 将炉子归一为热处理设备。"
+          }
+        ]
+      },
+      "final": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": "heat_device_trace",
+        "confidence": 0.8,
+        "need_clarification": false,
+        "entities": {},
+        "candidates": [
+          {
+            "name": "heat_device_trace",
+            "confidence": 0.8,
+            "reason": "Business Facts 将炉子归一为热处理设备。"
+          }
+        ]
+      },
+      "validation": {
+        "status": "missing_required_entities",
+        "selected_capability": "heat_device_trace",
+        "execution_type": "tool",
+        "executor": "heat_device_trace",
+        "entities": {},
+        "missing_entities": [
+          "record_no"
+        ],
+        "need_clarification": true,
+        "clarification_reason": "缺少必要业务实体：record_no"
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": false,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "unrelated_001",
+      "request_id": "bfd12ae16f424652822d54b9095d0f12",
+      "user_input": "今天天气怎么样",
+      "expected_capability": null,
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {},
+        "candidates": []
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {},
+        "candidates": []
+      },
+      "final": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {},
+        "candidates": []
+      },
+      "validation": {
+        "status": "need_clarification",
+        "selected_capability": null,
+        "execution_type": null,
+        "executor": null,
+        "entities": {},
+        "missing_entities": [],
+        "need_clarification": true,
+        "clarification_reason": "无法从 Catalog 稳定选择唯一 MES Capability。"
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    },
+    {
+      "id": "unrelated_002",
+      "request_id": "4ccc1f7670474374950826b597f138dd",
+      "user_input": "帮我写一首诗",
+      "expected_capability": null,
+      "catalog_only": {
+        "context_level": "catalog_only",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {},
+        "candidates": []
+      },
+      "catalog_with_business_facts": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {},
+        "candidates": []
+      },
+      "final": {
+        "context_level": "catalog_with_business_facts",
+        "selected_capability": null,
+        "confidence": 0.0,
+        "need_clarification": true,
+        "entities": {},
+        "candidates": []
+      },
+      "validation": {
+        "status": "need_clarification",
+        "selected_capability": null,
+        "execution_type": null,
+        "executor": null,
+        "entities": {},
+        "missing_entities": [],
+        "need_clarification": true,
+        "clarification_reason": "无法从 Catalog 稳定选择唯一 MES Capability。"
+      },
+      "top1_pass": true,
+      "top3_pass": true,
+      "catalog_only_top1_pass": true,
+      "business_facts_top1_pass": true
+    }
+  ],
+  "failures": []
+}

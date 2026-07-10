@@ -3,6 +3,7 @@ capabilities:
     catalog_version: v2
     domain: heat_treatment
     description: 查询热处理记录当前阶段、状态、是否完成或结束。
+    business_context: 热处理记录号用于定位一条热处理追溯记录，状态查询回答该记录当前处于创建、进行、完成、转序、结束或取消阶段。
     intent:
       - query_status
       - 热处理当前阶段
@@ -13,6 +14,8 @@ capabilities:
     execution_type: tool
     executor: heat_current_stage
     required_entities:
+      - record_no
+    input_entities:
       - record_no
     input_schema:
       required:
@@ -52,6 +55,13 @@ capabilities:
             - CANCELLED
         status_name:
           type: string
+    api_contract:
+      request:
+        record_no: 热处理记录编号
+      response:
+        found: 是否找到记录
+        status: 热处理状态编码
+        status_name: 热处理状态中文名
     trace_fields:
       - user_input
       - semantic_router_result
@@ -85,6 +95,7 @@ capabilities:
     catalog_version: v2
     domain: heat_treatment
     description: 统计本月热处理完成批次数，属于分析型只读查询能力。
+    business_context: 完成批次数用于按时间范围统计热处理完成量，适合回答本月、当月等聚合分析问题。
     intent:
       - analyze_completion_count
       - 统计本月热处理完成数量
@@ -93,6 +104,8 @@ capabilities:
     execution_type: readonly_sql
     executor: text_to_sql
     required_entities:
+      - time_range
+    input_entities:
       - time_range
     input_schema:
       required:
@@ -118,6 +131,14 @@ capabilities:
           type: integer
         validated_sql:
           type: string
+    api_contract:
+      request:
+        question: 用户原始统计问题
+        time_range: 统计时间范围
+      response:
+        rows: 统计结果行
+        row_count: 返回行数
+        validated_sql: 已验证的只读 SQL
     trace_fields:
       - user_input
       - semantic_router_result
@@ -143,4 +164,71 @@ capabilities:
       - 只允许只读统计查询
       - 不负责单个热处理记录状态
       - 不负责跨业务模块自由查询
+    legacy_source: none
+  - name: heat_device_trace
+    catalog_version: v2
+    domain: heat_treatment
+    description: 查询指定热处理追溯记录对应的生产设备。
+    business_context: 热处理追溯编号用于定位热处理过程记录，设备、炉子、哪台炉等表达都指向热处理执行设备。
+    intent:
+      - query_device
+      - 查询热处理设备
+      - 查询热处理炉子
+      - 热处理在哪个设备进行
+    status: planned
+    execution_type: tool
+    executor: heat_device_trace
+    required_entities:
+      - record_no
+    input_entities:
+      - record_no
+    input_schema:
+      required:
+        - record_no
+      properties:
+        record_no:
+          type: string
+          description: 热处理追溯记录编号
+    output_schema:
+      required:
+        - found
+        - record_no
+        - equipment_name
+      properties:
+        found:
+          type: boolean
+        record_no:
+          type: string
+        equipment_name:
+          type: string
+    api_contract:
+      request:
+        record_no: 热处理追溯记录编号
+      response:
+        found: 是否找到记录
+        equipment_name: 热处理执行设备或炉号
+    trace_fields:
+      - user_input
+      - capability_name
+      - execution_type
+      - tool_name
+    data_sources:
+      - type: table
+        name: mes_heat_treatment_record
+        fields:
+          - record_no
+          - equipment_name
+        description: 待绑定真实热处理设备来源字段
+    examples:
+      - TRACE-HTR-B-H-001在哪个设备进行
+      - 这个热处理在哪个炉子完成
+      - TRACE-HTR-B-H-001哪台炉做的
+    example_queries:
+      - TRACE-HTR-B-H-001在哪个设备进行
+      - TRACE-HTR-B-H-001在哪个炉子完成
+      - 这个热处理在哪台炉做的 TRACE-HTR-B-H-001
+    boundaries:
+      - 本轮只验证 Capability Reasoning，不实现 Tool
+      - 不查询状态
+      - 不统计完成数量
     legacy_source: none

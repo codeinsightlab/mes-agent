@@ -1,0 +1,29 @@
+version: 1
+disable_existing_loggers: false
+filters:
+  trace_id:
+    (): app.core.logging.logging_config.TraceIdFilter
+formatters:
+  json:
+    (): app.core.logging.logging_config.JsonLogFormatter
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: json
+    filters:
+      - trace_id
+loggers:
+  agent:
+    handlers:
+      - console
+    level: INFO
+    propagate: false
+  agent.sql:
+    handlers:
+      - console
+    level: INFO
+    propagate: false
+root:
+  handlers:
+    - console
+  level: INFO

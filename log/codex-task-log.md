@@ -4072,3 +4072,206 @@ Added or updated:
 - `docs/capabilities/mvp-evaluation-v1.md`
 - `docs/capabilities/semantic-router-v1.md`
 - `docs/agent-architecture-consolidation-v1.md`
+
+## 2026-07-10 - Agent Logging Observability V1
+
+### Task Goal
+
+Add a standard Python logging layer for observing the complete MES Agent execution path without changing business capabilities.
+
+Target flow:
+
+```text
+User Input -> Semantic Router -> Planner -> Capability Router -> Capability Catalog -> Execution -> Tool / SQL -> Trace / Analytics
+```
+
+### Modified Files
+
+- `backend/app/core/logging/__init__.py`
+- `backend/app/core/logging/logging_config.py`
+- `backend/logging.yaml`
+- `backend/app/core/config.py`
+- `backend/app/main.py`
+- `backend/app/agent/orchestrator/agent_orchestrator.py`
+- `backend/app/agent/text_to_sql/executor.py`
+- `backend/tests/test_agent_logging.py`
+- `docs/agent-logging-observability-v1.md`
+- `log/codex-task-log.md`
+
+### Key Decisions
+
+- Use Python standard `logging`.
+- Use structured JSON logging by default.
+- Use logger namespace `agent.*`.
+- Keep SQL text behind `agent.sql` DEBUG level.
+- Use a context variable to propagate `trace_id` through Agent request logs.
+- Do not modify business Capability definitions, repository business logic, Tool business logic, or SQL query logic.
+
+### Event Coverage
+
+- `agent.request.start`
+- `semantic_router.completed`
+- `planner.completed`
+- `capability.matched`
+- `capability.not_found`
+- `execution.started`
+- `execution.completed`
+- `tool.execute.start`
+- `tool.execute.completed`
+- `tool.execute.failed`
+- `sql.execute`
+- `agent.request.finished`
+
+### Configuration
+
+```text
+AGENT_LOG_LEVEL=INFO
+AGENT_SQL_LOG_LEVEL=INFO
+AGENT_LOG_FORMAT=json
+```
+
+SQL text is emitted only when:
+
+```text
+AGENT_SQL_LOG_LEVEL=DEBUG
+```
+
+### Verification Commands
+
+Initial targeted verification:
+
+```text
+cd backend && .venv/bin/pytest tests/test_agent_logging.py tests/test_agent_orchestrator.py
+```
+
+Result:
+
+```text
+14 passed
+```
+
+Full verification is run after this log update:
+
+```text
+cd backend && .venv/bin/python -m compileall app scripts
+cd backend && .venv/bin/pytest
+cd backend && .venv/bin/python scripts/run_agent_os_v1_tests.py
+cd backend && .venv/bin/python scripts/run_production_acceptance_v1.py
+cd backend && .venv/bin/python scripts/run_agent_mvp_evaluation.py
+cd backend && git diff --check
+```
+
+### Risks Or Issues
+
+- File rotation is not configured yet.
+- Logs are not shipped to an external aggregation system.
+- SQL parameters are captured at Agent step level, not DB-driver bind level.
+- Existing analytics persistence remains separate from log aggregation.
+
+### Documentation
+
+Added:
+
+- `docs/agent-logging-observability-v1.md`
+
+## 2026-07-10 - Capability Reasoning Experiment V1
+
+### Task Goal
+
+Validate whether MES Agent can use user natural language plus Capability Catalog to directly infer the correct MES Capability.
+
+Experiment chain:
+
+```text
+User Input + Capability Catalog
+-> Capability Reasoning
+-> Capability Candidate
+-> Capability Validator
+-> Capability Router
+-> Existing Execution Boundary
+```
+
+### Modified Files
+
+- `backend/app/agent/capability/models.py`
+- `backend/app/agent/capability/router/router.py`
+- `backend/app/agent/capability/definitions/heat-treatment.yaml`
+- `backend/app/agent/capability_reasoning/__init__.py`
+- `backend/app/agent/capability_reasoning/models.py`
+- `backend/app/agent/capability_reasoning/reasoner.py`
+- `backend/app/agent/capability_reasoning/generator.py`
+- `backend/app/agent/capability_reasoning/validator.py`
+- `backend/app/agent/capability_reasoning/audit.py`
+- `backend/app/agent/capability_reasoning/prompt/capability_reasoning.md`
+- `backend/scripts/run_capability_reasoning_experiment.py`
+- `backend/tests/test_capability_reasoning.py`
+- `backend/tests/test_capability_runtime.py`
+- `docs/capabilities/capability-reasoning-experiment-v1.md`
+- `docs/agent-architecture-consolidation-v1.md`
+- `log/codex-task-log.md`
+
+### Key Decisions
+
+- Keep Semantic Router code and production chain.
+- Add Capability Reasoning as an experiment path only.
+- Add structured output protocol that forbids SQL, Repository, database, API call, and Tool call fields.
+- Add Business Facts two-stage mode: `catalog_only` and `catalog_with_business_facts`.
+- Add `heat_device_trace` as a planned Catalog contract only; no Tool implementation.
+- Add audit persistence for each reasoning request.
+
+### Experiment Result
+
+Command:
+
+```text
+cd backend && .venv/bin/python scripts/run_capability_reasoning_experiment.py
+```
+
+Result:
+
+```text
+total=30
+top1_capability_accuracy=1.00
+top3_candidate_coverage=1.00
+catalog_only_top1_accuracy=0.73
+business_facts_top1_accuracy=1.00
+business_facts_lift=0.27
+failed=0
+system_status=PASS
+```
+
+### Verification Commands
+
+```text
+cd backend && .venv/bin/python -m compileall app scripts
+cd backend && .venv/bin/pytest
+cd backend && AGENT_LOG_LEVEL=ERROR .venv/bin/python scripts/run_agent_os_v1_tests.py
+cd backend && AGENT_LOG_LEVEL=ERROR .venv/bin/python scripts/run_production_acceptance_v1.py
+cd backend && AGENT_LOG_LEVEL=ERROR .venv/bin/python scripts/run_agent_mvp_evaluation.py
+cd backend && .venv/bin/python scripts/run_capability_reasoning_experiment.py
+cd backend && git diff --check
+```
+
+Results:
+
+```text
+compileall app scripts: passed
+pytest: 159 passed, 159 warnings
+run_agent_os_v1_tests.py: 15 passed, 0 failed, SYSTEM STATUS = PASS
+run_production_acceptance_v1.py: 32 passed, 0 failed, SYSTEM STATUS = READY
+run_agent_mvp_evaluation.py: 6 passed, 0 failed, SYSTEM STATUS = PASS
+run_capability_reasoning_experiment.py: 30 cases, SYSTEM STATUS = PASS
+git diff --check: passed
+```
+
+### Recommendation
+
+Do not replace Semantic Router yet.
+
+Keep Capability Reasoning as a parallel experiment until real LLM runs on production-like samples confirm stable Top1 and Top3 accuracy.
+
+### Documentation
+
+Added:
+
+- `docs/capabilities/capability-reasoning-experiment-v1.md`

@@ -16,6 +16,7 @@ from app.api.feedback import close_feedback_service, router as feedback_router
 from app.analytics.metrics.snapshot import MetricsSnapshotScheduler, MetricsSnapshotService
 from app.analytics.report.scheduler import DailyReportScheduler
 from app.core.config import get_settings
+from app.core.logging import configure_logging
 from app.domain.persistence.exceptions import PersistenceError
 from app.infrastructure.database.engine import (
     check_database_connection,
@@ -24,8 +25,13 @@ from app.infrastructure.database.engine import (
 
 
 APP_NAME = "MES Agent Backend"
-logger = logging.getLogger(__name__)
 settings = get_settings()
+configure_logging(
+    level=settings.agent_log_level,
+    sql_level=settings.agent_sql_log_level,
+    json_format=settings.agent_log_format == "json",
+)
+logger = logging.getLogger(__name__)
 _report_scheduler: DailyReportScheduler | None = None
 _metrics_snapshot_scheduler: MetricsSnapshotScheduler | None = None
 _metrics_snapshot_engine = None

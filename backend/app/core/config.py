@@ -31,6 +31,9 @@ DEFAULT_AGENT_TEXT_TO_SQL_TIMEOUT_SECONDS = 5
 DEFAULT_ANALYTICS_REPORT_SCHEDULER_ENABLED = False
 DEFAULT_ANALYTICS_METRICS_SNAPSHOT_ENABLED = False
 DEFAULT_ANALYTICS_METRICS_SNAPSHOT_INTERVAL_MINUTES = 30
+DEFAULT_AGENT_LOG_LEVEL = "INFO"
+DEFAULT_AGENT_SQL_LOG_LEVEL = "INFO"
+DEFAULT_AGENT_LOG_FORMAT = "json"
 
 
 def _parse_cors_origins(value: str) -> list[str]:
@@ -71,6 +74,9 @@ class Settings:
     analytics_metrics_snapshot_interval_minutes: int = (
         DEFAULT_ANALYTICS_METRICS_SNAPSHOT_INTERVAL_MINUTES
     )
+    agent_log_level: str = DEFAULT_AGENT_LOG_LEVEL
+    agent_sql_log_level: str = DEFAULT_AGENT_SQL_LOG_LEVEL
+    agent_log_format: str = DEFAULT_AGENT_LOG_FORMAT
     env_file_path: str = str(BACKEND_ENV_PATH)
 
 
@@ -180,4 +186,12 @@ def get_settings() -> Settings:
             DEFAULT_ANALYTICS_METRICS_SNAPSHOT_ENABLED,
         ),
         analytics_metrics_snapshot_interval_minutes=metrics_interval,
+        agent_log_level=os.getenv("AGENT_LOG_LEVEL", DEFAULT_AGENT_LOG_LEVEL).strip().upper(),
+        agent_sql_log_level=os.getenv(
+            "AGENT_SQL_LOG_LEVEL",
+            DEFAULT_AGENT_SQL_LOG_LEVEL,
+        )
+        .strip()
+        .upper(),
+        agent_log_format=os.getenv("AGENT_LOG_FORMAT", DEFAULT_AGENT_LOG_FORMAT).strip().lower(),
     )

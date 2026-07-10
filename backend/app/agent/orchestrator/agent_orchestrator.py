@@ -32,11 +32,18 @@ from app.agent.text_to_sql.models import NormalizedTextToSqlResult
 from app.agent.nodes.text_to_sql import TextToSqlNode
 from app.agent.tools.registry import DEFAULT_TOOL_REGISTRY, ToolRegistry
 from app.analytics.event.collector import AgentEventCollector
+from app.core.logging import log_event, reset_trace_id, set_trace_id
 from app.core.type_defs import JsonObject, JsonValue
 from app.domain.persistence.exceptions import PersistenceError
 
 
 logger = logging.getLogger(__name__)
+agent_logger = logging.getLogger("agent")
+semantic_logger = logging.getLogger("agent.semantic_router")
+planner_logger = logging.getLogger("agent.planner")
+capability_logger = logging.getLogger("agent.capability_router")
+execution_logger = logging.getLogger("agent.execution")
+sql_logger = logging.getLogger("agent.sql")
 
 
 class AgentRunContext(BaseModel):
@@ -84,18 +91,60 @@ class AgentOrchestrator:
 
     def run(self, request: AgentRunInput) -> AgentRunResult:
         trace_id = uuid.uuid4().hex
-        semantic_router_result = self._semantic_router.route(request.message)
-        planner_request = PlannerRequest(
-            user_query=request.message,
-            semantic_router_result=semantic_router_result,
-        )
+        trace_token = set_trace_id(trace_id)
         started_at = time.perf_counter()
         try:
+            log_event(
+                agent_logger,
+                logging.INFO,
+                "agent.request.start",
+                user_input=request.message,
+            )
+            semantic_router_result = self._semantic_router.route(request.message)
+            log_event(
+                semantic_logger,
+                logging.INFO,
+                "semantic_router.completed",
+                domain=semantic_router_result.domain,
+                intent=semantic_router_result.intent,
+                confidence=semantic_router_result.confidence,
+                need_clarification=semantic_router_result.need_clarification,
+            )
+            log_event(
+                semantic_logger,
+                logging.DEBUG,
+                "semantic_router.entities",
+                entities=semantic_router_result.entities,
+            )
+            planner_request = PlannerRequest(
+                user_query=request.message,
+                semantic_router_result=semantic_router_result,
+            )
             loop_result = ExecutionFeedbackLoop(
                 planner=self._planner,
                 execution_layer=self._execution_layer,
             ).run(planner_request)
+            log_event(
+                planner_logger,
+                logging.INFO,
+                "planner.completed",
+                step_count=len(loop_result.initial_plan.steps),
+            )
+            log_event(
+                planner_logger,
+                logging.DEBUG,
+                "planner.plan",
+                plan=_model_json_object(loop_result.initial_plan),
+            )
         except Exception as exc:
+            duration_ms = elapsed_ms(started_at)
+            log_event(
+                agent_logger,
+                logging.ERROR,
+                "agent.request.failed",
+                error=type(exc).__name__,
+                total_duration_ms=duration_ms,
+            )
             result = _error_result(
                 trace_id=trace_id,
                 error_type="execution_error",
@@ -103,20 +152,33 @@ class AgentOrchestrator:
                 recoverable=False,
                 detail=str(exc),
             )
-            self._record_error_trace(request, result, elapsed_ms(started_at))
+            self._record_error_trace(request, result, duration_ms)
+            log_event(
+                agent_logger,
+                logging.INFO,
+                "agent.request.finished",
+                total_duration_ms=duration_ms,
+                success=False,
+            )
+            reset_trace_id(trace_token)
             return result
 
+        duration_ms = elapsed_ms(started_at)
         result = _normalize_loop_result(trace_id, loop_result)
-        logger.info(
-            "Agent run completed trace_id=%s planner_intent=%s final_status=%s replan=%s planner_calls=%s execution_loops=%s",
-            trace_id,
-            loop_result.initial_plan.intent,
-            result.final_result.status,
-            loop_result.attempts > 1,
-            loop_result.attempts,
-            loop_result.attempts,
+        log_event(
+            agent_logger,
+            logging.INFO,
+            "agent.request.finished",
+            total_duration_ms=duration_ms,
+            success=result.final_result.status == "success",
+            final_status=result.final_result.status,
+            planner_intent=loop_result.initial_plan.intent,
+            replanned=loop_result.attempts > 1,
+            planner_calls=loop_result.attempts,
+            execution_loops=loop_result.attempts,
         )
-        self._record_success_trace(request, loop_result, result, elapsed_ms(started_at))
+        self._record_success_trace(request, loop_result, result, duration_ms)
+        reset_trace_id(trace_token)
         return result
 
     def _record_success_trace(
@@ -216,7 +278,12 @@ class PlanExecutionAdapter:
 
     def execute(self, plan: PlannerPlan) -> ExecutionObservation:
         if not plan.steps:
-            logger.info("PlanExecutionAdapter received empty plan intent=%s", plan.intent)
+            log_event(
+                planner_logger,
+                logging.WARNING,
+                "planner.empty_plan",
+                intent=plan.intent,
+            )
             return ExecutionObservation(
                 status="fail",
                 observation=ObservationFacts(
@@ -237,21 +304,32 @@ class PlanExecutionAdapter:
 
         step_results: list[JsonObject] = []
         for step in plan.steps:
-            logger.info(
-                "PlanExecutionAdapter executing step step_id=%s step_type=%s capability_name=%s argument_keys=%s",
-                step.step_id,
-                step.type,
-                step.name,
-                sorted(step.args.keys()),
+            log_event(
+                execution_logger,
+                logging.INFO,
+                "execution.step.started",
+                step_id=step.step_id,
+                step_type=step.type,
+                capability_name=step.name,
+                argument_keys=sorted(step.args.keys()),
             )
             observation = _with_plan_trace_metadata(self._execute_step(plan, step), plan)
-            logger.info(
-                "PlanExecutionAdapter step completed step_id=%s step_type=%s capability_name=%s observation_status=%s missing_fields=%s",
-                step.step_id,
-                step.type,
-                step.name,
-                observation.status,
-                observation.observation.missing_facts,
+            log_event(
+                execution_logger,
+                logging.INFO,
+                "execution.completed",
+                step_id=step.step_id,
+                step_type=step.type,
+                capability_name=observation.trace.capability_name,
+                tool_name=observation.trace.tool_name,
+                execution_type=observation.trace.execution_type,
+                success=observation.status == "success",
+                error_reason=(
+                    observation.observation.failure_type
+                    or observation.trace.error_type
+                    or observation.trace.error_reason
+                ),
+                missing_fields=observation.observation.missing_facts,
             )
             step_results.append(
                 {
@@ -324,6 +402,19 @@ class PlanExecutionAdapter:
     def _execute_tool_step(self, step: PlanStep) -> ExecutionObservation:
         routed_step = self._route_tool_step(step)
         if routed_step.status != "matched":
+            log_event(
+                capability_logger,
+                logging.WARNING,
+                "capability.not_found",
+                capability_name=routed_step.capability,
+                routing_source=(
+                    "semantic_router"
+                    if step.semantic_domain and step.semantic_intent
+                    else "legacy_fallback"
+                ),
+                route_status=routed_step.status,
+                reason=routed_step.reason,
+            )
             missing_fact = (
                 f"{step.semantic_domain}.{step.semantic_intent}"
                 if step.semantic_domain and step.semantic_intent
@@ -351,6 +442,26 @@ class PlanExecutionAdapter:
                     error_type=routed_step.status,
                 ),
             )
+        log_event(
+            capability_logger,
+            logging.INFO,
+            "capability.matched",
+            capability_name=routed_step.capability,
+            routing_source=(
+                "semantic_router"
+                if step.semantic_domain and step.semantic_intent
+                else "legacy_fallback"
+            ),
+            execution_type=routed_step.execution_type,
+            executor=routed_step.executor,
+        )
+        log_event(
+            execution_logger,
+            logging.INFO,
+            "execution.started",
+            execution_type=routed_step.execution_type,
+            capability_name=routed_step.capability,
+        )
         step = step.model_copy(
             update={
                 "name": routed_step.executor,
@@ -437,7 +548,25 @@ class PlanExecutionAdapter:
                 ),
             )
         try:
+            started_at = time.perf_counter()
+            log_event(
+                execution_logger,
+                logging.INFO,
+                "tool.execute.start",
+                tool_name=step.name,
+                capability_name=routed_step.capability,
+            )
             data = self._registry.execute(step.name, step.args)
+            duration_ms = elapsed_ms(started_at)
+            log_event(
+                execution_logger,
+                logging.INFO,
+                "tool.execute.completed",
+                tool_name=step.name,
+                capability_name=routed_step.capability,
+                success=True,
+                duration_ms=duration_ms,
+            )
             tool_trace = _registry_last_trace(self._registry)
             return ExecutionObservation(
                 status="success",
@@ -464,6 +593,15 @@ class PlanExecutionAdapter:
                 ),
             )
         except Exception as exc:
+            log_event(
+                execution_logger,
+                logging.ERROR,
+                "tool.execute.failed",
+                tool_name=step.name,
+                capability_name=routed_step.capability,
+                success=False,
+                error=type(exc).__name__,
+            )
             failure_type = "tool_miss"
             missing_facts = [step.name]
             if "required" in str(exc).lower() or "missing" in str(exc).lower():
@@ -501,6 +639,19 @@ class PlanExecutionAdapter:
     def _execute_sql_step(self, plan: PlannerPlan, step: PlanStep) -> ExecutionObservation:
         routed_step = self._route_sql_step(step)
         if routed_step.status != "matched":
+            log_event(
+                capability_logger,
+                logging.WARNING,
+                "capability.not_found",
+                capability_name=routed_step.capability,
+                routing_source=(
+                    "semantic_router"
+                    if step.semantic_domain and step.semantic_intent
+                    else "legacy_fallback"
+                ),
+                route_status=routed_step.status,
+                reason=routed_step.reason,
+            )
             missing_fact = (
                 f"{step.semantic_domain}.{step.semantic_intent}"
                 if step.semantic_domain and step.semantic_intent
@@ -529,6 +680,26 @@ class PlanExecutionAdapter:
                     error_reason=routed_step.reason,
                 ),
             )
+        log_event(
+            capability_logger,
+            logging.INFO,
+            "capability.matched",
+            capability_name=routed_step.capability,
+            routing_source=(
+                "semantic_router"
+                if step.semantic_domain and step.semantic_intent
+                else "legacy_fallback"
+            ),
+            execution_type=routed_step.execution_type,
+            executor=routed_step.executor,
+        )
+        log_event(
+            execution_logger,
+            logging.INFO,
+            "execution.started",
+            execution_type=routed_step.execution_type,
+            capability_name=routed_step.capability,
+        )
         question = step.args.get("question")
         state: AgentState = {
             "user_query": question if isinstance(question, str) else plan.goal,
@@ -537,9 +708,21 @@ class PlanExecutionAdapter:
             "prompt_version": "orchestrator-v1",
             "tool_version": "orchestrator-v1",
         }
+        started_at = time.perf_counter()
         result_state = self._text_to_sql_node(state)
         result = result_state.get("tool_result") or {}
         normalized = NormalizedTextToSqlResult.model_validate(result)
+        duration_ms = normalized.duration_ms or elapsed_ms(started_at)
+        if sql_logger.isEnabledFor(logging.DEBUG):
+            log_event(
+                sql_logger,
+                logging.DEBUG,
+                "sql.execute",
+                sql=normalized.validated_sql or normalized.generated_sql,
+                parameters={key: value for key, value in step.args.items() if key != "question"},
+                duration_ms=duration_ms,
+                success=normalized.status == "success",
+            )
         if normalized.status == "success":
             return ExecutionObservation(
                 status="success",

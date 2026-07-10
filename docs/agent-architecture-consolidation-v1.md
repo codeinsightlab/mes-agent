@@ -666,3 +666,70 @@ Detailed record:
 - `docs/capabilities/mvp-evaluation-v1.md`
 - `backend/results/agent_mvp_evaluation_report.json`
 - `backend/results/agent_mvp_evaluation_report.md`
+
+## 17. Capability Reasoning Experiment V1
+
+Date: 2026-07-10
+
+An experimental capability reasoning layer was added as a parallel validation path.
+
+Experiment chain:
+
+```text
+User Input
++ Capability Catalog
+-> Capability Reasoning
+-> Capability Candidate
+-> Capability Validator
+-> Capability Router selected-name validation
+-> existing Execution boundary
+```
+
+This does not replace the current production chain:
+
+```text
+User Input
+-> Semantic Router
+-> Planner
+-> Capability Router
+-> Capability Catalog
+-> Execution
+```
+
+New module:
+
+- `backend/app/agent/capability_reasoning/`
+
+Catalog enrichment:
+
+- `business_context`
+- `input_entities`
+- `api_contract`
+
+New planned contract:
+
+- `heat_device_trace`
+
+Experiment result:
+
+```text
+total=30
+top1_capability_accuracy=1.00
+top3_candidate_coverage=1.00
+catalog_only_top1_accuracy=0.73
+business_facts_top1_accuracy=1.00
+business_facts_lift=0.27
+system_status=PASS
+```
+
+Recommendation:
+
+- Do not replace Semantic Router yet.
+- Keep Capability Reasoning as a parallel experiment until real LLM runs on production-like samples confirm stability.
+
+Detailed record:
+
+- `docs/capabilities/capability-reasoning-experiment-v1.md`
+- `backend/results/capability_reasoning_experiment_report.json`
+- `backend/results/capability_reasoning_experiment_report.md`
+- `backend/results/capability_reasoning_audit.sqlite`
