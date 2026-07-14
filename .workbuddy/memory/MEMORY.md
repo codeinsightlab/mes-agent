@@ -5,19 +5,30 @@
 ### Tech Stack
 - Frontend: Vue 3 + Vite (single `App.vue`, no router, no state management)
 - Backend: Python + FastAPI (layered: api → application → domain → infrastructure)
-- Agent: LangGraph + LangChain + DeepSeek LLM
+- Agent: **V2**: Pure Python (MesAgent + AgentRouter + Capability Catalog YAML); **V1 archived**: LangGraph StateGraph
+- LLM: DeepSeek via httpx (direct), langchain_openai ChatOpenAI for Text-to-SQL
 - Database: MySQL (two databases: `mes_agent` metadata + `j2eedb` MES readonly)
 - No Docker, no CI/CD, no ESLint/Ruff
 
-### Architecture Notes
-- Two Agent paths exist: `LangGraph StateGraph` (legacy `graph.py`) and `AgentOrchestrator` (current `/api/agent/run`)
-- Planner uses hardcoded keyword matching, NOT LLM (despite `LangChainToolMatcher` existing)
-- 3 heat treatment Tools: only `heat_current_stage` queries real DB; other 2 return mock data
-- Text-to-SQL has strong safety: Schema whitelist → sqlglot validator → readonly executor with LIMIT enforcement
+### Architecture (as of 2026-07-10, V2)
+- **V2 Production Chain**: `POST /api/agent/run` → `MesAgent` → `AgentRouter`(fixed) → `HeatTreatmentAgent` → `CapabilityReasoner`(rule-based) → `CapabilityRuntime` → `ExecutionEngine`
+- **Capability Catalog**: YAML-driven (`definitions/*.yaml`), loaded by `CapabilityLoader`, validated by `CapabilityValidator`
+- **Status gating**: `enabled`/`planned`/`blocked` — planned capabilities are selectable but not executable
+- **Runtime abstractions**: `LlmRuntime`, `TraceRuntime`, `AuditRuntime`, `CapabilityRuntime` — all Protocol-based DI
+- **V1 code archived**: `agent/archive/v1/` (Orchestrator, Planner, Graph, nodes) — not imported by V2
+- **V2 core is ~350 lines** (vs V1's 1336-line orchestrator)
+- **17-stage documented evolution** in `docs/agent-architecture-consolidation-v1.md`
 
-### Known Issues (as of 2026-07-09)
-- `.env` contains real production credentials (needs immediate rotation)
+### Known Issues (as of 2026-07-10)
+- `.env` contains real production credentials (needs rotation)
 - Admin APIs have no authentication
-- `agent_orchestrator.py` is 876 lines (needs splitting)
-- `App.vue` is 838 lines (needs component extraction)
-- Engine creation is duplicated in `executor.py` and `heat_treatment_repository.py`
+- Dual-track Capability definitions: YAML + Python `CapabilitySpec` coexist
+- `CapabilityReasoner` is rule-based keyword matching (LLM `CapabilityReasoningGenerator` exists but not enabled)
+- `TextToSqlNode` still uses `AgentState` TypedDict (LangGraph legacy)
+- Executor registration scattered in `api/agent.py` assembly layer
+- V2 has only 6 test cases vs V1 archive's 122+
+
+### V2 Architecture Score (experiment/evaluation perspective)
+- 8.5/10 overall
+- Strongest: evolution process management (9.5), architecture design quality (9)
+- Weakest: architecture consistency (7) due to V1 residuals
