@@ -1,9 +1,7 @@
 from app.agent.capability.catalog.registry import CapabilityRuntimeRegistry
 from app.agent.capability.catalog.router import CapabilityRouter
-from app.agent.reasoning.capability_reasoning.models import (
-    CapabilityReasoningResult,
-    CapabilityValidationResult,
-)
+
+from .models import CapabilityReasoningResult, CapabilityValidationResult
 
 
 class CapabilityReasoningValidator:
@@ -12,19 +10,18 @@ class CapabilityReasoningValidator:
         self._router = CapabilityRouter(registry)
 
     def validate(self, result: CapabilityReasoningResult) -> CapabilityValidationResult:
-        selected_name = result.selected_capability_name
-        if not selected_name:
+        if result.need_clarification or not result.selected_capability:
             return CapabilityValidationResult(
                 status="need_clarification",
                 entities=result.entities,
                 need_clarification=True,
                 clarification_reason=result.clarification_reason,
             )
-        capability = self._registry.get(selected_name)
+        capability = self._registry.get(result.selected_capability)
         if capability is None:
             return CapabilityValidationResult(
                 status="capability_not_found",
-                selected_capability=selected_name,
+                selected_capability=result.selected_capability,
                 entities=result.entities,
                 need_clarification=True,
                 clarification_reason="模型选择了 Catalog 中不存在的能力。",
@@ -54,14 +51,6 @@ class CapabilityReasoningValidator:
                 clarification_reason=(
                     f"Capability '{capability.name}' 当前状态为 {capability.status}，不能执行。"
                 ),
-            )
-        if routed.status == "capability_not_found":
-            return CapabilityValidationResult(
-                status="capability_not_found",
-                selected_capability=capability.name,
-                entities=result.entities,
-                need_clarification=True,
-                clarification_reason=routed.reason,
             )
         return CapabilityValidationResult(
             status="matched",

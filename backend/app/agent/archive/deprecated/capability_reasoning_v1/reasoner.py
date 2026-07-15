@@ -1,7 +1,7 @@
 import re
 
 from app.agent.capability.catalog.registry import CapabilityRuntimeRegistry
-from app.agent.reasoning.capability_reasoning.models import (
+from .models import (
     BusinessFacts,
     CapabilityCandidate,
     CapabilityReasoningResult,

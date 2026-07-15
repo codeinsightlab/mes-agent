@@ -3,6 +3,13 @@ capabilities:
     catalog_version: v2
     domain: heat_treatment
     description: 查询热处理记录当前阶段、状态、是否完成或结束。
+    business_goal: 查询一条热处理生产过程记录的当前进度。
+    when_to_use:
+      - 用户询问热处理当前状态或阶段
+      - 用户询问热处理是否完成、结束或仍在进行
+      - 用户询问热处理做到哪一步或是否已经转序
+      - 不用于回答为什么没有完成、异常原因、是否有问题或风险判断
+      - 用户只说看看这炉或这个热处理怎么样时应要求澄清，不选择本能力
     business_context: 热处理记录号用于定位一条热处理追溯记录，状态查询回答该记录当前处于创建、进行、完成、转序、结束或取消阶段。
     intent:
       - query_status
@@ -95,6 +102,11 @@ capabilities:
     catalog_version: v2
     domain: heat_treatment
     description: 统计本月热处理完成批次数，属于分析型只读查询能力。
+    business_goal: 统计当前月份已完成的热处理批次数量。
+    when_to_use:
+      - 用户明确询问本月或这个月完成多少批热处理
+      - 用户要求统计本月热处理完成数量
+      - 不用于今天、上月、自定义时间范围、趋势或设备排行
     business_context: 完成批次数用于按时间范围统计热处理完成量，适合回答本月、当月等聚合分析问题。
     intent:
       - analyze_completion_count
@@ -169,6 +181,11 @@ capabilities:
     catalog_version: v2
     domain: heat_treatment
     description: 查询指定热处理追溯记录对应的生产设备。
+    business_goal: 追溯一条热处理记录由哪个设备或炉子处理。
+    when_to_use:
+      - 用户询问指定热处理记录在哪个设备执行
+      - 用户询问指定热处理记录用了哪个炉子或哪台炉
+      - 不用于设备异常、停机原因、产量排行或设备运行状态
     business_context: 热处理追溯编号用于定位热处理过程记录，设备、炉子、哪台炉等表达都指向热处理执行设备。
     intent:
       - query_device

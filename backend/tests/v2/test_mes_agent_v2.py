@@ -14,6 +14,70 @@ class RecordingAuditRuntime:
         self.records.append((request, response))
 
 
+class RecordingReasoningAudit:
+    def __init__(self):
+        self.records = []
+
+    def record(self, audit):
+        self.records.append(audit)
+
+
+class FakeBusinessReasoningModel:
+    def with_structured_output(self, output_type):
+        return self
+
+    def invoke(self, prompt):
+        user_input = prompt.split("用户问题：", 1)[1].split("MES Capability Catalog：", 1)[0].strip()
+        if "什么状态" in user_input:
+            return {
+                "goal": "查询热处理当前状态",
+                "domain": "heat_treatment",
+                "selected_capability": {
+                    "name": "heat_current_stage",
+                    "reason": "用户询问当前状态",
+                },
+                "entities": {"record_no": "TRACE-HTR-B-H-001"},
+                "confidence": 0.95,
+                "need_clarification": False,
+                "clarification_reason": None,
+            }
+        if "炉子" in user_input:
+            return {
+                "goal": "查询热处理执行设备",
+                "domain": "heat_treatment",
+                "selected_capability": {
+                    "name": "heat_device_trace",
+                    "reason": "用户询问指定记录使用的炉子",
+                },
+                "entities": {"record_no": "TRACE-HTR-B-H-001"},
+                "confidence": 0.94,
+                "need_clarification": False,
+                "clarification_reason": None,
+            }
+        if "完成多少批" in user_input:
+            return {
+                "goal": "统计本月热处理完成批次",
+                "domain": "heat_treatment",
+                "selected_capability": {
+                    "name": "heat_completion_count_monthly",
+                    "reason": "用户明确询问本月完成批次",
+                },
+                "entities": {"time_range": "current_month"},
+                "confidence": 0.96,
+                "need_clarification": False,
+                "clarification_reason": None,
+            }
+        return {
+            "goal": "无法确定",
+            "domain": "heat_treatment",
+            "selected_capability": None,
+            "entities": {},
+            "confidence": 0.2,
+            "need_clarification": True,
+            "clarification_reason": "用户未说明需要查询的业务信息",
+        }
+
+
 def build_mes_agent():
     registry = CapabilityLoader().load()
     trace_runtime = TraceRuntime()
@@ -31,17 +95,27 @@ def build_mes_agent():
         registry,
         ExecutionEngine({"heat_current_stage": current_stage, "text_to_sql": monthly_count}),
     )
+    reasoning_audit = RecordingReasoningAudit()
     domain_agent = HeatTreatmentAgent(
-        CapabilityReasoner(registry, LlmRuntime()),
+        CapabilityReasoner(
+            registry,
+            LlmRuntime(FakeBusinessReasoningModel()),
+            reasoning_audit,
+        ),
         runtime,
         trace_runtime,
     )
     audit = RecordingAuditRuntime()
-    return MesAgent(AgentRouter(domain_agent), trace_runtime, audit), executions, audit
+    return (
+        MesAgent(AgentRouter(domain_agent), trace_runtime, audit),
+        executions,
+        audit,
+        reasoning_audit,
+    )
 
 
 def test_heat_status_runs_full_v2_chain():
-    agent, executions, audit = build_mes_agent()
+    agent, executions, audit, reasoning_audit = build_mes_agent()
 
     result = agent.run(AgentRequest(message="TRACE-HTR-B-H-001什么状态"))
 
@@ -53,10 +127,13 @@ def test_heat_status_runs_full_v2_chain():
         "request", "agent_router", "reasoning", "capability", "execution", "result"
     ]
     assert len(audit.records) == 1
+    assert reasoning_audit.records[0].prompt_version == "capability-reasoning-v2"
+    assert reasoning_audit.records[0].selected_capability == "heat_current_stage"
+    assert reasoning_audit.records[0].business_fact_version == "heat-treatment-business-facts-v1"
 
 
 def test_heat_device_contract_is_routed_but_not_executed_while_planned():
-    agent, executions, audit = build_mes_agent()
+    agent, executions, audit, _ = build_mes_agent()
 
     result = agent.run(AgentRequest(message="TRACE-HTR-B-H-001在哪个炉子完成"))
 
@@ -68,7 +145,7 @@ def test_heat_device_contract_is_routed_but_not_executed_while_planned():
 
 
 def test_heat_monthly_statistics_runs_shared_execution_runtime():
-    agent, executions, _ = build_mes_agent()
+    agent, executions, _, _ = build_mes_agent()
 
     result = agent.run(AgentRequest(message="本月热处理完成多少批"))
 
@@ -80,7 +157,7 @@ def test_heat_monthly_statistics_runs_shared_execution_runtime():
 
 
 def test_ambiguous_heat_question_requires_clarification_without_execution():
-    agent, executions, audit = build_mes_agent()
+    agent, executions, audit, _ = build_mes_agent()
 
     result = agent.run(AgentRequest(message="这个热处理怎么样"))
 
@@ -92,7 +169,7 @@ def test_ambiguous_heat_question_requires_clarification_without_execution():
 
 
 def test_agent_router_is_fixed_but_accepts_request_for_future_extension():
-    agent, _, _ = build_mes_agent()
+    agent, _, _, _ = build_mes_agent()
     domain_agent = agent._router.route(AgentRequest(message="任意输入"))
 
     assert domain_agent.name == "heat_treatment_agent"

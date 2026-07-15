@@ -58,7 +58,7 @@ def _sql_executor(node: TextToSqlNode):
             "user_query": str(arguments.get("question", "")),
             "conversation_key": None,
             "agent_version": "v2",
-            "prompt_version": "capability-reasoning-v1",
+            "prompt_version": "capability-reasoning-v2",
             "tool_version": "v2",
         }
         state = node(initial_state)

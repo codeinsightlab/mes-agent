@@ -1,0 +1,1587 @@
+{
+  "metadata": {
+    "benchmark_version": "capability-reasoning-v2-benchmark-v1",
+    "prompt_version": "capability-reasoning-v2",
+    "model": "deepseek-chat",
+    "base_url": "https://api.deepseek.com",
+    "question_set": "docs/business-scenarios/heat-treatment/heat-treatment-question-set-v1.yaml",
+    "case_ids": [
+      "HT-Q-001",
+      "HT-Q-002",
+      "HT-Q-003",
+      "HT-Q-004",
+      "HT-Q-005",
+      "HT-Q-006",
+      "HT-Q-007",
+      "HT-Q-008",
+      "HT-Q-009",
+      "HT-Q-010",
+      "HT-Q-011",
+      "HT-Q-012",
+      "HT-Q-013",
+      "HT-Q-014",
+      "HT-Q-017",
+      "HT-Q-019",
+      "HT-Q-025",
+      "HT-Q-026",
+      "HT-Q-027",
+      "HT-Q-033",
+      "HT-Q-034",
+      "HT-Q-035",
+      "HT-Q-038",
+      "HT-Q-039",
+      "HT-Q-041",
+      "HT-Q-042",
+      "HT-Q-043",
+      "HT-Q-044",
+      "HT-Q-046",
+      "HT-Q-047"
+    ]
+  },
+  "summary": {
+    "total": 30,
+    "passed": 30,
+    "pass_rate": 1.0,
+    "selection_accuracy": 1.0,
+    "clarification_accuracy": 1.0,
+    "errors": 0,
+    "actual_capability_distribution": {
+      "heat_current_stage": 8,
+      "heat_device_trace": 6,
+      "none": 13,
+      "heat_completion_count_monthly": 3
+    },
+    "category_stats": {
+      "ambiguous": {
+        "total": 6,
+        "passed": 6
+      },
+      "device_trace": {
+        "total": 6,
+        "passed": 6
+      },
+      "exception_analysis": {
+        "total": 3,
+        "passed": 3
+      },
+      "process_parameters": {
+        "total": 2,
+        "passed": 2
+      },
+      "statistical_analysis": {
+        "total": 5,
+        "passed": 5
+      },
+      "status": {
+        "total": 8,
+        "passed": 8
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "HT-Q-001",
+      "category": "status",
+      "question": "TRACE-HTR-B-H-001现在什么状态？",
+      "expected_capability": "heat_current_stage",
+      "actual_capability": "heat_current_stage",
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1879,
+      "reasoning_output": {
+        "goal": "查询热处理记录当前状态",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_current_stage",
+          "reason": "用户明确询问TRACE-HTR-B-H-001现在什么状态，符合heat_current_stage的查询当前阶段或状态的业务目标。"
+        },
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-001"
+        },
+        "confidence": 0.95,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-002",
+      "category": "status",
+      "question": "HT20260603-007热处理做到哪一步了？",
+      "expected_capability": "heat_current_stage",
+      "actual_capability": "heat_current_stage",
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1557,
+      "reasoning_output": {
+        "goal": "查询热处理记录当前阶段或进度",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_current_stage",
+          "reason": "用户明确询问HT20260603-007热处理做到哪一步了，符合heat_current_stage的when_to_use条件：用户询问热处理做到哪一步或是否已经转序。"
+        },
+        "entities": {
+          "record_no": "HT20260603-007"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-003",
+      "category": "status",
+      "question": "TRACE-HTR-K2-T-FG-001这个热处理完成了吗？",
+      "expected_capability": "heat_current_stage",
+      "actual_capability": "heat_current_stage",
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1639,
+      "reasoning_output": {
+        "goal": "查询热处理记录当前阶段、状态、是否完成或结束",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_current_stage",
+          "reason": "用户明确询问热处理是否完成，符合 heat_current_stage 的 business_goal 和 when_to_use 条件，且用户提供了记录号 TRACE-HTR-K2-T-FG-001。"
+        },
+        "entities": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        },
+        "confidence": 0.95,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-004",
+      "category": "status",
+      "question": "HT20260714-001现在进度怎么样？",
+      "expected_capability": "heat_current_stage",
+      "actual_capability": "heat_current_stage",
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1536,
+      "reasoning_output": {
+        "goal": "查询热处理记录当前进度",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_current_stage",
+          "reason": "用户询问HT20260714-001的进度，对应heat_current_stage能力，用于查询热处理记录当前阶段和状态。"
+        },
+        "entities": {
+          "record_no": "HT20260714-001"
+        },
+        "confidence": 0.95,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-005",
+      "category": "status",
+      "question": "TRACE-HTR-A-002当前情况是什么？",
+      "expected_capability": "heat_current_stage",
+      "actual_capability": "heat_current_stage",
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1741,
+      "reasoning_output": {
+        "goal": "查询热处理记录当前状态或进度",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_current_stage",
+          "reason": "用户询问TRACE-HTR-A-002当前情况，根据业务事实，状态、做到哪一步、进度、是否完成对应heat_current_stage，且用户明确给出了记录编号，符合该能力的使用条件。"
+        },
+        "entities": {
+          "record_no": "TRACE-HTR-A-002"
+        },
+        "confidence": 0.95,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-006",
+      "category": "status",
+      "question": "HT20260714-002还在做吗？",
+      "expected_capability": "heat_current_stage",
+      "actual_capability": "heat_current_stage",
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1514,
+      "reasoning_output": {
+        "goal": "查询热处理记录当前状态或进度",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_current_stage",
+          "reason": "用户询问HT20260714-002是否还在做，即查询该热处理记录当前是否仍在进行中，符合heat_current_stage的business_goal和when_to_use条件。"
+        },
+        "entities": {
+          "record_no": "HT20260714-002"
+        },
+        "confidence": 0.95,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-007",
+      "category": "status",
+      "question": "TRACE-HTR-A-003有没有结束？",
+      "expected_capability": "heat_current_stage",
+      "actual_capability": "heat_current_stage",
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1516,
+      "reasoning_output": {
+        "goal": "查询热处理记录是否结束",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_current_stage",
+          "reason": "用户询问TRACE-HTR-A-003有没有结束，属于查询热处理记录当前状态或是否完成，符合heat_current_stage的when_to_use条件。"
+        },
+        "entities": {
+          "record_no": "TRACE-HTR-A-003"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-008",
+      "category": "status",
+      "question": "HT20260714-003是不是已经转序了？",
+      "expected_capability": "heat_current_stage",
+      "actual_capability": "heat_current_stage",
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1874,
+      "reasoning_output": {
+        "goal": "查询热处理记录是否已经转序",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_current_stage",
+          "reason": "用户询问热处理记录HT20260714-003是否已经转序，即查询该记录的当前阶段或状态，符合heat_current_stage的when_to_use条件中'用户询问热处理是否完成、结束或仍在进行'以及'用户询问热处理做到哪一步或是否已经转序'。"
+        },
+        "entities": {
+          "record_no": "HT20260714-003"
+        },
+        "confidence": 0.95,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-009",
+      "category": "device_trace",
+      "question": "TRACE-HTR-B-H-001在哪个炉子做的？",
+      "expected_capability": "heat_device_trace",
+      "actual_capability": "heat_device_trace",
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1623,
+      "reasoning_output": {
+        "goal": "查询指定热处理追溯记录对应的生产设备",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_device_trace",
+          "reason": "用户明确询问TRACE-HTR-B-H-001在哪个炉子做的，符合heat_device_trace的用途：追溯一条热处理记录由哪个设备或炉子处理。"
+        },
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-001"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-010",
+      "category": "device_trace",
+      "question": "HT20260603-007用了哪台炉？",
+      "expected_capability": "heat_device_trace",
+      "actual_capability": "heat_device_trace",
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1466,
+      "reasoning_output": {
+        "goal": "查询指定热处理记录使用的设备或炉子",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_device_trace",
+          "reason": "用户明确询问HT20260603-007用了哪台炉，属于追溯热处理记录对应的生产设备，与heat_device_trace的when_to_use条件完全匹配。"
+        },
+        "entities": {
+          "record_no": "HT20260603-007"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-011",
+      "category": "device_trace",
+      "question": "TRACE-HTR-K2-T-FG-001是哪个设备处理的？",
+      "expected_capability": "heat_device_trace",
+      "actual_capability": "heat_device_trace",
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1661,
+      "reasoning_output": {
+        "goal": "查询热处理追溯记录对应的生产设备",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_device_trace",
+          "reason": "用户明确询问编号为TRACE-HTR-K2-T-FG-001的记录由哪个设备处理，符合heat_device_trace的用途：追溯一条热处理记录由哪个设备或炉子处理。"
+        },
+        "entities": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-012",
+      "category": "device_trace",
+      "question": "这个批次在哪个炉子完成？TRACE-HTR-A-004",
+      "expected_capability": "heat_device_trace",
+      "actual_capability": "heat_device_trace",
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1667,
+      "reasoning_output": {
+        "goal": "查询指定热处理追溯记录对应的生产设备",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_device_trace",
+          "reason": "用户明确询问批次在哪个炉子完成，并提供了追溯编号TRACE-HTR-A-004，符合heat_device_trace的用途：追溯一条热处理记录由哪个设备或炉子处理。"
+        },
+        "entities": {
+          "record_no": "TRACE-HTR-A-004"
+        },
+        "confidence": 0.95,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-013",
+      "category": "device_trace",
+      "question": "TRACE-HTR-A-005对应的生产设备是什么？",
+      "expected_capability": "heat_device_trace",
+      "actual_capability": "heat_device_trace",
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1580,
+      "reasoning_output": {
+        "goal": "查询指定热处理追溯记录对应的生产设备",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_device_trace",
+          "reason": "用户明确询问TRACE-HTR-A-005对应的生产设备，符合heat_device_trace的用途：追溯一条热处理记录由哪个设备或炉子处理。"
+        },
+        "entities": {
+          "record_no": "TRACE-HTR-A-005"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-014",
+      "category": "device_trace",
+      "question": "HT20260714-004走的是哪条炉线？",
+      "expected_capability": "heat_device_trace",
+      "actual_capability": "heat_device_trace",
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1584,
+      "reasoning_output": {
+        "goal": "查询指定热处理记录对应的生产设备或炉线",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_device_trace",
+          "reason": "用户询问HT20260714-004走的是哪条炉线，明确要求追溯该热处理记录对应的设备或炉子，符合heat_device_trace的业务目标。"
+        },
+        "entities": {
+          "record_no": "HT20260714-004"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-017",
+      "category": "process_parameters",
+      "question": "TRACE-HTR-B-H-001实际热处理温度是多少？",
+      "expected_capability": null,
+      "actual_capability": null,
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1699,
+      "reasoning_output": {
+        "goal": "查询指定热处理追溯记录的实际热处理温度",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-001"
+        },
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户询问的是实际热处理温度，但当前 Capability Catalog 中没有提供查询热处理温度的能力。请确认用户是否想查询该记录的当前阶段/状态（heat_current_stage）或执行设备（heat_device_trace），或者需要新增温度查询能力。"
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-019",
+      "category": "process_parameters",
+      "question": "TRACE-HTR-A-006实际工艺参数是否完整？",
+      "expected_capability": null,
+      "actual_capability": null,
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1936,
+      "reasoning_output": {
+        "goal": "查询热处理记录的实际工艺参数是否完整",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {
+          "record_no": "TRACE-HTR-A-006"
+        },
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户询问实际工艺参数是否完整，但当前Capability Catalog中没有提供查询工艺参数完整性或校验参数是否缺失的能力。请确认用户是否想查询该热处理记录的当前状态、执行设备，或需要其他统计信息。"
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-025",
+      "category": "exception_analysis",
+      "question": "TRACE-HTR-B-H-001为什么还没有完成？",
+      "expected_capability": null,
+      "actual_capability": null,
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 2149,
+      "reasoning_output": {
+        "goal": "查询热处理记录未完成的原因",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-001"
+        },
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户询问'为什么还没有完成'，属于原因追问，但Catalog中无对应能力（heat_current_stage仅返回状态，不解释原因）。请明确您是想查看当前状态/进度，还是需要其他信息？"
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-026",
+      "category": "exception_analysis",
+      "question": "最近有没有热处理异常？",
+      "expected_capability": null,
+      "actual_capability": null,
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1740,
+      "reasoning_output": {
+        "goal": "查询热处理异常情况",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户询问“最近有没有热处理异常”，但当前能力目录中没有专门查询热处理异常、异常原因或异常记录的能力。请明确您是想查询某条热处理记录的当前状态、设备信息，还是统计完成批次？或者请提供更具体的异常描述。"
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-027",
+      "category": "exception_analysis",
+      "question": "本月哪个炉子异常最多？",
+      "expected_capability": null,
+      "actual_capability": null,
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 2046,
+      "reasoning_output": {
+        "goal": "统计本月各炉子异常次数并找出异常最多的炉子",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户询问'本月哪个炉子异常最多'，涉及设备异常排行统计，但当前Capability Catalog中没有任何能力支持按设备统计异常次数或异常排行。请澄清用户具体想查询什么：是查询某条热处理记录的异常状态？还是查询本月热处理完成批次？或是其他统计目标？"
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-033",
+      "category": "statistical_analysis",
+      "question": "本月热处理完成多少批？",
+      "expected_capability": "heat_completion_count_monthly",
+      "actual_capability": "heat_completion_count_monthly",
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1605,
+      "reasoning_output": {
+        "goal": "统计本月热处理完成批次数",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_completion_count_monthly",
+          "reason": "用户明确询问本月热处理完成多少批，该能力专门用于统计本月已完成的热处理批次数量，与用户目标完全匹配。"
+        },
+        "entities": {
+          "time_range": "本月"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-034",
+      "category": "statistical_analysis",
+      "question": "统计本月热处理完成数量。",
+      "expected_capability": "heat_completion_count_monthly",
+      "actual_capability": "heat_completion_count_monthly",
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1364,
+      "reasoning_output": {
+        "goal": "统计本月热处理完成数量",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_completion_count_monthly",
+          "reason": "用户明确要求统计本月热处理完成数量，该能力专门用于统计当前月份已完成的热处理批次数量，与用户目标完全匹配。"
+        },
+        "entities": {
+          "time_range": "本月"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-035",
+      "category": "statistical_analysis",
+      "question": "这个月完成了多少批热处理？",
+      "expected_capability": "heat_completion_count_monthly",
+      "actual_capability": "heat_completion_count_monthly",
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1383,
+      "reasoning_output": {
+        "goal": "统计本月热处理完成批次数",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_completion_count_monthly",
+          "reason": "用户明确询问本月完成多少批热处理，与 heat_completion_count_monthly 的 business_goal 和 when_to_use 完全匹配。"
+        },
+        "entities": {
+          "time_range": "本月"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-038",
+      "category": "statistical_analysis",
+      "question": "本月哪个设备热处理产量最高？",
+      "expected_capability": null,
+      "actual_capability": null,
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 2030,
+      "reasoning_output": {
+        "goal": "查询本月热处理产量最高的设备",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户询问本月哪个设备热处理产量最高，但Catalog中没有按设备统计热处理产量的能力。现有能力中heat_completion_count_monthly只统计本月完成批次数，不按设备排行；heat_device_trace只能追溯单条记录的设备，无法统计产量排行。请澄清用户是否希望统计本月各设备的热处理完成批次数排行，或需要其他统计方式。"
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-039",
+      "category": "statistical_analysis",
+      "question": "最近三个月热处理完成趋势如何？",
+      "expected_capability": null,
+      "actual_capability": null,
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1918,
+      "reasoning_output": {
+        "goal": "查询最近三个月热处理完成趋势",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户询问的是最近三个月的完成趋势，但当前能力目录中只有统计本月完成批次数的能力（heat_completion_count_monthly），没有支持自定义时间范围或趋势分析的能力。请澄清用户具体需要什么维度的趋势（例如按天、按周、按设备等），或者是否仅需要最近三个月的完成总数。"
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-041",
+      "category": "ambiguous",
+      "question": "这个热处理怎么样？",
+      "expected_capability": null,
+      "actual_capability": null,
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1546,
+      "reasoning_output": {
+        "goal": "无法确定",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户问题“这个热处理怎么样？”表述模糊，未明确是要查询当前状态、追溯设备、统计完成数量还是其他目标。请用户明确具体要查看的内容，例如当前进度、使用设备或完成批次统计等。"
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-042",
+      "category": "ambiguous",
+      "question": "最近生产情况如何？",
+      "expected_capability": null,
+      "actual_capability": null,
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1515,
+      "reasoning_output": {
+        "goal": "无法确定",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户问题“最近生产情况如何？”表述模糊，未明确指定是查询热处理状态、设备追溯、完成批次统计还是其他目标。请用户明确要查看的具体内容，例如：某条热处理记录的当前进度、本月完成批次数量、或某条记录对应的设备等。"
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-043",
+      "category": "ambiguous",
+      "question": "热处理有没有问题？",
+      "expected_capability": null,
+      "actual_capability": null,
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1744,
+      "reasoning_output": {
+        "goal": "无法确定",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户问题“热处理有没有问题”表述模糊，未明确是查询当前状态、设备追溯、统计完成数量还是其他目标。请用户明确具体要查什么，例如：查询某条热处理记录的状态、查看执行设备、统计本月完成批次数，或描述具体问题。"
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-044",
+      "category": "ambiguous",
+      "question": "帮我看一下这炉。",
+      "expected_capability": null,
+      "actual_capability": null,
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1334,
+      "reasoning_output": {
+        "goal": "无法确定",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户只说“帮我看一下这炉”，没有明确是查询当前状态、追溯设备还是统计完成数量，需要澄清具体要查看什么信息。"
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-046",
+      "category": "ambiguous",
+      "question": "炉子情况怎么样？",
+      "expected_capability": null,
+      "actual_capability": null,
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1675,
+      "reasoning_output": {
+        "goal": "无法确定",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户问题“炉子情况怎么样”表述模糊，未明确是查询热处理当前状态、设备追溯还是统计完成数量。请用户明确具体要查看的内容，例如：指定热处理记录的状态、该炉子对应的设备信息，或本月完成批次统计等。"
+      },
+      "error": null
+    },
+    {
+      "id": "HT-Q-047",
+      "category": "ambiguous",
+      "question": "最近做得好不好？",
+      "expected_capability": null,
+      "actual_capability": null,
+      "selection_ok": true,
+      "clarification_ok": true,
+      "passed": true,
+      "duration_ms": 1495,
+      "reasoning_output": {
+        "goal": "无法确定",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户问题“最近做得好不好”表述模糊，未明确是查询热处理状态、统计完成批次、追溯设备还是其他目标。请用户明确具体要查看什么内容，例如：某条热处理记录的当前进度、本月完成批次数、或指定记录对应的设备。"
+      },
+      "error": null
+    }
+  ],
+  "reasoning_audit": [
+    {
+      "user_input": "TRACE-HTR-B-H-001现在什么状态？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询热处理记录当前状态",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_current_stage",
+          "reason": "用户明确询问TRACE-HTR-B-H-001现在什么状态，符合heat_current_stage的查询当前阶段或状态的业务目标。"
+        },
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-001"
+        },
+        "confidence": 0.95,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "selected_capability": "heat_current_stage",
+      "confidence": 0.95,
+      "need_clarification": false,
+      "parse_error": null
+    },
+    {
+      "user_input": "HT20260603-007热处理做到哪一步了？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询热处理记录当前阶段或进度",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_current_stage",
+          "reason": "用户明确询问HT20260603-007热处理做到哪一步了，符合heat_current_stage的when_to_use条件：用户询问热处理做到哪一步或是否已经转序。"
+        },
+        "entities": {
+          "record_no": "HT20260603-007"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "selected_capability": "heat_current_stage",
+      "confidence": 1.0,
+      "need_clarification": false,
+      "parse_error": null
+    },
+    {
+      "user_input": "TRACE-HTR-K2-T-FG-001这个热处理完成了吗？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询热处理记录当前阶段、状态、是否完成或结束",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_current_stage",
+          "reason": "用户明确询问热处理是否完成，符合 heat_current_stage 的 business_goal 和 when_to_use 条件，且用户提供了记录号 TRACE-HTR-K2-T-FG-001。"
+        },
+        "entities": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        },
+        "confidence": 0.95,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "selected_capability": "heat_current_stage",
+      "confidence": 0.95,
+      "need_clarification": false,
+      "parse_error": null
+    },
+    {
+      "user_input": "HT20260714-001现在进度怎么样？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询热处理记录当前进度",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_current_stage",
+          "reason": "用户询问HT20260714-001的进度，对应heat_current_stage能力，用于查询热处理记录当前阶段和状态。"
+        },
+        "entities": {
+          "record_no": "HT20260714-001"
+        },
+        "confidence": 0.95,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "selected_capability": "heat_current_stage",
+      "confidence": 0.95,
+      "need_clarification": false,
+      "parse_error": null
+    },
+    {
+      "user_input": "TRACE-HTR-A-002当前情况是什么？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询热处理记录当前状态或进度",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_current_stage",
+          "reason": "用户询问TRACE-HTR-A-002当前情况，根据业务事实，状态、做到哪一步、进度、是否完成对应heat_current_stage，且用户明确给出了记录编号，符合该能力的使用条件。"
+        },
+        "entities": {
+          "record_no": "TRACE-HTR-A-002"
+        },
+        "confidence": 0.95,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "selected_capability": "heat_current_stage",
+      "confidence": 0.95,
+      "need_clarification": false,
+      "parse_error": null
+    },
+    {
+      "user_input": "HT20260714-002还在做吗？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询热处理记录当前状态或进度",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_current_stage",
+          "reason": "用户询问HT20260714-002是否还在做，即查询该热处理记录当前是否仍在进行中，符合heat_current_stage的business_goal和when_to_use条件。"
+        },
+        "entities": {
+          "record_no": "HT20260714-002"
+        },
+        "confidence": 0.95,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "selected_capability": "heat_current_stage",
+      "confidence": 0.95,
+      "need_clarification": false,
+      "parse_error": null
+    },
+    {
+      "user_input": "TRACE-HTR-A-003有没有结束？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询热处理记录是否结束",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_current_stage",
+          "reason": "用户询问TRACE-HTR-A-003有没有结束，属于查询热处理记录当前状态或是否完成，符合heat_current_stage的when_to_use条件。"
+        },
+        "entities": {
+          "record_no": "TRACE-HTR-A-003"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "selected_capability": "heat_current_stage",
+      "confidence": 1.0,
+      "need_clarification": false,
+      "parse_error": null
+    },
+    {
+      "user_input": "HT20260714-003是不是已经转序了？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询热处理记录是否已经转序",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_current_stage",
+          "reason": "用户询问热处理记录HT20260714-003是否已经转序，即查询该记录的当前阶段或状态，符合heat_current_stage的when_to_use条件中'用户询问热处理是否完成、结束或仍在进行'以及'用户询问热处理做到哪一步或是否已经转序'。"
+        },
+        "entities": {
+          "record_no": "HT20260714-003"
+        },
+        "confidence": 0.95,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "selected_capability": "heat_current_stage",
+      "confidence": 0.95,
+      "need_clarification": false,
+      "parse_error": null
+    },
+    {
+      "user_input": "TRACE-HTR-B-H-001在哪个炉子做的？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询指定热处理追溯记录对应的生产设备",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_device_trace",
+          "reason": "用户明确询问TRACE-HTR-B-H-001在哪个炉子做的，符合heat_device_trace的用途：追溯一条热处理记录由哪个设备或炉子处理。"
+        },
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-001"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "selected_capability": "heat_device_trace",
+      "confidence": 1.0,
+      "need_clarification": false,
+      "parse_error": null
+    },
+    {
+      "user_input": "HT20260603-007用了哪台炉？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询指定热处理记录使用的设备或炉子",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_device_trace",
+          "reason": "用户明确询问HT20260603-007用了哪台炉，属于追溯热处理记录对应的生产设备，与heat_device_trace的when_to_use条件完全匹配。"
+        },
+        "entities": {
+          "record_no": "HT20260603-007"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "selected_capability": "heat_device_trace",
+      "confidence": 1.0,
+      "need_clarification": false,
+      "parse_error": null
+    },
+    {
+      "user_input": "TRACE-HTR-K2-T-FG-001是哪个设备处理的？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询热处理追溯记录对应的生产设备",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_device_trace",
+          "reason": "用户明确询问编号为TRACE-HTR-K2-T-FG-001的记录由哪个设备处理，符合heat_device_trace的用途：追溯一条热处理记录由哪个设备或炉子处理。"
+        },
+        "entities": {
+          "record_no": "TRACE-HTR-K2-T-FG-001"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "selected_capability": "heat_device_trace",
+      "confidence": 1.0,
+      "need_clarification": false,
+      "parse_error": null
+    },
+    {
+      "user_input": "这个批次在哪个炉子完成？TRACE-HTR-A-004",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询指定热处理追溯记录对应的生产设备",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_device_trace",
+          "reason": "用户明确询问批次在哪个炉子完成，并提供了追溯编号TRACE-HTR-A-004，符合heat_device_trace的用途：追溯一条热处理记录由哪个设备或炉子处理。"
+        },
+        "entities": {
+          "record_no": "TRACE-HTR-A-004"
+        },
+        "confidence": 0.95,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "selected_capability": "heat_device_trace",
+      "confidence": 0.95,
+      "need_clarification": false,
+      "parse_error": null
+    },
+    {
+      "user_input": "TRACE-HTR-A-005对应的生产设备是什么？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询指定热处理追溯记录对应的生产设备",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_device_trace",
+          "reason": "用户明确询问TRACE-HTR-A-005对应的生产设备，符合heat_device_trace的用途：追溯一条热处理记录由哪个设备或炉子处理。"
+        },
+        "entities": {
+          "record_no": "TRACE-HTR-A-005"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "selected_capability": "heat_device_trace",
+      "confidence": 1.0,
+      "need_clarification": false,
+      "parse_error": null
+    },
+    {
+      "user_input": "HT20260714-004走的是哪条炉线？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询指定热处理记录对应的生产设备或炉线",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_device_trace",
+          "reason": "用户询问HT20260714-004走的是哪条炉线，明确要求追溯该热处理记录对应的设备或炉子，符合heat_device_trace的业务目标。"
+        },
+        "entities": {
+          "record_no": "HT20260714-004"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "selected_capability": "heat_device_trace",
+      "confidence": 1.0,
+      "need_clarification": false,
+      "parse_error": null
+    },
+    {
+      "user_input": "TRACE-HTR-B-H-001实际热处理温度是多少？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询指定热处理追溯记录的实际热处理温度",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-001"
+        },
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户询问的是实际热处理温度，但当前 Capability Catalog 中没有提供查询热处理温度的能力。请确认用户是否想查询该记录的当前阶段/状态（heat_current_stage）或执行设备（heat_device_trace），或者需要新增温度查询能力。"
+      },
+      "selected_capability": null,
+      "confidence": 0.0,
+      "need_clarification": true,
+      "parse_error": null
+    },
+    {
+      "user_input": "TRACE-HTR-A-006实际工艺参数是否完整？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询热处理记录的实际工艺参数是否完整",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {
+          "record_no": "TRACE-HTR-A-006"
+        },
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户询问实际工艺参数是否完整，但当前Capability Catalog中没有提供查询工艺参数完整性或校验参数是否缺失的能力。请确认用户是否想查询该热处理记录的当前状态、执行设备，或需要其他统计信息。"
+      },
+      "selected_capability": null,
+      "confidence": 0.0,
+      "need_clarification": true,
+      "parse_error": null
+    },
+    {
+      "user_input": "TRACE-HTR-B-H-001为什么还没有完成？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询热处理记录未完成的原因",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {
+          "record_no": "TRACE-HTR-B-H-001"
+        },
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户询问'为什么还没有完成'，属于原因追问，但Catalog中无对应能力（heat_current_stage仅返回状态，不解释原因）。请明确您是想查看当前状态/进度，还是需要其他信息？"
+      },
+      "selected_capability": null,
+      "confidence": 0.0,
+      "need_clarification": true,
+      "parse_error": null
+    },
+    {
+      "user_input": "最近有没有热处理异常？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询热处理异常情况",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户询问“最近有没有热处理异常”，但当前能力目录中没有专门查询热处理异常、异常原因或异常记录的能力。请明确您是想查询某条热处理记录的当前状态、设备信息，还是统计完成批次？或者请提供更具体的异常描述。"
+      },
+      "selected_capability": null,
+      "confidence": 0.0,
+      "need_clarification": true,
+      "parse_error": null
+    },
+    {
+      "user_input": "本月哪个炉子异常最多？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "统计本月各炉子异常次数并找出异常最多的炉子",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户询问'本月哪个炉子异常最多'，涉及设备异常排行统计，但当前Capability Catalog中没有任何能力支持按设备统计异常次数或异常排行。请澄清用户具体想查询什么：是查询某条热处理记录的异常状态？还是查询本月热处理完成批次？或是其他统计目标？"
+      },
+      "selected_capability": null,
+      "confidence": 0.0,
+      "need_clarification": true,
+      "parse_error": null
+    },
+    {
+      "user_input": "本月热处理完成多少批？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "统计本月热处理完成批次数",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_completion_count_monthly",
+          "reason": "用户明确询问本月热处理完成多少批，该能力专门用于统计本月已完成的热处理批次数量，与用户目标完全匹配。"
+        },
+        "entities": {
+          "time_range": "本月"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "selected_capability": "heat_completion_count_monthly",
+      "confidence": 1.0,
+      "need_clarification": false,
+      "parse_error": null
+    },
+    {
+      "user_input": "统计本月热处理完成数量。",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "统计本月热处理完成数量",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_completion_count_monthly",
+          "reason": "用户明确要求统计本月热处理完成数量，该能力专门用于统计当前月份已完成的热处理批次数量，与用户目标完全匹配。"
+        },
+        "entities": {
+          "time_range": "本月"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "selected_capability": "heat_completion_count_monthly",
+      "confidence": 1.0,
+      "need_clarification": false,
+      "parse_error": null
+    },
+    {
+      "user_input": "这个月完成了多少批热处理？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "统计本月热处理完成批次数",
+        "domain": "heat_treatment",
+        "selected_capability": {
+          "name": "heat_completion_count_monthly",
+          "reason": "用户明确询问本月完成多少批热处理，与 heat_completion_count_monthly 的 business_goal 和 when_to_use 完全匹配。"
+        },
+        "entities": {
+          "time_range": "本月"
+        },
+        "confidence": 1.0,
+        "need_clarification": false,
+        "clarification_reason": null
+      },
+      "selected_capability": "heat_completion_count_monthly",
+      "confidence": 1.0,
+      "need_clarification": false,
+      "parse_error": null
+    },
+    {
+      "user_input": "本月哪个设备热处理产量最高？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询本月热处理产量最高的设备",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户询问本月哪个设备热处理产量最高，但Catalog中没有按设备统计热处理产量的能力。现有能力中heat_completion_count_monthly只统计本月完成批次数，不按设备排行；heat_device_trace只能追溯单条记录的设备，无法统计产量排行。请澄清用户是否希望统计本月各设备的热处理完成批次数排行，或需要其他统计方式。"
+      },
+      "selected_capability": null,
+      "confidence": 0.0,
+      "need_clarification": true,
+      "parse_error": null
+    },
+    {
+      "user_input": "最近三个月热处理完成趋势如何？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "查询最近三个月热处理完成趋势",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户询问的是最近三个月的完成趋势，但当前能力目录中只有统计本月完成批次数的能力（heat_completion_count_monthly），没有支持自定义时间范围或趋势分析的能力。请澄清用户具体需要什么维度的趋势（例如按天、按周、按设备等），或者是否仅需要最近三个月的完成总数。"
+      },
+      "selected_capability": null,
+      "confidence": 0.0,
+      "need_clarification": true,
+      "parse_error": null
+    },
+    {
+      "user_input": "这个热处理怎么样？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "无法确定",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户问题“这个热处理怎么样？”表述模糊，未明确是要查询当前状态、追溯设备、统计完成数量还是其他目标。请用户明确具体要查看的内容，例如当前进度、使用设备或完成批次统计等。"
+      },
+      "selected_capability": null,
+      "confidence": 0.0,
+      "need_clarification": true,
+      "parse_error": null
+    },
+    {
+      "user_input": "最近生产情况如何？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "无法确定",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户问题“最近生产情况如何？”表述模糊，未明确指定是查询热处理状态、设备追溯、完成批次统计还是其他目标。请用户明确要查看的具体内容，例如：某条热处理记录的当前进度、本月完成批次数量、或某条记录对应的设备等。"
+      },
+      "selected_capability": null,
+      "confidence": 0.0,
+      "need_clarification": true,
+      "parse_error": null
+    },
+    {
+      "user_input": "热处理有没有问题？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "无法确定",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户问题“热处理有没有问题”表述模糊，未明确是查询当前状态、设备追溯、统计完成数量还是其他目标。请用户明确具体要查什么，例如：查询某条热处理记录的状态、查看执行设备、统计本月完成批次数，或描述具体问题。"
+      },
+      "selected_capability": null,
+      "confidence": 0.0,
+      "need_clarification": true,
+      "parse_error": null
+    },
+    {
+      "user_input": "帮我看一下这炉。",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "无法确定",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户只说“帮我看一下这炉”，没有明确是查询当前状态、追溯设备还是统计完成数量，需要澄清具体要查看什么信息。"
+      },
+      "selected_capability": null,
+      "confidence": 0.0,
+      "need_clarification": true,
+      "parse_error": null
+    },
+    {
+      "user_input": "炉子情况怎么样？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "无法确定",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户问题“炉子情况怎么样”表述模糊，未明确是查询热处理当前状态、设备追溯还是统计完成数量。请用户明确具体要查看的内容，例如：指定热处理记录的状态、该炉子对应的设备信息，或本月完成批次统计等。"
+      },
+      "selected_capability": null,
+      "confidence": 0.0,
+      "need_clarification": true,
+      "parse_error": null
+    },
+    {
+      "user_input": "最近做得好不好？",
+      "prompt_version": "capability-reasoning-v2",
+      "available_capabilities": [
+        "heat_current_stage",
+        "heat_completion_count_monthly",
+        "heat_device_trace"
+      ],
+      "business_fact_version": "heat-treatment-business-facts-v1",
+      "llm_output": {
+        "goal": "无法确定",
+        "domain": "heat_treatment",
+        "selected_capability": null,
+        "entities": {},
+        "confidence": 0.0,
+        "need_clarification": true,
+        "clarification_reason": "用户问题“最近做得好不好”表述模糊，未明确是查询热处理状态、统计完成批次、追溯设备还是其他目标。请用户明确具体要查看什么内容，例如：某条热处理记录的当前进度、本月完成批次数、或指定记录对应的设备。"
+      },
+      "selected_capability": null,
+      "confidence": 0.0,
+      "need_clarification": true,
+      "parse_error": null
+    }
+  ]
+}

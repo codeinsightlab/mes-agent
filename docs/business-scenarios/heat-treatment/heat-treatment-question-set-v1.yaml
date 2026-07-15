@@ -1,0 +1,402 @@
+version: v1
+domain: heat_treatment
+evaluation_purpose: 基于当前 Business Facts、Capability Catalog 和 Capability Reasoning 的业务问题覆盖评估
+questions:
+  - id: HT-Q-001
+    role: production_operator
+    category: status
+    question: TRACE-HTR-B-H-001现在什么状态？
+    expected_capability: heat_current_stage
+    expected_behavior: execute
+    notes: 标准状态查询，包含记录号。
+  - id: HT-Q-002
+    role: production_operator
+    category: status
+    question: HT20260603-007热处理做到哪一步了？
+    expected_capability: heat_current_stage
+    expected_behavior: execute
+    notes: 标准阶段查询。
+  - id: HT-Q-003
+    role: production_manager
+    category: status
+    question: TRACE-HTR-K2-T-FG-001这个热处理完成了吗？
+    expected_capability: heat_current_stage
+    expected_behavior: execute
+    notes: 标准完成状态查询。
+  - id: HT-Q-004
+    role: production_operator
+    category: status
+    question: HT20260714-001现在进度怎么样？
+    expected_capability: heat_current_stage
+    expected_behavior: execute
+    notes: Business Fact 应将进度归一为当前状态。
+  - id: HT-Q-005
+    role: quality_engineer
+    category: status
+    question: TRACE-HTR-A-002当前情况是什么？
+    expected_capability: heat_current_stage
+    expected_behavior: execute
+    notes: 当前情况是状态类现场表达。
+  - id: HT-Q-006
+    role: production_operator
+    category: status
+    question: HT20260714-002还在做吗？
+    expected_capability: heat_current_stage
+    expected_behavior: execute
+    notes: 口语化状态表达，用于暴露 Business Fact 缺口。
+  - id: HT-Q-007
+    role: production_manager
+    category: status
+    question: TRACE-HTR-A-003有没有结束？
+    expected_capability: heat_current_stage
+    expected_behavior: execute
+    notes: 结束语义属于当前阶段查询。
+  - id: HT-Q-008
+    role: production_operator
+    category: status
+    question: HT20260714-003是不是已经转序了？
+    expected_capability: heat_current_stage
+    expected_behavior: execute
+    notes: TRANSFERRED 是现有状态值，但当前 Reasoning 未必识别转序表达。
+
+  - id: HT-Q-009
+    role: equipment_engineer
+    category: device_trace
+    question: TRACE-HTR-B-H-001在哪个炉子做的？
+    expected_capability: heat_device_trace
+    expected_behavior: execute
+    notes: 标准炉子追溯问题。
+  - id: HT-Q-010
+    role: production_operator
+    category: device_trace
+    question: HT20260603-007用了哪台炉？
+    expected_capability: heat_device_trace
+    expected_behavior: execute
+    notes: 设备追溯同义表达。
+  - id: HT-Q-011
+    role: quality_engineer
+    category: device_trace
+    question: TRACE-HTR-K2-T-FG-001是哪个设备处理的？
+    expected_capability: heat_device_trace
+    expected_behavior: execute
+    notes: 包含设备关键词。
+  - id: HT-Q-012
+    role: production_manager
+    category: device_trace
+    question: 这个批次在哪个炉子完成？TRACE-HTR-A-004
+    expected_capability: heat_device_trace
+    expected_behavior: execute
+    notes: 炉子与完成组合仍应归入设备追溯。
+  - id: HT-Q-013
+    role: equipment_engineer
+    category: device_trace
+    question: TRACE-HTR-A-005对应的生产设备是什么？
+    expected_capability: heat_device_trace
+    expected_behavior: execute
+    notes: 标准生产设备表达。
+  - id: HT-Q-014
+    role: production_operator
+    category: device_trace
+    question: HT20260714-004走的是哪条炉线？
+    expected_capability: heat_device_trace
+    expected_behavior: execute
+    notes: 炉线是现场设备表达。
+  - id: HT-Q-015
+    role: quality_engineer
+    category: device_trace
+    question: 这个产品经过哪个设备？
+    expected_capability: heat_device_trace
+    expected_behavior: clarify
+    notes: 能识别设备意图，但缺少热处理记录号。
+  - id: HT-Q-016
+    role: production_manager
+    category: device_trace
+    question: 哪个设备处理了这个批次？
+    expected_capability: heat_device_trace
+    expected_behavior: clarify
+    notes: 缺少可定位记录的业务标识。
+
+  - id: HT-Q-017
+    role: process_engineer
+    category: process_parameters
+    question: TRACE-HTR-B-H-001实际热处理温度是多少？
+    expected_capability: heat_process_parameters
+    expected_behavior: gap
+    notes: 需要参数查询能力。
+  - id: HT-Q-018
+    role: process_engineer
+    category: process_parameters
+    question: HT20260603-007保温时间是多少？
+    expected_capability: heat_process_parameters
+    expected_behavior: gap
+    notes: 需要阶段参数查询能力。
+  - id: HT-Q-019
+    role: quality_engineer
+    category: process_parameters
+    question: TRACE-HTR-A-006实际工艺参数是否完整？
+    expected_capability: heat_parameter_completeness
+    expected_behavior: gap
+    notes: 需要参数完整性判断能力。
+  - id: HT-Q-020
+    role: process_engineer
+    category: process_parameters
+    question: 这个批次的淬火温度和回火温度分别是多少？
+    expected_capability: heat_process_parameters
+    expected_behavior: clarify
+    notes: 缺少批次或记录标识，同时缺参数能力。
+  - id: HT-Q-021
+    role: quality_engineer
+    category: process_parameters
+    question: TRACE-HTR-A-007有没有改过工艺参数？
+    expected_capability: heat_parameter_change_trace
+    expected_behavior: gap
+    notes: 需要 changed_flag 和 old_value 追溯能力。
+  - id: HT-Q-022
+    role: process_engineer
+    category: process_parameters
+    question: HT20260714-005最后一次参数是谁提交的？
+    expected_capability: heat_parameter_submit_trace
+    expected_behavior: gap
+    notes: 需要参数提交历史能力。
+  - id: HT-Q-023
+    role: production_operator
+    category: process_parameters
+    question: TRACE-HTR-A-008参数照片都传齐了吗？
+    expected_capability: heat_parameter_evidence_completeness
+    expected_behavior: gap
+    notes: 需要参数和照片证据完整性能力。
+  - id: HT-Q-024
+    role: process_engineer
+    category: process_parameters
+    question: 这个产品应该执行哪套热处理参数模板？
+    expected_capability: heat_parameter_template_match
+    expected_behavior: clarify
+    notes: 缺产品和设备条件，也缺模板匹配能力。
+
+  - id: HT-Q-025
+    role: production_manager
+    category: exception_analysis
+    question: TRACE-HTR-B-H-001为什么还没有完成？
+    expected_capability: heat_incomplete_reason_analysis
+    expected_behavior: gap
+    notes: 状态查询不能回答未完成原因。
+  - id: HT-Q-026
+    role: quality_engineer
+    category: exception_analysis
+    question: 最近有没有热处理异常？
+    expected_capability: heat_abnormal_overview
+    expected_behavior: gap
+    notes: 需要异常定义和时间范围。
+  - id: HT-Q-027
+    role: equipment_engineer
+    category: exception_analysis
+    question: 本月哪个炉子异常最多？
+    expected_capability: heat_device_abnormal_ranking
+    expected_behavior: gap
+    notes: 需要设备异常口径和统计执行能力。
+  - id: HT-Q-028
+    role: production_operator
+    category: exception_analysis
+    question: HT20260714-006为什么被作废了？
+    expected_capability: heat_void_reason
+    expected_behavior: gap
+    notes: 需要作废原因查询。
+  - id: HT-Q-029
+    role: quality_engineer
+    category: exception_analysis
+    question: TRACE-HTR-A-009的参数有没有超出工艺范围？
+    expected_capability: heat_parameter_deviation_analysis
+    expected_behavior: gap
+    notes: 需要目标范围与实际值对比规则。
+  - id: HT-Q-030
+    role: equipment_engineer
+    category: exception_analysis
+    question: 一号热处理炉最近为什么总是停？
+    expected_capability: heat_device_downtime_analysis
+    expected_behavior: gap
+    notes: 设备停机不等于热处理记录状态。
+  - id: HT-Q-031
+    role: production_manager
+    category: exception_analysis
+    question: 哪些热处理记录长时间没有结束？
+    expected_capability: heat_overdue_records
+    expected_behavior: gap
+    notes: 需要超时口径和列表能力。
+  - id: HT-Q-032
+    role: process_engineer
+    category: exception_analysis
+    question: 最近参数被修改最多的是哪个工序？
+    expected_capability: heat_parameter_change_statistics
+    expected_behavior: gap
+    notes: 需要参数变更统计能力。
+
+  - id: HT-Q-033
+    role: production_manager
+    category: statistical_analysis
+    question: 本月热处理完成多少批？
+    expected_capability: heat_completion_count_monthly
+    expected_behavior: execute
+    notes: 当前统计能力的标准问题。
+  - id: HT-Q-034
+    role: production_manager
+    category: statistical_analysis
+    question: 统计本月热处理完成数量。
+    expected_capability: heat_completion_count_monthly
+    expected_behavior: execute
+    notes: 当前统计能力的 Catalog 示例。
+  - id: HT-Q-035
+    role: production_manager
+    category: statistical_analysis
+    question: 这个月完成了多少批热处理？
+    expected_capability: heat_completion_count_monthly
+    expected_behavior: execute
+    notes: 本月完成批次的自然表达。
+  - id: HT-Q-036
+    role: production_manager
+    category: statistical_analysis
+    question: 今天完成了多少热处理？
+    expected_capability: heat_completion_count_by_period
+    expected_behavior: gap
+    notes: 当前实体提取只支持本月。
+  - id: HT-Q-037
+    role: production_manager
+    category: statistical_analysis
+    question: 上个月热处理完成数量是多少？
+    expected_capability: heat_completion_count_by_period
+    expected_behavior: gap
+    notes: 缺少非本月时间范围支持。
+  - id: HT-Q-038
+    role: equipment_engineer
+    category: statistical_analysis
+    question: 本月哪个设备热处理产量最高？
+    expected_capability: heat_device_output_ranking
+    expected_behavior: gap
+    notes: 需要按设备聚合统计。
+  - id: HT-Q-039
+    role: production_manager
+    category: statistical_analysis
+    question: 最近三个月热处理完成趋势如何？
+    expected_capability: heat_completion_trend
+    expected_behavior: gap
+    notes: 需要趋势和多月时间范围能力。
+  - id: HT-Q-040
+    role: process_engineer
+    category: statistical_analysis
+    question: 各工艺阶段平均耗时是多少？
+    expected_capability: heat_stage_duration_statistics
+    expected_behavior: gap
+    notes: 需要阶段时间事实和统计能力。
+
+  - id: HT-Q-041
+    role: production_operator
+    category: ambiguous
+    question: 这个热处理怎么样？
+    expected_capability: null
+    expected_behavior: clarify
+    notes: 当前 Business Fact 明确要求澄清。
+  - id: HT-Q-042
+    role: production_manager
+    category: ambiguous
+    question: 最近生产情况如何？
+    expected_capability: null
+    expected_behavior: clarify
+    notes: 缺领域目标、指标和时间范围。
+  - id: HT-Q-043
+    role: quality_engineer
+    category: ambiguous
+    question: 热处理有没有问题？
+    expected_capability: null
+    expected_behavior: clarify
+    notes: 问题口径不明确。
+  - id: HT-Q-044
+    role: production_operator
+    category: ambiguous
+    question: 帮我看一下这炉。
+    expected_capability: null
+    expected_behavior: clarify
+    notes: 缺对象标识和查询目标。
+  - id: HT-Q-045
+    role: process_engineer
+    category: ambiguous
+    question: 参数正常吗？
+    expected_capability: heat_parameter_deviation_analysis
+    expected_behavior: clarify
+    notes: 缺记录、参数范围和判定目标。
+  - id: HT-Q-046
+    role: equipment_engineer
+    category: ambiguous
+    question: 炉子情况怎么样？
+    expected_capability: heat_device_status
+    expected_behavior: clarify
+    notes: 缺设备标识，且设备运行状态不是记录设备追溯。
+  - id: HT-Q-047
+    role: production_manager
+    category: ambiguous
+    question: 最近做得好不好？
+    expected_capability: null
+    expected_behavior: clarify
+    notes: 缺少评价指标和业务对象。
+  - id: HT-Q-048
+    role: quality_engineer
+    category: ambiguous
+    question: 这个批次有风险吗？
+    expected_capability: heat_risk_assessment
+    expected_behavior: clarify
+    notes: 缺批次标识和风险定义。
+
+  - id: HT-Q-049
+    role: production_operator
+    category: missing_conditions
+    question: 查一下热处理状态。
+    expected_capability: heat_current_stage
+    expected_behavior: clarify
+    notes: 能识别状态意图，但缺 record_no。
+  - id: HT-Q-050
+    role: production_operator
+    category: missing_conditions
+    question: 这个热处理完成了吗？
+    expected_capability: heat_current_stage
+    expected_behavior: clarify
+    notes: 能识别完成意图，但缺 record_no。
+  - id: HT-Q-051
+    role: equipment_engineer
+    category: missing_conditions
+    question: 查一下这个热处理在哪个设备。
+    expected_capability: heat_device_trace
+    expected_behavior: clarify
+    notes: 能识别设备意图，但缺 record_no。
+  - id: HT-Q-052
+    role: production_manager
+    category: missing_conditions
+    question: 帮我看看那个订单的热处理进度。
+    expected_capability: heat_current_stage
+    expected_behavior: clarify
+    notes: 有进度意图，但订单不能直接作为 record_no。
+  - id: HT-Q-053
+    role: process_engineer
+    category: missing_conditions
+    question: 查一下保温时间。
+    expected_capability: heat_process_parameters
+    expected_behavior: clarify
+    notes: 缺记录标识，也缺参数能力。
+  - id: HT-Q-054
+    role: production_manager
+    category: missing_conditions
+    question: 统计一下热处理完成数量。
+    expected_capability: heat_completion_count_monthly
+    expected_behavior: clarify
+    notes: 能识别统计目标，但缺时间范围。
+  - id: HT-Q-055
+    role: quality_engineer
+    category: missing_conditions
+    question: 看看这个产品的热处理记录。
+    expected_capability: heat_record_by_product
+    expected_behavior: clarify
+    notes: 缺产品标识和产品到热处理记录的查询能力。
+  - id: HT-Q-056
+    role: production_manager
+    category: missing_conditions
+    question: 查一下昨天没有完成的热处理。
+    expected_capability: heat_incomplete_records_by_period
+    expected_behavior: gap
+    notes: 需要时间范围、未完成口径和记录列表能力。

@@ -4366,3 +4366,151 @@ Results:
 - Historical suite: `156 tests collected`; V1 public API contract remains intentionally module-skipped.
 - Agent package historical-reference grep: no matches.
 - No historical imports in the production API or current V2 packages.
+## 2026-07-14 - Heat Treatment Business Question Coverage Evaluation V1
+
+### Task Goal
+
+Evaluate the current HeatTreatmentAgent, runtime Capability Catalog, Business Facts, and Capability Reasoning through manufacturing-site business questions. This round only creates the question set and coverage findings.
+
+### Modified Files
+
+- Added `docs/business-scenarios/heat-treatment/heat-treatment-question-set-v1.yaml`.
+- Added `docs/business-scenarios/heat-treatment/heat-treatment-coverage-evaluation-v1.md`.
+- Added `scripts/run_heat_question_evaluation.py`.
+- Added `results/heat-treatment-question-evaluation.json`.
+- Added `reports/heat-treatment-knowledge-gap-v1.md`.
+- Updated `log/codex-task-log.md`.
+
+### Key Decisions
+
+- Used existing `docs/capabilities/heat-treatment/` review documents to design realistic questions, but treated only the runtime YAML Catalog as current capability truth.
+- Ran all questions through the current deterministic `CapabilityReasoner.reason_with_business_facts()` and `CapabilityReasoningValidator`.
+- Classified each question once as supported, missing Capability, missing Business Fact, or missing API/Execution.
+- Did not add Business Facts, capabilities, executors, APIs, repositories, or Reasoning rules.
+
+### Evaluation Result
+
+```text
+questions=56
+supported=8 (14.3%)
+need_clarification=12 (21.4%)
+safe_behavior_coverage=20 (35.7%)
+missing_capability=33 (58.9%, including 6 API/Execution gaps)
+missing_fact=3 (5.4%)
+```
+
+Key findings:
+
+- Current direct answer coverage is limited to recognized record-status questions and current-month completion count.
+- Six fully specified device-trace questions are reasoned correctly but blocked because `heat_device_trace` remains planned.
+- `还在做吗`, `有没有结束`, and `是不是已经转序了` fail to select the existing status capability.
+- Process parameters and exception analysis have zero current runtime capability coverage.
+- Four analytical questions route falsely to a capability based on object words such as `炉子` or `设备`.
+
+### Verification
+
+```text
+YAML parse: passed
+question count: 56
+unique IDs: 56
+category distribution: 7 categories x 8
+current Reasoning + Validator evaluation: 56 completed
+```
+
+### Unfinished Items
+
+- No gap was implemented in this round.
+- The prioritized gap list is an input for a later scoped capability decision.
+
+## 2026-07-14 - Documentation Language Policy
+
+### Task Goal
+
+Extend the root `AGENTS.md` with a purpose-based language and persistence policy for future MES Agent documentation.
+
+### Modified Files
+
+- Updated `AGENTS.md` with `Documentation Language Policy`.
+- Updated `log/codex-task-log.md`.
+
+### Key Decisions
+
+- Technical and Architecture documentation is English-preferred; MES Business documentation and Business Scenarios are Chinese-preferred.
+- Code, protocol fields, schemas, and machine-readable identifiers remain English.
+- Capability and Agent knowledge files use English fields with Chinese business descriptions and examples.
+- Prompt language follows the primary input language; Chinese is the default for the current MES manufacturing context.
+- Reusable reviews and research must be appended to an existing same-topic document or created in the classified documentation directory.
+- Existing documents are not rewritten automatically; future substantive additions follow the new policy.
+
+### Existing Documentation Review (Report Only)
+
+- `docs/agent-architecture-v2-review.md` is an Architecture review written mainly in Chinese; this is an obvious legacy mismatch with the new English-preferred Architecture rule.
+- `docs/capabilities/heat-treatment/business-facts.md` expresses MES business facts mainly in English; business meanings and rules should be Chinese under the new policy.
+- `docs/business-scenarios/heat-treatment/heat-treatment-coverage-evaluation-v1.md` is a Business Scenario evaluation written mainly in English; scenario and benchmark narrative should be Chinese.
+- Several documents under `docs/capabilities/`, including `heat-treatment/capability-catalog.md`, use English for business descriptions; future substantive updates should keep technical fields in English and business explanations in Chinese.
+- Many historical Architecture and engineering documents remain directly under `docs/` instead of `docs/architecture/`. This is a directory-classification mismatch for future documents, but no historical files were moved in this task.
+- No root `prompt/` directory currently exists. Existing runtime Prompt files are stored within backend packages; this task does not relocate them.
+
+### Verification
+
+```text
+Markdown structure and required section review
+Targeted scan of docs headings and representative content
+git diff --check
+```
+
+### Unfinished Items
+
+- Existing documentation language and directory mismatches were reported only and were not modified.
+- No business code, runtime Prompt, Capability definition, or historical document was changed.
+## 2026-07-14 - Capability Reasoning V2 LLM Native Business Reasoning
+
+### Task Goal
+
+Replace the production deterministic Capability Reasoning decision with real LLM business understanding based on user input, runtime Capability Catalog, and Heat Treatment Business Facts, without changing execution or MES data access.
+
+### Modified Files
+
+- Enhanced heat-treatment Catalog knowledge with `business_goal` and `when_to_use`.
+- Added `capability_reasoning_v2.md`.
+- Added `LlmCapabilityReasoningAdapter` and structured Reasoning audit.
+- Updated `CapabilityReasoningResult` to the nested V2 selection protocol.
+- Wired the existing `CapabilityReasoner` service to the LLM adapter.
+- Preserved the deterministic V1 scorer/generator/audit under `archive/deprecated/capability_reasoning_v1/`.
+- Added V2 Reasoning tests and a real-LLM Benchmark runner.
+- Added Benchmark JSON, design documentation, and error report.
+
+### Boundaries Preserved
+
+- No MES API, Repository, SQL capability, Text-to-SQL, Execution Engine, Agent Router, RAG, Memory, or multi-Agent change.
+- Unknown model-selected capability names are rejected.
+- Planned capabilities remain non-executable.
+- Execution fields are recursively forbidden by the output protocol.
+
+### Real Benchmark
+
+```text
+model=deepseek-chat
+cases=30
+passed=30
+pass_rate=100.0%
+selection_accuracy=100.0%
+clarification_accuracy=100.0%
+errors=0
+```
+
+Errors observed in the preceding run:
+
+- one strict structured-output violation (`input_entities` added inside selection);
+- one semantic error where an incomplete-reason question selected the status capability.
+
+### Verification
+
+- Current V2 tests: 9 passed.
+- Pyright targeted check: 0 errors.
+- Final real Benchmark result and 30 structured audit records written to JSON.
+- No Capability execution was invoked by the Benchmark.
+
+### Conclusion
+
+LLM-native Capability Selection is feasible for the bounded heat-treatment benchmark but is not yet proven production-ready. Observed runs varied from 80.0% to 100.0%; repeated-run stability remains future evaluation work.

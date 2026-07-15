@@ -23,27 +23,17 @@ class CapabilityCandidate(BaseModel):
         return value
 
 
-class SelectedCapability(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    name: str
-    reason: str
-
-
 class CapabilityReasoningResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     goal: str
-    domain: str = "heat_treatment"
-    selected_capability: SelectedCapability | None = None
+    context_level: ContextLevel
+    candidate_capabilities: list[CapabilityCandidate] = Field(default_factory=list)
+    selected_capability: str | None = None
     entities: JsonObject = Field(default_factory=dict)
     confidence: float = 0
     need_clarification: bool = True
     clarification_reason: str | None = None
-
-    @property
-    def selected_capability_name(self) -> str | None:
-        return self.selected_capability.name if self.selected_capability else None
 
     @field_validator("confidence")
     @classmethod
@@ -58,24 +48,10 @@ class CapabilityReasoningResult(BaseModel):
         if not isinstance(values, dict):
             return values
         forbidden = {"sql", "repository", "database", "api_call", "tool_call"}
-        present = sorted(_find_forbidden_fields(values, forbidden))
+        present = sorted(forbidden.intersection(values))
         if present:
             raise ValueError(f"Capability reasoning must not output execution fields: {present}")
         return values
-
-
-def _find_forbidden_fields(value: object, forbidden: set[str]) -> set[str]:
-    if isinstance(value, dict):
-        found = {str(key) for key in value if str(key) in forbidden}
-        for child in value.values():
-            found.update(_find_forbidden_fields(child, forbidden))
-        return found
-    if isinstance(value, list):
-        found: set[str] = set()
-        for child in value:
-            found.update(_find_forbidden_fields(child, forbidden))
-        return found
-    return set()
 
 
 class BusinessFacts(BaseModel):

@@ -19,7 +19,7 @@ class HeatTreatmentAgent:
     def run(self, request: AgentRequest, request_id: str) -> AgentResponse:
         reasoning = self._reasoner.reason(request.message, HEAT_TREATMENT_BUSINESS_FACTS)
         self._trace_runtime.record(request_id, "reasoning", reasoning.model_dump(mode="json"))
-        selected = reasoning.selected_capability
+        selected = reasoning.selected_capability_name
         if selected not in HEAT_TREATMENT_CAPABILITIES:
             selected = None
         validation = self._validator.validate(reasoning)

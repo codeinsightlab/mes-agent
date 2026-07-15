@@ -5,7 +5,7 @@ from typing import cast
 from langchain_core.language_models.chat_models import BaseChatModel
 
 from app.agent.capability.catalog.registry import CapabilityRuntimeRegistry
-from app.agent.reasoning.capability_reasoning.models import (
+from .models import (
     BusinessFacts,
     CapabilityReasoningResult,
 )

@@ -42,6 +42,8 @@ class CapabilityDefinition(BaseModel):
     name: str
     domain: str
     description: str
+    business_goal: str | None = None
+    when_to_use: list[str] = Field(default_factory=list)
     business_context: str | None = None
     intent: list[str] = Field(default_factory=list)
     status: CapabilityStatus
@@ -67,7 +69,13 @@ class CapabilityDefinition(BaseModel):
             raise ValueError("field must not be empty")
         return stripped
 
-    @field_validator("required_entities", "input_entities", "trace_fields", "example_queries")
+    @field_validator(
+        "required_entities",
+        "input_entities",
+        "trace_fields",
+        "example_queries",
+        "when_to_use",
+    )
     @classmethod
     def normalize_string_list(cls, values: list[str]) -> list[str]:
         normalized: list[str] = []

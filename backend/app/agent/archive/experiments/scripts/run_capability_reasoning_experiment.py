@@ -11,14 +11,16 @@ BACKEND_DIR = Path(__file__).resolve().parents[5]
 sys.path.insert(0, str(BACKEND_DIR))
 
 from app.agent.capability.catalog.loader import CapabilityLoader  # noqa: E402
-from app.agent.reasoning.capability_reasoning.audit import (  # noqa: E402
+from ...deprecated.capability_reasoning_v1.audit import (  # noqa: E402
     CapabilityReasoningAuditRepository,
 )
-from app.agent.reasoning.capability_reasoning.reasoner import (  # noqa: E402
+from ...deprecated.capability_reasoning_v1.reasoner import (  # noqa: E402
     CapabilityReasoner,
     default_heat_treatment_business_facts,
 )
-from app.agent.reasoning.capability_reasoning.validator import CapabilityReasoningValidator  # noqa: E402
+from ...deprecated.capability_reasoning_v1.validator import (  # noqa: E402
+    CapabilityReasoningValidator,
+)
 from app.core.type_defs import JsonObject  # noqa: E402
 
 

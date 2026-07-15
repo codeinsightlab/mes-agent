@@ -3,14 +3,14 @@ from pydantic import ValidationError
 from sqlalchemy import create_engine, text
 
 from app.agent.capability.catalog.loader import CapabilityLoader
-from app.agent.reasoning.capability_reasoning.audit import CapabilityReasoningAuditRepository
-from app.agent.reasoning.capability_reasoning.generator import build_prompt
-from app.agent.reasoning.capability_reasoning.models import CapabilityReasoningResult
-from app.agent.reasoning.capability_reasoning.reasoner import (
+from app.agent.archive.deprecated.capability_reasoning_v1.audit import CapabilityReasoningAuditRepository
+from app.agent.archive.deprecated.capability_reasoning_v1.generator import build_prompt
+from app.agent.archive.deprecated.capability_reasoning_v1.models import CapabilityReasoningResult
+from app.agent.archive.deprecated.capability_reasoning_v1.reasoner import (
     CapabilityReasoner,
     default_heat_treatment_business_facts,
 )
-from app.agent.reasoning.capability_reasoning.validator import CapabilityReasoningValidator
+from app.agent.archive.deprecated.capability_reasoning_v1.validator import CapabilityReasoningValidator
 
 
 def test_capability_reasoning_result_rejects_execution_fields():

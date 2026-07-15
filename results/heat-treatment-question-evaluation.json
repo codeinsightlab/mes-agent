@@ -1,0 +1,523 @@
+{
+  "metadata": {
+    "question_set": "docs/business-scenarios/heat-treatment/heat-treatment-question-set-v1.yaml",
+    "business_facts": "HEAT_TREATMENT_BUSINESS_FACTS",
+    "capability_catalog": "heat-treatment.yaml",
+    "reasoning": "current CapabilityReasoning"
+  },
+  "summary": {
+    "total": 56,
+    "supported": 8,
+    "support_rate": 0.1429,
+    "missing_capability": 33,
+    "missing_fact": 3,
+    "need_clarification": 12,
+    "missing_api_execution_detail": 6
+  },
+  "results": [
+    {
+      "id": "HT-Q-001",
+      "question": "TRACE-HTR-B-H-001现在什么状态？",
+      "result": "当前 Reasoning 与 Validator 可进入预期 Capability 执行链。",
+      "selected_capability": "heat_current_stage",
+      "confidence": 0.93,
+      "status": "supported",
+      "reason": "正确选择 heat_current_stage，置信度 0.93。"
+    },
+    {
+      "id": "HT-Q-002",
+      "question": "HT20260603-007热处理做到哪一步了？",
+      "result": "当前 Reasoning 与 Validator 可进入预期 Capability 执行链。",
+      "selected_capability": "heat_current_stage",
+      "confidence": 0.93,
+      "status": "supported",
+      "reason": "正确选择 heat_current_stage，置信度 0.93。"
+    },
+    {
+      "id": "HT-Q-003",
+      "question": "TRACE-HTR-K2-T-FG-001这个热处理完成了吗？",
+      "result": "当前 Reasoning 与 Validator 可进入预期 Capability 执行链。",
+      "selected_capability": "heat_current_stage",
+      "confidence": 0.93,
+      "status": "supported",
+      "reason": "正确选择 heat_current_stage，置信度 0.93。"
+    },
+    {
+      "id": "HT-Q-004",
+      "question": "HT20260714-001现在进度怎么样？",
+      "result": "当前 Reasoning 与 Validator 可进入预期 Capability 执行链。",
+      "selected_capability": "heat_current_stage",
+      "confidence": 0.87,
+      "status": "supported",
+      "reason": "正确选择 heat_current_stage，置信度 0.87。"
+    },
+    {
+      "id": "HT-Q-005",
+      "question": "TRACE-HTR-A-002当前情况是什么？",
+      "result": "当前 Reasoning 与 Validator 可进入预期 Capability 执行链。",
+      "selected_capability": "heat_current_stage",
+      "confidence": 0.87,
+      "status": "supported",
+      "reason": "正确选择 heat_current_stage，置信度 0.87。"
+    },
+    {
+      "id": "HT-Q-006",
+      "question": "HT20260714-002还在做吗？",
+      "result": "当前 Reasoning 未选择已存在的目标 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_fact",
+      "reason": "期望选择 heat_current_stage，实际选择 none；现有 Business Facts/表达映射不足。"
+    },
+    {
+      "id": "HT-Q-007",
+      "question": "TRACE-HTR-A-003有没有结束？",
+      "result": "当前 Reasoning 未选择已存在的目标 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_fact",
+      "reason": "期望选择 heat_current_stage，实际选择 none；现有 Business Facts/表达映射不足。"
+    },
+    {
+      "id": "HT-Q-008",
+      "question": "HT20260714-003是不是已经转序了？",
+      "result": "当前 Reasoning 未选择已存在的目标 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_fact",
+      "reason": "期望选择 heat_current_stage，实际选择 none；现有 Business Facts/表达映射不足。"
+    },
+    {
+      "id": "HT-Q-009",
+      "question": "TRACE-HTR-B-H-001在哪个炉子做的？",
+      "result": "Reasoning 正确，但当前 Capability 没有可用执行链。",
+      "selected_capability": "heat_device_trace",
+      "confidence": 0.88,
+      "status": "missing_capability",
+      "reason": "API/Execution 缺口：Capability 'heat_device_trace' 当前状态为 planned，不能执行。"
+    },
+    {
+      "id": "HT-Q-010",
+      "question": "HT20260603-007用了哪台炉？",
+      "result": "Reasoning 正确，但当前 Capability 没有可用执行链。",
+      "selected_capability": "heat_device_trace",
+      "confidence": 0.88,
+      "status": "missing_capability",
+      "reason": "API/Execution 缺口：Capability 'heat_device_trace' 当前状态为 planned，不能执行。"
+    },
+    {
+      "id": "HT-Q-011",
+      "question": "TRACE-HTR-K2-T-FG-001是哪个设备处理的？",
+      "result": "Reasoning 正确，但当前 Capability 没有可用执行链。",
+      "selected_capability": "heat_device_trace",
+      "confidence": 0.9,
+      "status": "missing_capability",
+      "reason": "API/Execution 缺口：Capability 'heat_device_trace' 当前状态为 planned，不能执行。"
+    },
+    {
+      "id": "HT-Q-012",
+      "question": "这个批次在哪个炉子完成？TRACE-HTR-A-004",
+      "result": "Reasoning 正确，但当前 Capability 没有可用执行链。",
+      "selected_capability": "heat_device_trace",
+      "confidence": 0.88,
+      "status": "missing_capability",
+      "reason": "API/Execution 缺口：Capability 'heat_device_trace' 当前状态为 planned，不能执行。"
+    },
+    {
+      "id": "HT-Q-013",
+      "question": "TRACE-HTR-A-005对应的生产设备是什么？",
+      "result": "Reasoning 正确，但当前 Capability 没有可用执行链。",
+      "selected_capability": "heat_device_trace",
+      "confidence": 0.9,
+      "status": "missing_capability",
+      "reason": "API/Execution 缺口：Capability 'heat_device_trace' 当前状态为 planned，不能执行。"
+    },
+    {
+      "id": "HT-Q-014",
+      "question": "HT20260714-004走的是哪条炉线？",
+      "result": "Reasoning 正确，但当前 Capability 没有可用执行链。",
+      "selected_capability": "heat_device_trace",
+      "confidence": 0.88,
+      "status": "missing_capability",
+      "reason": "API/Execution 缺口：Capability 'heat_device_trace' 当前状态为 planned，不能执行。"
+    },
+    {
+      "id": "HT-Q-015",
+      "question": "这个产品经过哪个设备？",
+      "result": "已识别业务方向，但缺少执行所需条件。",
+      "selected_capability": "heat_device_trace",
+      "confidence": 0.82,
+      "status": "need_clarification",
+      "reason": "缺少必要业务实体：record_no"
+    },
+    {
+      "id": "HT-Q-016",
+      "question": "哪个设备处理了这个批次？",
+      "result": "已识别业务方向，但缺少执行所需条件。",
+      "selected_capability": "heat_device_trace",
+      "confidence": 0.82,
+      "status": "need_clarification",
+      "reason": "缺少必要业务实体：record_no"
+    },
+    {
+      "id": "HT-Q-017",
+      "question": "TRACE-HTR-B-H-001实际热处理温度是多少？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.62,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_process_parameters 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-018",
+      "question": "HT20260603-007保温时间是多少？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_process_parameters 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-019",
+      "question": "TRACE-HTR-A-006实际工艺参数是否完整？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_parameter_completeness 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-020",
+      "question": "这个批次的淬火温度和回火温度分别是多少？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_process_parameters 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-021",
+      "question": "TRACE-HTR-A-007有没有改过工艺参数？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_parameter_change_trace 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-022",
+      "question": "HT20260714-005最后一次参数是谁提交的？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_parameter_submit_trace 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-023",
+      "question": "TRACE-HTR-A-008参数照片都传齐了吗？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_parameter_evidence_completeness 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-024",
+      "question": "这个产品应该执行哪套热处理参数模板？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_parameter_template_match 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-025",
+      "question": "TRACE-HTR-B-H-001为什么还没有完成？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_incomplete_reason_analysis 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-026",
+      "question": "最近有没有热处理异常？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_abnormal_overview 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-027",
+      "question": "本月哪个炉子异常最多？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": "heat_device_trace",
+      "confidence": 0.8,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_device_abnormal_ranking 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-028",
+      "question": "HT20260714-006为什么被作废了？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_void_reason 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-029",
+      "question": "TRACE-HTR-A-009的参数有没有超出工艺范围？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_parameter_deviation_analysis 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-030",
+      "question": "一号热处理炉最近为什么总是停？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": "heat_device_trace",
+      "confidence": 0.8,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_device_downtime_analysis 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-031",
+      "question": "哪些热处理记录长时间没有结束？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_overdue_records 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-032",
+      "question": "最近参数被修改最多的是哪个工序？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_parameter_change_statistics 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-033",
+      "question": "本月热处理完成多少批？",
+      "result": "当前 Reasoning 与 Validator 可进入预期 Capability 执行链。",
+      "selected_capability": "heat_completion_count_monthly",
+      "confidence": 0.92,
+      "status": "supported",
+      "reason": "正确选择 heat_completion_count_monthly，置信度 0.92。"
+    },
+    {
+      "id": "HT-Q-034",
+      "question": "统计本月热处理完成数量。",
+      "result": "当前 Reasoning 与 Validator 可进入预期 Capability 执行链。",
+      "selected_capability": "heat_completion_count_monthly",
+      "confidence": 0.92,
+      "status": "supported",
+      "reason": "正确选择 heat_completion_count_monthly，置信度 0.92。"
+    },
+    {
+      "id": "HT-Q-035",
+      "question": "这个月完成了多少批热处理？",
+      "result": "当前 Reasoning 与 Validator 可进入预期 Capability 执行链。",
+      "selected_capability": "heat_completion_count_monthly",
+      "confidence": 0.84,
+      "status": "supported",
+      "reason": "正确选择 heat_completion_count_monthly，置信度 0.84。"
+    },
+    {
+      "id": "HT-Q-036",
+      "question": "今天完成了多少热处理？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_completion_count_by_period 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-037",
+      "question": "上个月热处理完成数量是多少？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": "heat_completion_count_monthly",
+      "confidence": 0.92,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_completion_count_by_period 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-038",
+      "question": "本月哪个设备热处理产量最高？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": "heat_device_trace",
+      "confidence": 0.82,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_device_output_ranking 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-039",
+      "question": "最近三个月热处理完成趋势如何？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_completion_trend 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-040",
+      "question": "各工艺阶段平均耗时是多少？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_stage_duration_statistics 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-041",
+      "question": "这个热处理怎么样？",
+      "result": "问题目标不明确，当前链路安全进入澄清。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "need_clarification",
+      "reason": "无法从 Catalog 稳定选择唯一 MES Capability。"
+    },
+    {
+      "id": "HT-Q-042",
+      "question": "最近生产情况如何？",
+      "result": "问题目标不明确，当前链路安全进入澄清。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "need_clarification",
+      "reason": "无法从 Catalog 稳定选择唯一 MES Capability。"
+    },
+    {
+      "id": "HT-Q-043",
+      "question": "热处理有没有问题？",
+      "result": "问题目标不明确，当前链路安全进入澄清。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "need_clarification",
+      "reason": "无法从 Catalog 稳定选择唯一 MES Capability。"
+    },
+    {
+      "id": "HT-Q-044",
+      "question": "帮我看一下这炉。",
+      "result": "问题目标不明确，当前链路安全进入澄清。",
+      "selected_capability": "heat_device_trace",
+      "confidence": 0.8,
+      "status": "need_clarification",
+      "reason": "缺少必要业务实体：record_no"
+    },
+    {
+      "id": "HT-Q-045",
+      "question": "参数正常吗？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_parameter_deviation_analysis 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-046",
+      "question": "炉子情况怎么样？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": "heat_device_trace",
+      "confidence": 0.8,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_device_status 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-047",
+      "question": "最近做得好不好？",
+      "result": "问题目标不明确，当前链路安全进入澄清。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "need_clarification",
+      "reason": "无法从 Catalog 稳定选择唯一 MES Capability。"
+    },
+    {
+      "id": "HT-Q-048",
+      "question": "这个批次有风险吗？",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_risk_assessment 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-049",
+      "question": "查一下热处理状态。",
+      "result": "已识别业务方向，但缺少执行所需条件。",
+      "selected_capability": "heat_current_stage",
+      "confidence": 0.78,
+      "status": "need_clarification",
+      "reason": "缺少必要业务实体：record_no"
+    },
+    {
+      "id": "HT-Q-050",
+      "question": "这个热处理完成了吗？",
+      "result": "已识别业务方向，但缺少执行所需条件。",
+      "selected_capability": "heat_current_stage",
+      "confidence": 0.78,
+      "status": "need_clarification",
+      "reason": "缺少必要业务实体：record_no"
+    },
+    {
+      "id": "HT-Q-051",
+      "question": "查一下这个热处理在哪个设备。",
+      "result": "已识别业务方向，但缺少执行所需条件。",
+      "selected_capability": "heat_device_trace",
+      "confidence": 0.82,
+      "status": "need_clarification",
+      "reason": "缺少必要业务实体：record_no"
+    },
+    {
+      "id": "HT-Q-052",
+      "question": "帮我看看那个订单的热处理进度。",
+      "result": "已识别业务方向，但缺少执行所需条件。",
+      "selected_capability": "heat_current_stage",
+      "confidence": 0.76,
+      "status": "need_clarification",
+      "reason": "缺少必要业务实体：record_no"
+    },
+    {
+      "id": "HT-Q-053",
+      "question": "查一下保温时间。",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_process_parameters 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-054",
+      "question": "统计一下热处理完成数量。",
+      "result": "已识别业务方向，但缺少执行所需条件。",
+      "selected_capability": "heat_completion_count_monthly",
+      "confidence": 0.92,
+      "status": "need_clarification",
+      "reason": "缺少必要业务实体：time_range"
+    },
+    {
+      "id": "HT-Q-055",
+      "question": "看看这个产品的热处理记录。",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_record_by_product 不在当前运行时 Capability Catalog。"
+    },
+    {
+      "id": "HT-Q-056",
+      "question": "查一下昨天没有完成的热处理。",
+      "result": "当前运行时 Catalog 不包含完成该业务目标所需的 Capability。",
+      "selected_capability": null,
+      "confidence": 0.0,
+      "status": "missing_capability",
+      "reason": "期望能力 heat_incomplete_records_by_period 不在当前运行时 Capability Catalog。"
+    }
+  ]
+}
